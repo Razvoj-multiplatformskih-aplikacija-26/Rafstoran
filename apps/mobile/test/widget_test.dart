@@ -1,7 +1,10 @@
+import 'package:domain/domain.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/app.dart';
 
 void main() {
+  setUpAll(initializeDomainTimeZones);
+
   testWidgets('shows free slots on the home screen', (tester) async {
     await tester.pumpWidget(const RafstoranApp());
     await tester.pumpAndSettle();

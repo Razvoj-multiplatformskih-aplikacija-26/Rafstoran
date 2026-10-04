@@ -1,40 +1,40 @@
 import 'dart:math' as math;
 
+import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/slot_selection.dart';
-import '../models/time_slot.dart';
 import '../text/serbian.dart';
 import '../widgets/party_size_stepper.dart';
 import '../widgets/rafstoran_mark.dart';
 import '../widgets/table_illustration.dart';
+import 'my_reservations_screen.dart';
 
-typedef _OpeningHours = ({int open, int close});
+final fakeOpeningHours = OpeningHours({
+  DateTime.monday: const DayHours(open: LocalTime(12, 0), close: LocalTime(23, 0)),
+  DateTime.tuesday: const DayHours(open: LocalTime(12, 0), close: LocalTime(23, 0)),
+  DateTime.wednesday: const DayHours(open: LocalTime(12, 0), close: LocalTime(23, 0)),
+  DateTime.thursday: const DayHours(open: LocalTime(12, 0), close: LocalTime(23, 0)),
+  DateTime.friday: const DayHours(open: LocalTime(12, 0), close: LocalTime(24, 0)),
+  DateTime.saturday: const DayHours(open: LocalTime(12, 0), close: LocalTime(24, 0)),
+  DateTime.sunday: const DayHours(open: LocalTime(12, 0), close: LocalTime(22, 0)),
+});
 
-const Map<int, _OpeningHours> _fakeOpeningHours = {
-  DateTime.monday: (open: 12, close: 23),
-  DateTime.tuesday: (open: 12, close: 23),
-  DateTime.wednesday: (open: 12, close: 23),
-  DateTime.thursday: (open: 12, close: 23),
-  DateTime.friday: (open: 12, close: 24),
-  DateTime.saturday: (open: 12, close: 24),
-  DateTime.sunday: (open: 12, close: 22),
-};
-
-List<TimeSlot> _fakeSlotsFor(DateTime date, int partySize) {
-  final hours = _fakeOpeningHours[date.weekday];
-  if (hours == null) return const [];
-  final lastStart = hours.close * 60 - TimeSlot.duration.inMinutes;
-  final slots = <TimeSlot>[];
-  for (var minutes = hours.open * 60; minutes <= lastStart; minutes += 30) {
-    final start = DateTime(date.year, date.month, date.day, minutes ~/ 60, minutes % 60);
-    final seed = date.day * 31 + minutes ~/ 30 + partySize * 7;
-    final freeTables = math.max(0, (seed * 17 + 5) % 8 - (partySize > 6 ? 3 : 0));
-    slots.add(TimeSlot(start: start, freeTables: freeTables));
-  }
-  return slots;
-}
+const fakeTables = [
+  DiningTable(id: DiningTableId('t-01'), label: 'S1', capacity: 2, area: TableArea.hall),
+  DiningTable(id: DiningTableId('t-02'), label: 'S2', capacity: 2, area: TableArea.hall),
+  DiningTable(id: DiningTableId('t-03'), label: 'S3', capacity: 4, area: TableArea.hall),
+  DiningTable(id: DiningTableId('t-04'), label: 'S4', capacity: 4, area: TableArea.hall),
+  DiningTable(id: DiningTableId('t-05'), label: 'S5', capacity: 6, area: TableArea.hall),
+  DiningTable(id: DiningTableId('t-06'), label: 'S6', capacity: 8, area: TableArea.hall),
+  DiningTable(id: DiningTableId('t-07'), label: 'T1', capacity: 2, area: TableArea.terrace),
+  DiningTable(id: DiningTableId('t-08'), label: 'T2', capacity: 4, area: TableArea.terrace),
+  DiningTable(id: DiningTableId('t-09'), label: 'T3', capacity: 4, area: TableArea.terrace),
+  DiningTable(id: DiningTableId('t-10'), label: 'T4', capacity: 6, area: TableArea.terrace),
+  DiningTable(id: DiningTableId('t-11'), label: 'B1', capacity: 4, area: TableArea.garden),
+  DiningTable(id: DiningTableId('t-12'), label: 'B2', capacity: 10, area: TableArea.garden),
+];
 
 class SlotsScreen extends StatefulWidget {
   const SlotsScreen({super.key});
@@ -47,18 +47,21 @@ class _SlotsScreenState extends State<SlotsScreen> {
   static const _daysAhead = 14;
 
   late DateTime _selectedDate = _today;
-  int _partySize = 2;
+  PartySize _partySize = PartySize.parse(2).valueOrNull!;
 
-  DateTime get _today {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day);
-  }
+  DateTime get _today => restaurantDay(DateTime.now());
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final now = DateTime.now();
-    final slots = _fakeSlotsFor(_selectedDate, _partySize).where((slot) => slot.start.isAfter(now)).toList();
+    final slots = availableSlots(
+      openingHours: fakeOpeningHours,
+      tables: fakeTables,
+      reservations: fakeReservations,
+      localDay: _selectedDate,
+      partySize: _partySize,
+      now: DateTime.now(),
+    );
 
     return Scaffold(
       appBar: AppBar(title: const RafstoranWordmark()),
@@ -213,8 +216,8 @@ class _SlotGrid extends StatelessWidget {
   static const _minCardWidth = 150.0;
   static const _spacing = 12.0;
 
-  final List<TimeSlot> slots;
-  final int partySize;
+  final List<SlotAvailability> slots;
+  final PartySize partySize;
 
   @override
   Widget build(BuildContext context) {
@@ -229,7 +232,7 @@ class _SlotGrid extends StatelessWidget {
             for (final slot in slots)
               SizedBox(
                 width: cardWidth,
-                child: _SlotCard(slot: slot, partySize: partySize),
+                child: _SlotCard(availability: slot, partySize: partySize),
               ),
           ],
         );
@@ -239,20 +242,21 @@ class _SlotGrid extends StatelessWidget {
 }
 
 class _SlotCard extends StatelessWidget {
-  const _SlotCard({required this.slot, required this.partySize});
+  const _SlotCard({required this.availability, required this.partySize});
 
-  final TimeSlot slot;
-  final int partySize;
+  final SlotAvailability availability;
+  final PartySize partySize;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final available = slot.isAvailable;
-    final caption = available ? freeTablesLabel(slot.freeTables) : 'Popunjeno';
+    final slot = availability.slot;
+    final available = availability.isAvailable;
+    final caption = available ? freeTablesLabel(availability.freeTables) : 'Popunjeno';
     void open() {
-      final SlotSelection selection = (slot: slot, partySize: partySize);
-      context.push('/slots/${slot.id}', extra: selection);
+      final SlotSelection selection = (availability: availability, partySize: partySize);
+      context.push('/slots/${slot.start.toIso8601String()}', extra: selection);
     }
 
     return Semantics(
@@ -272,7 +276,7 @@ class _SlotCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Hero(
-                  tag: 'slot-${slot.id}',
+                  tag: 'slot-${slot.start.toIso8601String()}',
                   child: Material(
                     type: MaterialType.transparency,
                     child: Text(

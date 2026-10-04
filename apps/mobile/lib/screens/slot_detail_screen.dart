@@ -13,7 +13,7 @@ class SlotDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final slot = selection.slot;
+    final slot = selection.availability.slot;
     return Scaffold(
       appBar: AppBar(title: const Text('Termin')),
       body: Center(
@@ -25,7 +25,7 @@ class SlotDetailScreen extends StatelessWidget {
               Semantics(
                 header: true,
                 child: Hero(
-                  tag: 'slot-${slot.id}',
+                  tag: 'slot-${slot.start.toIso8601String()}',
                   child: Material(
                     type: MaterialType.transparency,
                     child: Text(formatTime(slot.start), style: theme.textTheme.displayLarge),
@@ -34,7 +34,7 @@ class SlotDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                capitalize(formatLongDate(slot.start)),
+                capitalize(formatInstantDate(slot.start)),
                 style: theme.textTheme.titleLarge?.copyWith(color: scheme.onSurfaceVariant),
               ),
               const SizedBox(height: 24),
@@ -50,13 +50,13 @@ class SlotDetailScreen extends StatelessWidget {
                     _DetailRow(
                       icon: Icons.group_outlined,
                       label: 'Broj osoba',
-                      value: peopleLabel(selection.partySize),
+                      value: peopleLabel(selection.partySize.value),
                     ),
                     const Divider(indent: 16, endIndent: 16),
                     _DetailRow(
                       icon: Icons.table_restaurant_outlined,
                       label: 'Slobodno',
-                      value: freeTablesLabel(slot.freeTables),
+                      value: freeTablesLabel(selection.availability.freeTables),
                     ),
                   ],
                 ),
@@ -77,7 +77,7 @@ class SlotDetailScreen extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 720),
             child: FilledButton.icon(
-              onPressed: () => context.push('/slots/${slot.id}/reserve', extra: selection),
+              onPressed: () => context.push('/slots/${slot.start.toIso8601String()}/reserve', extra: selection),
               icon: const Icon(Icons.restaurant_outlined),
               label: const Text('Rezerviši'),
             ),

@@ -1,3 +1,3 @@
-import 'time_slot.dart';
+import 'package:domain/domain.dart';
 
-typedef SlotSelection = ({TimeSlot slot, int partySize});
+typedef SlotSelection = ({SlotAvailability availability, PartySize partySize});

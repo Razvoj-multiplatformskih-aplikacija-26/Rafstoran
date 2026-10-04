@@ -1,12 +1,14 @@
+import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-import '../models/reservation.dart';
 import '../models/slot_selection.dart';
+import '../text/domain_errors.dart';
 import '../text/serbian.dart';
 import '../widgets/party_size_stepper.dart';
 import 'my_reservations_screen.dart';
+import 'slots_screen.dart';
 
 class ReservationFormScreen extends StatefulWidget {
   const ReservationFormScreen({super.key, required this.selection});
@@ -18,13 +20,9 @@ class ReservationFormScreen extends StatefulWidget {
 }
 
 class _ReservationFormScreenState extends State<ReservationFormScreen> {
-  static const maxNoteLength = 200;
-  static const minPartySize = 1;
-  static const maxPartySize = 12;
-
   final _formKey = GlobalKey<FormState>();
   final _noteController = TextEditingController();
-  late int _partySize = widget.selection.partySize;
+  late PartySize _partySize = widget.selection.partySize;
 
   @override
   void dispose() {
@@ -32,47 +30,44 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
     super.dispose();
   }
 
-  String? _validateNote(String? value) {
-    final length = (value ?? '').characters.length;
-    if (length > maxNoteLength) return 'Napomena može imati najviše $maxNoteLength znakova.';
-    return null;
-  }
+  String? _validateNote(String? value) => ReservationNote.parse(value ?? '').errorOrNull?.message;
 
-  String? _validatePartySize(int value) {
-    if (value < minPartySize || value > maxPartySize) return 'Broj osoba je od $minPartySize do $maxPartySize.';
-    return null;
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _submit() {
-    final partySizeError = _validatePartySize(_partySize);
-    if (!_formKey.currentState!.validate() || partySizeError != null) {
-      if (partySizeError != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(partySizeError)));
-      }
-      return;
+    if (!_formKey.currentState!.validate()) return;
+    final note = ReservationNote.parse(_noteController.text).valueOrNull!;
+    final slot = widget.selection.availability.slot;
+    final table = assignTable(tables: fakeTables, reservations: fakeReservations, slot: slot, partySize: _partySize);
+    switch (table) {
+      case Failure(:final error):
+        _showMessage(error.message);
+      case Success(:final value):
+        final now = DateTime.now().toUtc();
+        fakeReservations.add(
+          Reservation(
+            id: ReservationId('r-${now.microsecondsSinceEpoch}'),
+            guestId: currentUser.id,
+            slot: slot,
+            partySize: _partySize,
+            note: note.isEmpty ? null : note,
+            tableId: value.id,
+            createdAt: now,
+          ),
+        );
+        HapticFeedback.mediumImpact();
+        _showMessage('Rezervacija je poslata. Čeka potvrdu osoblja.');
+        context.go('/reservations');
     }
-    HapticFeedback.mediumImpact();
-    final note = _noteController.text.trim();
-    final now = DateTime.now();
-    fakeReservations.add(
-      Reservation(
-        id: 'r-${now.microsecondsSinceEpoch}',
-        start: widget.selection.slot.start,
-        partySize: _partySize,
-        note: note.isEmpty ? null : note,
-        createdAt: now,
-      ),
-    );
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Rezervacija je poslata. Čeka potvrdu osoblja.')));
-    context.go('/reservations');
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final slot = widget.selection.slot;
+    final slot = widget.selection.availability.slot;
     return Scaffold(
       appBar: AppBar(title: const Text('Rezervacija')),
       body: Center(
@@ -87,7 +82,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
                 Semantics(header: true, child: Text(formatTime(slot.start), style: theme.textTheme.displaySmall)),
                 const SizedBox(height: 4),
                 Text(
-                  capitalize(formatLongDate(slot.start)),
+                  capitalize(formatInstantDate(slot.start)),
                   style: theme.textTheme.titleLarge?.copyWith(color: scheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 24),
@@ -97,13 +92,8 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Broj osoba', style: theme.textTheme.titleMedium),
-                        PartySizeStepper(
-                          value: _partySize,
-                          min: minPartySize,
-                          max: maxPartySize,
-                          onChanged: (value) => setState(() => _partySize = value),
-                        ),
+                        ExcludeSemantics(child: Text('Broj osoba', style: theme.textTheme.titleMedium)),
+                        PartySizeStepper(value: _partySize, onChanged: (value) => setState(() => _partySize = value)),
                       ],
                     ),
                   ),
@@ -111,7 +101,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _noteController,
-                  maxLength: maxNoteLength,
+                  maxLength: ReservationNote.maxLength,
                   maxLengthEnforcement: MaxLengthEnforcement.none,
                   minLines: 3,
                   maxLines: 6,

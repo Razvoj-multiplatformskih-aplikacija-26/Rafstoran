@@ -1,3 +1,5 @@
+import 'package:domain/domain.dart';
+
 String pluralize(int count, {required String one, required String few, required String many}) {
   final lastDigit = count % 10;
   final lastTwoDigits = count % 100;
@@ -40,14 +42,16 @@ String _time(DateTime date) => '${_twoDigits(date.hour)}:${_twoDigits(date.minut
 
 String _twoDigits(int value) => value.toString().padLeft(2, '0');
 
-String formatLongDate(DateTime date) => _longDate(date);
+String formatLongDate(DateTime localDate) => _longDate(localDate);
 
-String formatShortWeekday(DateTime date) => _shortWeekday(date);
+String formatShortWeekday(DateTime localDate) => _shortWeekday(localDate);
 
-String formatDayOfMonth(DateTime date) => _dayOfMonth(date);
+String formatDayOfMonth(DateTime localDate) => _dayOfMonth(localDate);
 
-String formatTime(DateTime date) => _time(date);
+String formatTime(DateTime instant) => _time(restaurantTime(instant));
 
-String formatDateAndTime(DateTime date) => '${formatLongDate(date)} u ${formatTime(date)}';
+String formatInstantDate(DateTime instant) => _longDate(restaurantTime(instant));
+
+String formatDateAndTime(DateTime instant) => '${formatInstantDate(instant)} u ${formatTime(instant)}';
 
 String capitalize(String text) => text.isEmpty ? text : text[0].toUpperCase() + text.substring(1);

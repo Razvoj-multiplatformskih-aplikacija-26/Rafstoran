@@ -1,14 +1,14 @@
+import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
-import '../models/reservation_status.dart';
 import '../theme/theme.dart';
 
 extension ReservationStatusLabel on ReservationStatus {
   String get label => switch (this) {
-    ReservationStatus.pending => 'Na čekanju',
-    ReservationStatus.confirmed => 'Potvrđena',
-    ReservationStatus.cancelled => 'Otkazana',
-    ReservationStatus.arrived => 'Gost stigao',
+    Pending() => 'Na čekanju',
+    Confirmed() => 'Potvrđena',
+    Cancelled() => 'Otkazana',
+    Arrived() => 'Gost stigao',
   };
 }
 
@@ -22,10 +22,10 @@ class StatusBadge extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.statusColors;
     final (background, foreground) = switch (status) {
-      ReservationStatus.pending => (colors.pending, colors.onPending),
-      ReservationStatus.confirmed => (colors.confirmed, colors.onConfirmed),
-      ReservationStatus.cancelled => (colors.cancelled, colors.onCancelled),
-      ReservationStatus.arrived => (colors.arrived, colors.onArrived),
+      Pending() => (colors.pending, colors.onPending),
+      Confirmed() => (colors.confirmed, colors.onConfirmed),
+      Cancelled() => (colors.cancelled, colors.onCancelled),
+      Arrived() => (colors.arrived, colors.onArrived),
     };
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),

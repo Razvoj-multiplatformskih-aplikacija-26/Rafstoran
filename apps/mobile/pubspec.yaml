@@ -12,6 +12,8 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  domain:
+    path: ../../packages/domain
   go_router: 18.0.2
 
 dev_dependencies:

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:domain/domain.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/app.dart';
 import 'package:mobile/screens/my_reservations_screen.dart';
 import 'package:mobile/theme/theme.dart';
 
 void main() {
+  setUpAll(initializeDomainTimeZones);
+
   testWidgets('home screen is readable with a screen reader', (tester) async {
     final semantics = tester.ensureSemantics();
     await tester.pumpWidget(const RafstoranApp());

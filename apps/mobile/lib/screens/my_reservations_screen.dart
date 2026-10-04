@@ -1,46 +1,66 @@
+import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../models/reservation.dart';
-import '../models/reservation_status.dart';
+import '../text/domain_errors.dart';
 import '../text/serbian.dart';
 import '../widgets/status_badge.dart';
 import '../widgets/table_illustration.dart';
 
-final DateTime _seedToday = () {
-  final now = DateTime.now();
-  return DateTime(now.year, now.month, now.day);
-}();
+const currentUser = User(id: UserId('u-guest'), username: 'gost', role: Role.guest);
+const _waiter = UserId('u-waiter');
+
+final DateTime _seedToday = restaurantDay(DateTime.now());
+
+Reservation _seed({
+  required String id,
+  required Duration fromToday,
+  required int partySize,
+  required String tableId,
+  String? note,
+  ReservationStatus status = const Pending(),
+}) {
+  final start = _seedToday.add(fromToday);
+  return Reservation(
+    id: ReservationId(id),
+    guestId: currentUser.id,
+    slot: TimeSlot.existing(start),
+    partySize: PartySize.parse(partySize).valueOrNull!,
+    note: note == null ? null : ReservationNote.parse(note).valueOrNull,
+    tableId: DiningTableId(tableId),
+    status: status,
+    createdAt: start.subtract(const Duration(days: 2)).toUtc(),
+  );
+}
 
 final fakeReservations = <Reservation>[
-  Reservation(
+  _seed(
     id: 'r-1',
-    start: _seedToday.add(const Duration(days: 1, hours: 20)),
+    fromToday: const Duration(days: 1, hours: 20),
     partySize: 4,
+    tableId: 't-03',
     note: 'Sto pored prozora, ako je moguće.',
-    status: ReservationStatus.confirmed,
-    createdAt: _seedToday.subtract(const Duration(days: 2)),
+    status: Confirmed(confirmedBy: _waiter, at: _seedToday.subtract(const Duration(hours: 20)).toUtc()),
   ),
-  Reservation(
-    id: 'r-2',
-    start: _seedToday.add(const Duration(days: 5, hours: 13)),
-    partySize: 2,
-    createdAt: _seedToday.subtract(const Duration(days: 1)),
-  ),
-  Reservation(
+  _seed(id: 'r-2', fromToday: const Duration(days: 5, hours: 13), partySize: 2, tableId: 't-01'),
+  _seed(
     id: 'r-3',
-    start: _seedToday.subtract(const Duration(days: 3, hours: -19, minutes: -30)),
+    fromToday: const Duration(days: -3, hours: 19, minutes: 30),
     partySize: 6,
+    tableId: 't-05',
     note: 'Rođendan, treba nam mesto za tortu.',
-    status: ReservationStatus.arrived,
-    createdAt: _seedToday.subtract(const Duration(days: 9)),
+    status: Arrived(arrivedAt: _seedToday.subtract(const Duration(days: 3, hours: -19, minutes: -42)).toUtc()),
   ),
-  Reservation(
+  _seed(
     id: 'r-4',
-    start: _seedToday.subtract(const Duration(days: 12, hours: -21)),
+    fromToday: const Duration(days: -12, hours: 21),
     partySize: 3,
-    status: ReservationStatus.cancelled,
-    createdAt: _seedToday.subtract(const Duration(days: 15)),
+    tableId: 't-08',
+    status: Cancelled(
+      reason: 'Promena plana.',
+      cancelledBy: currentUser.id,
+      at: _seedToday.subtract(const Duration(days: 13)).toUtc(),
+    ),
   ),
 ];
 
@@ -52,20 +72,19 @@ class MyReservationsScreen extends StatefulWidget {
 }
 
 class _MyReservationsScreenState extends State<MyReservationsScreen> {
-  static const cancellationNotice = Duration(hours: 2);
-
-  bool _canCancel(Reservation reservation) {
-    final isActive =
-        reservation.status == ReservationStatus.pending || reservation.status == ReservationStatus.confirmed;
-    return isActive && DateTime.now().isBefore(reservation.start.subtract(cancellationNotice));
-  }
+  bool _canCancel(Reservation reservation, DateTime now) =>
+      !reservation.status.isFinal &&
+      AccessPolicy.canCancel(currentUser, reservation) &&
+      guestMayStillCancel(reservation, now: now);
 
   Future<void> _cancel(Reservation reservation) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Otkazati rezervaciju?'),
-        content: Text('${capitalize(formatDateAndTime(reservation.start))}, ${peopleLabel(reservation.partySize)}.'),
+        content: Text(
+          '${capitalize(formatDateAndTime(reservation.slot.start))}, ${peopleLabel(reservation.partySize.value)}.',
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Odustani')),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Otkaži rezervaciju')),
@@ -73,17 +92,29 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    setState(() => reservation.status = ReservationStatus.cancelled);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rezervacija je otkazana.')));
+    final result = cancelReservation(reservation, by: currentUser, now: DateTime.now(), reason: 'Otkazao gost.');
+    final message = switch (result) {
+      Success(:final value) => _replace(value),
+      Failure(:final error) => error.message,
+    };
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _replace(Reservation updated) {
+    setState(() {
+      final index = fakeReservations.indexWhere((r) => r.id == updated.id);
+      fakeReservations[index] = updated;
+    });
+    return 'Rezervacija je otkazana.';
   }
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final upcoming = fakeReservations.where((r) => r.end.isAfter(now)).toList()
-      ..sort((a, b) => a.start.compareTo(b.start));
-    final past = fakeReservations.where((r) => !r.end.isAfter(now)).toList()
-      ..sort((a, b) => b.start.compareTo(a.start));
+    final upcoming = fakeReservations.where((r) => r.slot.end.isAfter(now)).toList()
+      ..sort((a, b) => a.slot.start.compareTo(b.slot.start));
+    final past = fakeReservations.where((r) => !r.slot.end.isAfter(now)).toList()
+      ..sort((a, b) => b.slot.start.compareTo(a.slot.start));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Moje rezervacije')),
@@ -96,17 +127,17 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   children: [
                     if (upcoming.isNotEmpty) ...[
-                      _SectionTitle('Predstojeće'),
+                      const _SectionTitle('Predstojeće'),
                       for (final reservation in upcoming) ...[
                         _ReservationCard(
                           reservation: reservation,
-                          onCancel: _canCancel(reservation) ? () => _cancel(reservation) : null,
+                          onCancel: _canCancel(reservation, now) ? () => _cancel(reservation) : null,
                         ),
                         const SizedBox(height: 12),
                       ],
                     ],
                     if (past.isNotEmpty) ...[
-                      _SectionTitle('Prethodne'),
+                      const _SectionTitle('Prethodne'),
                       for (final reservation in past) ...[
                         _ReservationCard(reservation: reservation, onCancel: null),
                         const SizedBox(height: 12),
@@ -140,12 +171,20 @@ class _ReservationCard extends StatelessWidget {
   final Reservation reservation;
   final VoidCallback? onCancel;
 
+  String? _statusDetail(ReservationStatus status) => switch (status) {
+    Pending() || Confirmed() => null,
+    Cancelled(:final reason) => reason.isEmpty ? null : reason,
+    Arrived(:final arrivedAt) => 'Dolazak u ${formatTime(arrivedAt)}.',
+  };
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final note = reservation.note;
+    final detail = _statusDetail(reservation.status);
     final cancel = onCancel;
+    final mutedStyle = theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant);
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -163,12 +202,9 @@ class _ReservationCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(formatTime(reservation.start), style: theme.textTheme.headlineMedium),
+                            Text(formatTime(reservation.slot.start), style: theme.textTheme.headlineMedium),
                             const SizedBox(height: 2),
-                            Text(
-                              capitalize(formatLongDate(reservation.start)),
-                              style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-                            ),
+                            Text(capitalize(formatInstantDate(reservation.slot.start)), style: mutedStyle),
                           ],
                         ),
                       ),
@@ -180,19 +216,14 @@ class _ReservationCard extends StatelessWidget {
                     children: [
                       Icon(Icons.group_outlined, size: 18, color: scheme.onSurfaceVariant),
                       const SizedBox(width: 6),
-                      Text(peopleLabel(reservation.partySize), style: theme.textTheme.bodyMedium),
+                      Text(peopleLabel(reservation.partySize.value), style: theme.textTheme.bodyMedium),
                     ],
                   ),
                   if (note != null) ...[
                     const SizedBox(height: 8),
-                    Text(
-                      note,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontStyle: FontStyle.italic,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
+                    Text(note.text, style: mutedStyle?.copyWith(fontStyle: FontStyle.italic)),
                   ],
+                  if (detail != null) ...[const SizedBox(height: 8), Text(detail, style: mutedStyle)],
                 ],
               ),
             ),
@@ -203,7 +234,7 @@ class _ReservationCard extends StatelessWidget {
                   ? const SizedBox(height: 40)
                   : Semantics(
                       button: true,
-                      label: 'Otkaži rezervaciju, ${capitalize(formatDateAndTime(reservation.start))}',
+                      label: 'Otkaži rezervaciju, ${capitalize(formatDateAndTime(reservation.slot.start))}',
                       excludeSemantics: true,
                       onTap: cancel,
                       child: TextButton(onPressed: cancel, child: const Text('Otkaži')),

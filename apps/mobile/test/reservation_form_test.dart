@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/models/time_slot.dart';
+import 'package:domain/domain.dart';
 import 'package:mobile/screens/reservation_form_screen.dart';
 import 'package:mobile/theme/theme.dart';
 
 void main() {
+  setUpAll(initializeDomainTimeZones);
+
   Widget buildForm() {
     return MaterialApp(
       theme: RafTheme.light(),
@@ -13,7 +15,10 @@ void main() {
       supportedLocales: const [Locale.fromSubtags(languageCode: 'sr', scriptCode: 'Latn')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: ReservationFormScreen(
-        selection: (slot: TimeSlot(start: DateTime(2026, 10, 9, 20), freeTables: 3), partySize: 2),
+        selection: (
+          availability: SlotAvailability(slot: TimeSlot.existing(DateTime.utc(2026, 10, 9, 18)), freeTables: 3),
+          partySize: PartySize.parse(2).valueOrNull!,
+        ),
       ),
     );
   }
