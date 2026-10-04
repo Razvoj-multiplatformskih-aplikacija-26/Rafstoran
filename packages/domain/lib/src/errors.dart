@@ -20,6 +20,34 @@ final class NoteTooLong extends DomainError {
   String toString() => 'NoteTooLong($length)';
 }
 
+@immutable
+final class InvalidPartySize extends DomainError {
+  const InvalidPartySize(this.size);
+
+  final int size;
+
+  @override
+  bool operator ==(Object other) => other is InvalidPartySize && other.size == size;
+
+  @override
+  int get hashCode => Object.hash(InvalidPartySize, size);
+
+  @override
+  String toString() => 'InvalidPartySize($size)';
+}
+
+final class SlotInPast extends DomainError {
+  const SlotInPast();
+}
+
+final class SlotNotOnHalfHour extends DomainError {
+  const SlotNotOnHalfHour();
+}
+
+final class OutsideOpeningHours extends DomainError {
+  const OutsideOpeningHours();
+}
+
 final class NotAllowed extends DomainError {
   const NotAllowed();
 }
