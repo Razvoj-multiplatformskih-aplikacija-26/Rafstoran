@@ -1,50 +1,49 @@
+import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../text/serbian.dart';
 import '../widgets/status_badge.dart';
 import 'my_reservations_screen.dart';
 
-class ReservationDetailScreen extends StatefulWidget {
+class ReservationDetailScreen extends StatelessWidget {
   const ReservationDetailScreen({super.key, required this.id});
 
   final ReservationId id;
 
-  @override
-  State<ReservationDetailScreen> createState() => _ReservationDetailScreenState();
-}
-
-class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
-  Reservation? _find() {
-    for (final reservation in fakeReservations) {
-      if (reservation.id == widget.id) return reservation;
+  Reservation? _find(MyReservationsLoaded state) {
+    for (final reservation in state.upcoming.followedBy(state.past)) {
+      if (reservation.id == id) return reservation;
     }
     return null;
   }
 
-  Future<void> _cancel(Reservation reservation) async {
-    final message = await confirmAndCancel(context, reservation);
-    if (message == null || !mounted) return;
-    setState(() {});
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-  }
-
   @override
   Widget build(BuildContext context) {
-    final reservation = _find();
-    if (reservation == null) return const _NotFound();
-    return _DetailBody(
-      reservation: reservation,
-      onCancel: canGuestCancel(reservation, DateTime.now()) ? () => _cancel(reservation) : null,
+    return BlocBuilder<MyReservationsBloc, MyReservationsState>(
+      builder: (context, state) {
+        if (state is! MyReservationsLoaded) return const _NotFound();
+        final reservation = _find(state);
+        if (reservation == null) return const _NotFound();
+        return _DetailBody(
+          reservation: reservation,
+          busy: state.isCancelling(reservation),
+          onCancel: state.canCancel(reservation) && !state.isBusy
+              ? () => confirmCancellation(context, reservation)
+              : null,
+        );
+      },
     );
   }
 }
 
 class _DetailBody extends StatelessWidget {
-  const _DetailBody({required this.reservation, required this.onCancel});
+  const _DetailBody({required this.reservation, required this.onCancel, this.busy = false});
 
   final Reservation reservation;
   final VoidCallback? onCancel;
+  final bool busy;
 
   List<Widget> _statusRows(ReservationStatus status) => switch (status) {
     Pending() => const [],
@@ -139,7 +138,7 @@ class _DetailBody extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: cancel == null
+      bottomNavigationBar: cancel == null && !busy
           ? null
           : SafeArea(
               minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -147,11 +146,20 @@ class _DetailBody extends StatelessWidget {
                 heightFactor: 1,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 720),
-                  child: OutlinedButton.icon(
-                    onPressed: cancel,
-                    icon: const Icon(Icons.close),
-                    label: const Text('Otkaži rezervaciju'),
-                  ),
+                  child: busy
+                      ? OutlinedButton.icon(
+                          onPressed: null,
+                          icon: const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          ),
+                          label: const Text('Otkazivanje…'),
+                        )
+                      : OutlinedButton.icon(
+                          onPressed: cancel,
+                          icon: const Icon(Icons.close),
+                          label: const Text('Otkaži rezervaciju'),
+                        ),
                 ),
               ),
             ),

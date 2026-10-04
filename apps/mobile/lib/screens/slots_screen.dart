@@ -1,144 +1,142 @@
 import 'dart:math' as math;
 
+import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../dependencies.dart';
 import '../models/slot_selection.dart';
 import '../text/serbian.dart';
 import '../widgets/party_size_stepper.dart';
 import '../widgets/rafstoran_mark.dart';
+import '../widgets/state_views.dart';
 import '../widgets/table_illustration.dart';
-import 'my_reservations_screen.dart';
 
-final fakeOpeningHours = OpeningHours({
-  DateTime.monday: const DayHours(open: LocalTime(12, 0), close: LocalTime(23, 0)),
-  DateTime.tuesday: const DayHours(open: LocalTime(12, 0), close: LocalTime(23, 0)),
-  DateTime.wednesday: const DayHours(open: LocalTime(12, 0), close: LocalTime(23, 0)),
-  DateTime.thursday: const DayHours(open: LocalTime(12, 0), close: LocalTime(23, 0)),
-  DateTime.friday: const DayHours(open: LocalTime(12, 0), close: LocalTime(24, 0)),
-  DateTime.saturday: const DayHours(open: LocalTime(12, 0), close: LocalTime(24, 0)),
-  DateTime.sunday: const DayHours(open: LocalTime(12, 0), close: LocalTime(22, 0)),
-});
-
-const fakeTables = [
-  DiningTable(id: DiningTableId('t-01'), label: 'S1', capacity: 2, area: TableArea.hall),
-  DiningTable(id: DiningTableId('t-02'), label: 'S2', capacity: 2, area: TableArea.hall),
-  DiningTable(id: DiningTableId('t-03'), label: 'S3', capacity: 4, area: TableArea.hall),
-  DiningTable(id: DiningTableId('t-04'), label: 'S4', capacity: 4, area: TableArea.hall),
-  DiningTable(id: DiningTableId('t-05'), label: 'S5', capacity: 6, area: TableArea.hall),
-  DiningTable(id: DiningTableId('t-06'), label: 'S6', capacity: 8, area: TableArea.hall),
-  DiningTable(id: DiningTableId('t-07'), label: 'T1', capacity: 2, area: TableArea.terrace),
-  DiningTable(id: DiningTableId('t-08'), label: 'T2', capacity: 4, area: TableArea.terrace),
-  DiningTable(id: DiningTableId('t-09'), label: 'T3', capacity: 4, area: TableArea.terrace),
-  DiningTable(id: DiningTableId('t-10'), label: 'T4', capacity: 6, area: TableArea.terrace),
-  DiningTable(id: DiningTableId('t-11'), label: 'B1', capacity: 4, area: TableArea.garden),
-  DiningTable(id: DiningTableId('t-12'), label: 'B2', capacity: 10, area: TableArea.garden),
-];
-
-class SlotsScreen extends StatefulWidget {
+class SlotsScreen extends StatelessWidget {
   const SlotsScreen({super.key});
 
-  @override
-  State<SlotsScreen> createState() => _SlotsScreenState();
-}
-
-class _SlotsScreenState extends State<SlotsScreen> {
   static const _daysAhead = 14;
 
-  late DateTime _selectedDate = _today;
-  PartySize _partySize = PartySize.parse(2).valueOrNull!;
-
-  DateTime get _today => restaurantDay(DateTime.now());
+  Future<void> _refresh(AvailableSlotsBloc bloc) {
+    bloc.add(const AvailableSlotsRefreshed());
+    return bloc.stream.firstWhere((state) => state is! AvailableSlotsLoading);
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final slots = availableSlots(
-      openingHours: fakeOpeningHours,
-      tables: fakeTables,
-      reservations: fakeReservations,
-      localDay: _selectedDate,
-      partySize: _partySize,
-      now: DateTime.now(),
-    );
-
+    final bloc = context.read<AvailableSlotsBloc>();
     return Scaffold(
-      appBar: AppBar(title: const RafstoranWordmark()),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: CustomScrollView(
-            slivers: [
-              const SliverToBoxAdapter(child: _Header()),
-              SliverToBoxAdapter(
-                child: _DateChips(
-                  today: _today,
-                  daysAhead: _daysAhead,
-                  selected: _selectedDate,
-                  onSelected: (date) => setState(() => _selectedDate = date),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      ExcludeSemantics(child: Text('Broj osoba', style: theme.textTheme.titleMedium)),
-                      PartySizeStepper(value: _partySize, onChanged: (value) => setState(() => _partySize = value)),
-                    ],
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Expanded(
-                        child: Semantics(
-                          header: true,
-                          child: Text(capitalize(formatLongDate(_selectedDate)), style: theme.textTheme.titleLarge),
+      appBar: AppBar(title: const RafstoranWordmark(), actions: [if (kDebugMode) const _OutageSwitch()]),
+      body: BlocBuilder<AvailableSlotsBloc, AvailableSlotsState>(
+        builder: (context, state) {
+          return RefreshIndicator(
+            onRefresh: () => _refresh(bloc),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    const SliverToBoxAdapter(child: _Header()),
+                    SliverToBoxAdapter(
+                      child: _DateChips(
+                        today: bloc.today,
+                        daysAhead: _daysAhead,
+                        selected: state.day,
+                        onSelected: (day) => bloc.add(AvailableSlotsDaySelected(day)),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            ExcludeSemantics(child: Text('Broj osoba', style: theme.textTheme.titleMedium)),
+                            PartySizeStepper(
+                              value: state.partySize,
+                              onChanged: (size) => bloc.add(AvailableSlotsPartySizeSelected(size)),
+                            ),
+                          ],
                         ),
                       ),
-                      if (slots.isNotEmpty)
-                        Semantics(
-                          liveRegion: true,
-                          child: Text(
-                            slotsLabel(slots.length),
-                            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                          ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Expanded(
+                              child: Semantics(
+                                header: true,
+                                child: Text(capitalize(formatLongDate(state.day)), style: theme.textTheme.titleLarge),
+                              ),
+                            ),
+                            if (state case AvailableSlotsLoaded(:final slots))
+                              Semantics(
+                                liveRegion: true,
+                                child: Text(
+                                  slotsLabel(slots.length),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
+                      ),
+                    ),
+                    switch (state) {
+                      AvailableSlotsLoading() => const SliverPadding(
+                        padding: EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        sliver: SliverToBoxAdapter(child: SlotSkeleton()),
+                      ),
+                      AvailableSlotsFailure() => SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: FailureView(onRetry: () => bloc.add(const AvailableSlotsRefreshed())),
+                      ),
+                      AvailableSlotsEmpty() => const SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: EmptyView(title: 'Nema termina za izabrani dan.'),
+                      ),
+                      AvailableSlotsLoaded(:final slots, :final partySize) => SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                        sliver: SliverToBoxAdapter(
+                          child: _SlotGrid(slots: slots, partySize: partySize),
+                        ),
+                      ),
+                    },
+                  ],
                 ),
               ),
-              if (slots.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Text(
-                      'Nema termina za izabrani dan.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                  sliver: SliverToBoxAdapter(
-                    child: _SlotGrid(slots: slots, partySize: _partySize),
-                  ),
-                ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
+    );
+  }
+}
+
+class _OutageSwitch extends StatelessWidget {
+  const _OutageSwitch();
+
+  @override
+  Widget build(BuildContext context) {
+    final fake = context.read<AppDependencies>().fakeRestaurant;
+    if (fake == null) return const SizedBox.shrink();
+    return IconButton(
+      tooltip: 'Simuliraj grešku',
+      icon: const Icon(Icons.cloud_off_outlined),
+      onPressed: () {
+        fake.failingRequests = 1;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sledeći zahtev neće uspeti.')));
+      },
     );
   }
 }

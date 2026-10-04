@@ -1,18 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:domain/domain.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/app.dart';
-import 'package:mobile/screens/my_reservations_screen.dart';
-import 'package:mobile/theme/theme.dart';
+
+import 'support.dart';
 
 void main() {
-  setUpAll(initializeDomainTimeZones);
+  setUpAll(initializeTestEnvironment);
 
   testWidgets('home screen is readable with a screen reader', (tester) async {
+    usePhoneSize(tester);
     final semantics = tester.ensureSemantics();
-    await tester.pumpWidget(const RafstoranApp());
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(appWith(fakeDependencies()));
+    await settle(tester);
 
     expect(
       tester.getSemantics(find.bySemanticsLabel('Rezervišite sto')),
@@ -45,17 +42,11 @@ void main() {
   });
 
   testWidgets('cancel buttons say which reservation they cancel', (tester) async {
+    usePhoneSize(tester);
     final semantics = tester.ensureSemantics();
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: RafTheme.light(),
-        locale: RafstoranApp.locale,
-        supportedLocales: const [RafstoranApp.locale],
-        localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        home: const MyReservationsScreen(),
-      ),
-    );
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(appWith(fakeDependencies()));
+    await settle(tester);
+    await openMyReservations(tester);
 
     final cancelButtons = find.bySemanticsLabel(RegExp(r'^Otkaži rezervaciju, .+ u \d\d:\d\d$'));
     expect(cancelButtons, findsWidgets);

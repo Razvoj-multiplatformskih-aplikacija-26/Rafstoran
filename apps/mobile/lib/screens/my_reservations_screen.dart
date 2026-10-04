@@ -1,209 +1,103 @@
+import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../text/domain_errors.dart';
 import '../text/serbian.dart';
+import '../widgets/state_views.dart';
 import '../widgets/status_badge.dart';
-import '../widgets/table_illustration.dart';
 
-const currentUser = User(id: UserId('u-guest'), username: 'gost', role: Role.guest);
-const _waiter = UserId('u-waiter');
-
-final DateTime _seedToday = restaurantDay(DateTime.now());
-
-Reservation _seed({
-  required String id,
-  required Duration fromToday,
-  required int partySize,
-  required String tableId,
-  String? note,
-  ReservationStatus status = const Pending(),
-}) {
-  final start = _seedToday.add(fromToday);
-  return Reservation(
-    id: ReservationId(id),
-    guestId: currentUser.id,
-    slot: TimeSlot.existing(start),
-    partySize: PartySize.parse(partySize).valueOrNull!,
-    note: note == null ? null : ReservationNote.parse(note).valueOrNull,
-    tableId: DiningTableId(tableId),
-    status: status,
-    createdAt: start.subtract(const Duration(days: 2)).toUtc(),
-  );
-}
-
-final fakeReservations = <Reservation>[
-  _seed(
-    id: 'r-1',
-    fromToday: const Duration(days: 1, hours: 20),
-    partySize: 4,
-    tableId: 't-03',
-    note: 'Sto pored prozora, ako je moguće.',
-    status: Confirmed(confirmedBy: _waiter, at: _seedToday.subtract(const Duration(hours: 20)).toUtc()),
-  ),
-  _seed(id: 'r-2', fromToday: const Duration(days: 5, hours: 13), partySize: 2, tableId: 't-01'),
-  _seed(
-    id: 'r-3',
-    fromToday: const Duration(days: -3, hours: 19, minutes: 30),
-    partySize: 6,
-    tableId: 't-05',
-    note: 'Rođendan, treba nam mesto za tortu.',
-    status: Arrived(arrivedAt: _seedToday.subtract(const Duration(days: 3, hours: -19, minutes: -42)).toUtc()),
-  ),
-  _seed(
-    id: 'r-4',
-    fromToday: const Duration(days: -12, hours: 21),
-    partySize: 3,
-    tableId: 't-08',
-    status: Cancelled(
-      reason: 'Promena plana.',
-      cancelledBy: currentUser.id,
-      at: _seedToday.subtract(const Duration(days: 13)).toUtc(),
-    ),
-  ),
-  _seed(
-    id: 'r-5',
-    fromToday: const Duration(days: 2, hours: 13),
-    partySize: 2,
-    tableId: 't-07',
-    note: 'Terasa, ako je lepo vreme.',
-  ),
-  _seed(
-    id: 'r-6',
-    fromToday: const Duration(days: 3, hours: 14, minutes: 30),
-    partySize: 5,
-    tableId: 't-10',
-    status: Confirmed(confirmedBy: _waiter, at: _seedToday.subtract(const Duration(hours: 2)).toUtc()),
-  ),
-  _seed(id: 'r-7', fromToday: const Duration(days: 8, hours: 12, minutes: 30), partySize: 2, tableId: 't-02'),
-  _seed(
-    id: 'r-8',
-    fromToday: const Duration(days: 10, hours: 16),
-    partySize: 8,
-    tableId: 't-06',
-    note: 'Poslovna večera.',
-    status: Confirmed(confirmedBy: _waiter, at: _seedToday.subtract(const Duration(days: 1)).toUtc()),
-  ),
-  _seed(
-    id: 'r-9',
-    fromToday: const Duration(days: -7, hours: 20),
-    partySize: 2,
-    tableId: 't-01',
-    status: Arrived(arrivedAt: _seedToday.subtract(const Duration(days: 7, hours: -20, minutes: -5)).toUtc()),
-  ),
-  _seed(
-    id: 'r-10',
-    fromToday: const Duration(days: -20, hours: 19),
-    partySize: 4,
-    tableId: 't-04',
-    status: Cancelled(
-      reason: 'Restoran zatvoren zbog privatne proslave.',
-      cancelledBy: _waiter,
-      at: _seedToday.subtract(const Duration(days: 21)).toUtc(),
-    ),
-  ),
-  _seed(
-    id: 'r-11',
-    fromToday: const Duration(days: -30, hours: 13),
-    partySize: 3,
-    tableId: 't-03',
-    note: 'Dečija stolica.',
-    status: Arrived(arrivedAt: _seedToday.subtract(const Duration(days: 30, hours: -13, minutes: -8)).toUtc()),
-  ),
-];
-
-bool canGuestCancel(Reservation reservation, DateTime now) =>
-    !reservation.status.isFinal &&
-    AccessPolicy.canCancel(currentUser, reservation) &&
-    guestMayStillCancel(reservation, now: now);
-
-Future<String?> confirmAndCancel(BuildContext context, Reservation reservation) async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Otkazati rezervaciju?'),
-      content: Text(
-        '${capitalize(formatDateAndTime(reservation.slot.start))}, ${peopleLabel(reservation.partySize.value)}.',
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Odustani')),
-        FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Otkaži rezervaciju')),
-      ],
-    ),
-  );
-  if (confirmed != true) return null;
-  final result = cancelReservation(reservation, by: currentUser, now: DateTime.now(), reason: 'Otkazao gost.');
-  return switch (result) {
-    Success(:final value) => _store(value),
-    Failure(:final error) => error.message,
-  };
-}
-
-String _store(Reservation updated) {
-  fakeReservations[fakeReservations.indexWhere((r) => r.id == updated.id)] = updated;
-  return 'Rezervacija je otkazana.';
-}
-
-class MyReservationsScreen extends StatefulWidget {
+class MyReservationsScreen extends StatelessWidget {
   const MyReservationsScreen({super.key});
 
-  @override
-  State<MyReservationsScreen> createState() => _MyReservationsScreenState();
-}
-
-class _MyReservationsScreenState extends State<MyReservationsScreen> {
-  Future<void> _cancel(Reservation reservation) async {
-    final message = await confirmAndCancel(context, reservation);
-    if (message == null || !mounted) return;
-    setState(() {});
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  Future<void> _refresh(MyReservationsBloc bloc) {
+    bloc.add(const MyReservationsRefreshed());
+    return bloc.stream.first;
   }
 
-  Future<void> _open(Reservation reservation) async {
-    await context.push('/reservations/${reservation.id.value}');
-    if (mounted) setState(() {});
+  void _showNotice(BuildContext context, MyReservationsNotice notice) {
+    final message = switch (notice) {
+      ReservationCancelled() => 'Rezervacija je otkazana.',
+      CancellationRejected(:final error) => error.message,
+      CancellationFailed() => 'Otkazivanje nije uspelo.',
+    };
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    context.read<MyReservationsBloc>().add(const MyReservationsNoticeAcknowledged());
   }
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final upcoming = fakeReservations.where((r) => r.slot.end.isAfter(now)).toList()
-      ..sort((a, b) => a.slot.start.compareTo(b.slot.start));
-    final past = fakeReservations.where((r) => !r.slot.end.isAfter(now)).toList()
-      ..sort((a, b) => b.slot.start.compareTo(a.slot.start));
-
+    final bloc = context.read<MyReservationsBloc>();
     return Scaffold(
       appBar: AppBar(title: const Text('Moje rezervacije')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: fakeReservations.isEmpty
-              ? const _EmptyState()
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                  children: [
-                    if (upcoming.isNotEmpty) ...[
-                      const _SectionTitle('Predstojeće'),
-                      for (final reservation in upcoming) ...[
-                        _ReservationCard(
-                          reservation: reservation,
-                          onOpen: () => _open(reservation),
-                          onCancel: canGuestCancel(reservation, now) ? () => _cancel(reservation) : null,
+      body: BlocConsumer<MyReservationsBloc, MyReservationsState>(
+        listenWhen: (previous, current) => current is MyReservationsLoaded && current.notice != null,
+        listener: (context, state) => _showNotice(context, (state as MyReservationsLoaded).notice!),
+        builder: (context, state) {
+          return RefreshIndicator(
+            onRefresh: () => _refresh(bloc),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: switch (state) {
+                  MyReservationsLoading() => ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    children: const [ReservationListSkeleton()],
+                  ),
+                  MyReservationsFailure() => ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [FailureView(onRetry: () => bloc.add(const MyReservationsRequested()))],
+                  ),
+                  MyReservationsEmpty() => ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      EmptyView(
+                        title: 'Nemate rezervacija.',
+                        action: FilledButton.tonal(
+                          onPressed: () => context.go('/'),
+                          child: const Text('Pogledaj termine'),
                         ),
-                        const SizedBox(height: 12),
+                      ),
+                    ],
+                  ),
+                  MyReservationsLoaded() => ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    children: [
+                      if (state.upcoming.isNotEmpty) ...[
+                        const _SectionTitle('Predstojeće'),
+                        for (final reservation in state.upcoming) ...[
+                          _ReservationCard(
+                            reservation: reservation,
+                            onOpen: () => context.push('/reservations/${reservation.id.value}'),
+                            busy: state.isCancelling(reservation),
+                            onCancel: state.canCancel(reservation) && !state.isBusy
+                                ? () => confirmCancellation(context, reservation)
+                                : null,
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      ],
+                      if (state.past.isNotEmpty) ...[
+                        const _SectionTitle('Prethodne'),
+                        for (final reservation in state.past) ...[
+                          _ReservationCard(
+                            reservation: reservation,
+                            onOpen: () => context.push('/reservations/${reservation.id.value}'),
+                            onCancel: null,
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                       ],
                     ],
-                    if (past.isNotEmpty) ...[
-                      const _SectionTitle('Prethodne'),
-                      for (final reservation in past) ...[
-                        _ReservationCard(reservation: reservation, onOpen: () => _open(reservation), onCancel: null),
-                        const SizedBox(height: 12),
-                      ],
-                    ],
-                  ],
-                ),
-        ),
+                  ),
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -224,11 +118,12 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _ReservationCard extends StatelessWidget {
-  const _ReservationCard({required this.reservation, required this.onOpen, required this.onCancel});
+  const _ReservationCard({required this.reservation, required this.onOpen, required this.onCancel, this.busy = false});
 
   final Reservation reservation;
   final VoidCallback onOpen;
   final VoidCallback? onCancel;
+  final bool busy;
 
   String? _statusDetail(ReservationStatus status) => switch (status) {
     Pending() || Confirmed() => null,
@@ -291,7 +186,9 @@ class _ReservationCard extends StatelessWidget {
               const SizedBox(height: 4),
               Align(
                 alignment: Alignment.centerRight,
-                child: cancel == null
+                child: busy
+                    ? const _CancellationProgress()
+                    : cancel == null
                     ? const SizedBox(height: 40)
                     : Semantics(
                         button: true,
@@ -309,24 +206,51 @@ class _ReservationCard extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+class _CancellationProgress extends StatelessWidget {
+  const _CancellationProgress();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const TableIllustration(size: 140),
-          const SizedBox(height: 24),
-          Text('Nemate rezervacija.', style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          FilledButton.tonal(onPressed: () => context.go('/'), child: const Text('Pogledaj termine')),
-        ],
+    return Semantics(
+      liveRegion: true,
+      label: 'Otkazivanje u toku',
+      child: SizedBox(
+        height: 40,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2.5)),
+            const SizedBox(width: 10),
+            ExcludeSemantics(
+              child: Text(
+                'Otkazivanje…',
+                style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
       ),
     );
   }
+}
+
+Future<void> confirmCancellation(BuildContext context, Reservation reservation) async {
+  final bloc = context.read<MyReservationsBloc>();
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Otkazati rezervaciju?'),
+      content: Text(
+        '${capitalize(formatDateAndTime(reservation.slot.start))}, ${peopleLabel(reservation.partySize.value)}.',
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Odustani')),
+        FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Otkaži rezervaciju')),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+  bloc.add(ReservationCancellationRequested(reservation.id, reason: 'Otkazao gost.'));
 }
