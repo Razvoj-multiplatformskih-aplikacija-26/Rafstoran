@@ -1,5 +1,7 @@
 import 'package:meta/meta.dart';
 
+import 'reservation_status.dart';
+
 sealed class DomainError {
   const DomainError();
 }
@@ -46,6 +48,30 @@ final class SlotNotOnHalfHour extends DomainError {
 
 final class OutsideOpeningHours extends DomainError {
   const OutsideOpeningHours();
+}
+
+final class CancellationTooLate extends DomainError {
+  const CancellationTooLate();
+}
+
+@immutable
+final class InvalidTransition extends DomainError {
+  const InvalidTransition({required this.from, required this.to});
+
+  final ReservationStatus from;
+  final ReservationStatus to;
+
+  @override
+  bool operator ==(Object other) =>
+      other is InvalidTransition &&
+      other.from.runtimeType == from.runtimeType &&
+      other.to.runtimeType == to.runtimeType;
+
+  @override
+  int get hashCode => Object.hash(InvalidTransition, from.runtimeType, to.runtimeType);
+
+  @override
+  String toString() => 'InvalidTransition(${from.runtimeType} -> ${to.runtimeType})';
 }
 
 final class NotAllowed extends DomainError {
