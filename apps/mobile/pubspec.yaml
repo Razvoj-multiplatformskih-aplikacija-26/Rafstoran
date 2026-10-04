@@ -17,7 +17,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: 0.14.4
   flutter_lints: 6.0.0
+  flutter_native_splash: 2.4.8
 
 flutter:
   uses-material-design: true
@@ -45,3 +47,23 @@ flutter:
           weight: 600
         - asset: assets/fonts/inter/Inter-Bold.ttf
           weight: 700
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path: assets/brand/icon.png
+  adaptive_icon_background: "#14233B"
+  adaptive_icon_foreground: assets/brand/icon_foreground.png
+  adaptive_icon_monochrome: assets/brand/icon_monochrome.png
+
+flutter_native_splash:
+  color: "#F6F8FB"
+  color_dark: "#14233B"
+  image: assets/brand/splash.png
+  android_12:
+    color: "#F6F8FB"
+    color_dark: "#14233B"
+    image: assets/brand/splash_android12.png
+    icon_background_color: "#2E6BB8"
+    icon_background_color_dark: "#2E6BB8"
