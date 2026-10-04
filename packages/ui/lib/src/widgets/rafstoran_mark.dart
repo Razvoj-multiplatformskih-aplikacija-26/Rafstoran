@@ -21,7 +21,8 @@ class RafstoranMark extends StatelessWidget {
           border: Border.all(color: scheme.outlineVariant),
         ),
         child: Image.asset(
-          'assets/brand/raf_mark.png',
+          'assets/raf_mark.png',
+          package: 'ui',
           color: scheme.primary,
           colorBlendMode: BlendMode.srcIn,
           filterQuality: FilterQuality.medium,

@@ -9,11 +9,8 @@ import 'package:go_router/go_router.dart';
 
 import '../dependencies.dart';
 import '../models/slot_selection.dart';
-import '../text/serbian.dart';
-import '../widgets/party_size_stepper.dart';
-import '../widgets/rafstoran_mark.dart';
-import '../widgets/state_views.dart';
-import '../widgets/table_illustration.dart';
+
+import 'package:ui/ui.dart';
 
 class SlotsScreen extends StatelessWidget {
   const SlotsScreen({super.key});

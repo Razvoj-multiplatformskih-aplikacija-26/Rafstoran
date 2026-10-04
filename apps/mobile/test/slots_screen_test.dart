@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/widgets/state_views.dart';
+import 'package:ui/ui.dart';
 
 import 'support.dart';
 

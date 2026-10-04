@@ -6,7 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import 'dependencies.dart';
 import 'router.dart';
-import 'theme/theme.dart';
+
+import 'package:ui/ui.dart';
 
 class RafstoranApp extends StatefulWidget {
   const RafstoranApp({super.key, required this.dependencies});

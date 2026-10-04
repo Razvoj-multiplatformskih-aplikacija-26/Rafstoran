@@ -2,15 +2,17 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/app.dart';
 import 'package:mobile/dependencies.dart';
-import 'package:mobile/theme/theme.dart';
+import 'package:ui/ui.dart';
 import 'package:use_cases/use_cases.dart';
 
 final fridayNoon = DateTime.utc(2026, 10, 9, 10);
 
-Future<void> initializeTestEnvironment() async {
+Future<void> initializeTestEnvironment() {
   initializeDomainTimeZones();
+  return initializeDateFormatting('sr_Latn');
 }
 
 AppDependencies fakeDependencies({DateTime? now, Duration latency = Duration.zero}) =>

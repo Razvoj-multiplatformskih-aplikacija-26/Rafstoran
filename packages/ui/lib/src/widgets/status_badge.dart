@@ -1,7 +1,7 @@
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 
-import '../theme/theme.dart';
+import '../status_colors.dart';
 
 extension ReservationStatusLabel on ReservationStatus {
   String get label => switch (this) {

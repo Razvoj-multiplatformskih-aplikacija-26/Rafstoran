@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/slot_selection.dart';
-import '../text/serbian.dart';
+
+import 'package:ui/ui.dart';
 
 class SlotDetailScreen extends StatelessWidget {
   const SlotDetailScreen({super.key, required this.selection});

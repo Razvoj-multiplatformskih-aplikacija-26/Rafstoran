@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../text/domain_errors.dart';
-import '../text/serbian.dart';
-import '../widgets/state_views.dart';
-import '../widgets/status_badge.dart';
+import 'package:ui/ui.dart';
 
 class MyReservationsScreen extends StatelessWidget {
   const MyReservationsScreen({super.key});

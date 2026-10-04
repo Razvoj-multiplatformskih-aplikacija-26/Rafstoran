@@ -2,9 +2,8 @@ import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ui/ui.dart';
 
-import '../text/serbian.dart';
-import '../widgets/status_badge.dart';
 import 'my_reservations_screen.dart';
 
 class ReservationDetailScreen extends StatelessWidget {

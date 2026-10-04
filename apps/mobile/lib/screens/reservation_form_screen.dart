@@ -6,9 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/slot_selection.dart';
-import '../text/domain_errors.dart';
-import '../text/serbian.dart';
-import '../widgets/party_size_stepper.dart';
+
+import 'package:ui/ui.dart';
 
 class ReservationFormScreen extends StatefulWidget {
   const ReservationFormScreen({super.key, required this.selection});

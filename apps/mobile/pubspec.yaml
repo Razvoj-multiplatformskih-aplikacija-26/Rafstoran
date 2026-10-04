@@ -8,52 +8,31 @@ environment:
 resolution: workspace
 
 dependencies:
-  flutter:
-    sdk: flutter
-  flutter_localizations:
-    sdk: flutter
   blocs:
     path: ../../packages/blocs
   domain:
     path: ../../packages/domain
+  flutter:
+    sdk: flutter
   flutter_bloc: 9.1.1
+  flutter_localizations:
+    sdk: flutter
   go_router: 18.0.2
+  intl: 0.20.3
+  ui:
+    path: ../../packages/ui
   use_cases:
     path: ../../packages/use_cases
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
   flutter_launcher_icons: 0.14.4
   flutter_lints: 6.0.0
   flutter_native_splash: 2.4.8
+  flutter_test:
+    sdk: flutter
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/brand/raf_mark.png
-  fonts:
-    - family: Fraunces
-      fonts:
-        - asset: assets/fonts/fraunces/Fraunces72pt-Regular.ttf
-        - asset: assets/fonts/fraunces/Fraunces72pt-Italic.ttf
-          style: italic
-        - asset: assets/fonts/fraunces/Fraunces72pt-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/fraunces/Fraunces72pt-SemiBoldItalic.ttf
-          weight: 600
-          style: italic
-        - asset: assets/fonts/fraunces/Fraunces72pt-Bold.ttf
-          weight: 700
-    - family: Inter
-      fonts:
-        - asset: assets/fonts/inter/Inter-Regular.ttf
-        - asset: assets/fonts/inter/Inter-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/inter/Inter-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/inter/Inter-Bold.ttf
-          weight: 700
 
 flutter_launcher_icons:
   android: true
