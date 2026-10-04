@@ -1,17 +1,14 @@
+import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:ui/ui.dart';
 
-void main() {
-  runApp(const BackofficeApp());
-}
+import 'app.dart';
+import 'dependencies.dart';
 
-class BackofficeApp extends StatelessWidget {
-  const BackofficeApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'Rafstoran Backoffice',
-      home: Scaffold(body: Center(child: Text('Rafstoran Backoffice'))),
-    );
-  }
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  initializeDomainTimeZones();
+  await initializeDateFormatting(serbianLatin);
+  runApp(BackofficeApp(dependencies: BackofficeDependencies.fake()));
 }
