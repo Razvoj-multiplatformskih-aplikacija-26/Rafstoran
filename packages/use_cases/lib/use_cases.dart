@@ -1,9 +1,14 @@
 export 'src/cancel_reservation.dart';
 export 'src/clock.dart';
+export 'src/confirm_reservation.dart';
+export 'src/daily_schedule.dart';
 export 'src/create_reservation.dart';
 export 'src/get_available_slots.dart';
+export 'src/get_daily_schedule.dart';
 export 'src/get_my_reservations.dart';
 export 'src/ports/reservation_repository.dart';
+export 'src/ports/schedule_repository.dart';
 export 'src/ports/slot_repository.dart';
+export 'src/record_arrival.dart';
 export 'src/repository_exception.dart';
 export 'src/reservation_request.dart';
