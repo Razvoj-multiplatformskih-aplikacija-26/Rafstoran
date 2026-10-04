@@ -21,6 +21,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/brand/raf_mark.png
   fonts:
     - family: Fraunces
       fonts:
