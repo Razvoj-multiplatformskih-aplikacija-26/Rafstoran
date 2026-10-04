@@ -1,4 +1,5 @@
 export 'src/access_policy.dart';
+export 'src/availability.dart';
 export 'src/dining_table.dart';
 export 'src/errors.dart';
 export 'src/identifiers.dart';

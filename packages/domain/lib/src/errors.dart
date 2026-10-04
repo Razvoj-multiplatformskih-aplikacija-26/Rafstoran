@@ -74,6 +74,10 @@ final class InvalidTransition extends DomainError {
   String toString() => 'InvalidTransition(${from.runtimeType} -> ${to.runtimeType})';
 }
 
+final class NoTableAvailable extends DomainError {
+  const NoTableAvailable();
+}
+
 final class NotAllowed extends DomainError {
   const NotAllowed();
 }
