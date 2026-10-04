@@ -1,9 +1,11 @@
+import 'package:domain/domain.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import 'models/slot_selection.dart';
 import 'screens/home_shell.dart';
 import 'screens/my_reservations_screen.dart';
+import 'screens/reservation_detail_screen.dart';
 import 'screens/reservation_form_screen.dart';
 import 'screens/slot_detail_screen.dart';
 import 'screens/slots_screen.dart';
@@ -42,7 +44,19 @@ final router = GoRouter(
           ],
         ),
         StatefulShellBranch(
-          routes: [GoRoute(path: '/reservations', builder: (context, state) => const MyReservationsScreen())],
+          routes: [
+            GoRoute(
+              path: '/reservations',
+              builder: (context, state) => const MyReservationsScreen(),
+              routes: [
+                GoRoute(
+                  path: ':id',
+                  parentNavigatorKey: _rootNavigatorKey,
+                  builder: (context, state) => ReservationDetailScreen(id: ReservationId(state.pathParameters['id']!)),
+                ),
+              ],
+            ),
+          ],
         ),
       ],
     ),
