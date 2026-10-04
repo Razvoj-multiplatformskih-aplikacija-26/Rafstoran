@@ -1,8 +1,8 @@
 import 'package:meta/meta.dart';
 
-import 'errors.dart';
+import '../errors.dart';
+import '../result.dart';
 import 'opening_hours.dart';
-import 'result.dart';
 
 @immutable
 final class TimeSlot {

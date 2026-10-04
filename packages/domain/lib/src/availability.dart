@@ -1,12 +1,12 @@
 import 'package:meta/meta.dart';
 
-import 'dining_table.dart';
 import 'errors.dart';
-import 'opening_hours.dart';
-import 'party_size.dart';
-import 'reservation.dart';
+import 'reservation/party_size.dart';
+import 'reservation/reservation.dart';
+import 'restaurant/dining_table.dart';
+import 'restaurant/opening_hours.dart';
+import 'restaurant/time_slot.dart';
 import 'result.dart';
-import 'time_slot.dart';
 
 @immutable
 final class SlotAvailability {

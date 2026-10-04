@@ -1,5 +1,5 @@
+import '../user.dart';
 import 'reservation.dart';
-import 'user.dart';
 
 abstract final class AccessPolicy {
   static bool canView(User user, Reservation reservation) => user.role.isStaff || reservation.guestId == user.id;

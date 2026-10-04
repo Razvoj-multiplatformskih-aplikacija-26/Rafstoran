@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import 'reservation_status.dart';
+import 'reservation/reservation_status.dart';
 
 sealed class DomainError {
   const DomainError();

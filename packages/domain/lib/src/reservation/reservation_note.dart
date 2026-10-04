@@ -1,8 +1,8 @@
 import 'package:characters/characters.dart';
 import 'package:meta/meta.dart';
 
-import 'errors.dart';
-import 'result.dart';
+import '../errors.dart';
+import '../result.dart';
 
 @immutable
 final class ReservationNote {

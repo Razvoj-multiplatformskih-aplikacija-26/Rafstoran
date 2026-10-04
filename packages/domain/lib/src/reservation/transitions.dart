@@ -1,9 +1,9 @@
+import '../errors.dart';
+import '../result.dart';
+import '../user.dart';
 import 'access_policy.dart';
-import 'errors.dart';
 import 'reservation.dart';
 import 'reservation_status.dart';
-import 'result.dart';
-import 'user.dart';
 
 const cancellationNotice = Duration(hours: 2);
 

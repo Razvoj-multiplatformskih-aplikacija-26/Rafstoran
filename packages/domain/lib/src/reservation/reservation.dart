@@ -1,10 +1,10 @@
 import 'package:meta/meta.dart';
 
-import 'identifiers.dart';
+import '../identifiers.dart';
+import '../restaurant/time_slot.dart';
 import 'party_size.dart';
 import 'reservation_note.dart';
 import 'reservation_status.dart';
-import 'time_slot.dart';
 
 @immutable
 final class Reservation {

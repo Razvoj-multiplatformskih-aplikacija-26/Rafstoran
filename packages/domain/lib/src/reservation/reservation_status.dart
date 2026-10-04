@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import 'identifiers.dart';
+import '../identifiers.dart';
 
 sealed class ReservationStatus {
   const ReservationStatus();
