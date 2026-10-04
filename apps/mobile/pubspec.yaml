@@ -5,6 +5,7 @@ version: 0.1.0+1
 
 environment:
   sdk: ^3.13.0
+resolution: workspace
 
 dependencies:
   flutter:
@@ -12,7 +13,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   go_router: 18.0.2
-  intl: 0.20.3
 
 dev_dependencies:
   flutter_test:
