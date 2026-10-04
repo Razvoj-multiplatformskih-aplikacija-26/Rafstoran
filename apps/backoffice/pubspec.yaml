@@ -10,6 +10,8 @@ resolution: workspace
 dependencies:
   blocs:
     path: ../../packages/blocs
+  design_tokens:
+    path: ../../packages/design_tokens
   domain:
     path: ../../packages/domain
   flutter:

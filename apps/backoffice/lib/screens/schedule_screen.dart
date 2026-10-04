@@ -1,15 +1,20 @@
 import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
+import 'package:design_tokens/design_tokens.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ui/ui.dart';
 
+import '../data/fake_schedule.dart';
 import '../dependencies.dart';
 import '../shortcuts.dart';
+import '../widgets/command_palette.dart';
 import '../widgets/reservation_detail_panel.dart';
 import '../widgets/schedule_grid.dart';
+import '../widgets/schedule_list.dart';
+import '../widgets/shortcuts_overview.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key, required this.day, this.selectedId});
@@ -109,6 +114,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
+  void _simulateOutage(FakeSchedule fake) {
+    fake.failingRequests = 1;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sledeći zahtev neće uspeti.')));
+  }
+
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -117,6 +127,46 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       lastDate: DateTime(2027, 12, 31),
     );
     if (picked != null) _goTo(picked);
+  }
+
+  List<PaletteCommand> _paletteCommands() {
+    final state = _bloc.state;
+    final selected = _selected;
+    return [
+      if (selected != null && selected.status is Pending)
+        PaletteCommand(label: 'Potvrdi izabranu rezervaciju', detail: 'C', icon: Icons.check, run: _confirm),
+      if (selected != null && selected.status is Confirmed)
+        PaletteCommand(label: 'Zabeleži dolazak gosta', detail: 'A', icon: Icons.login, run: _recordArrival),
+      if (selected != null && !selected.status.isFinal)
+        PaletteCommand(label: 'Otkaži izabranu rezervaciju', detail: 'X', icon: Icons.close, run: _cancel),
+      PaletteCommand(label: 'Danas', detail: 'T', icon: Icons.today_outlined, run: () => _goTo(_bloc.today)),
+      PaletteCommand(
+        label: 'Sledeći dan',
+        detail: '$optionKeyLabel →',
+        icon: Icons.chevron_right,
+        run: () => _goTo(widget.day.add(const Duration(days: 1))),
+      ),
+      PaletteCommand(
+        label: 'Prethodni dan',
+        detail: '$optionKeyLabel ←',
+        icon: Icons.chevron_left,
+        run: () => _goTo(widget.day.subtract(const Duration(days: 1))),
+      ),
+      PaletteCommand(
+        label: 'Prečice',
+        detail: '?',
+        icon: Icons.keyboard_outlined,
+        run: () => showShortcutsOverview(context),
+      ),
+      if (state is DailyScheduleLoaded)
+        for (final reservation in state.schedule.reservations.where((r) => r.isActive))
+          PaletteCommand(
+            label: '${formatTime(reservation.slot.start)} · ${state.schedule.guestOf(reservation)?.username ?? 'Gost'}',
+            detail: '${peopleLabel(reservation.partySize.value)} · ${reservation.status.label}',
+            icon: Icons.table_restaurant_outlined,
+            run: () => _select(reservation),
+          ),
+    ];
   }
 
   void _showNotice(BuildContext context, ScheduleNotice notice) {
@@ -139,6 +189,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final theme = Theme.of(context);
     final bloc = _bloc;
     final fake = context.read<BackofficeDependencies>().fakeSchedule;
+    final compact = MediaQuery.sizeOf(context).width < Breakpoints.medium;
     return Shortcuts(
       shortcuts: scheduleShortcuts(),
       child: Actions(
@@ -152,21 +203,32 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ),
           NextDayIntent: CallbackAction<NextDayIntent>(onInvoke: (_) => _goTo(widget.day.add(const Duration(days: 1)))),
           TodayIntent: CallbackAction<TodayIntent>(onInvoke: (_) => _goTo(bloc.today)),
+          ShowShortcutsIntent: CallbackAction<ShowShortcutsIntent>(onInvoke: (_) => showShortcutsOverview(context)),
+          CommandPaletteIntent: CallbackAction<CommandPaletteIntent>(
+            onInvoke: (_) => showCommandPalette(context, _paletteCommands()),
+          ),
         },
         child: Focus(
           autofocus: true,
           child: Scaffold(
             appBar: AppBar(
-              title: Row(
-                children: [
-                  const RafstoranWordmark(),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Backoffice',
-                    style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
+              title: compact
+                  ? const RafstoranMark(size: 32)
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const RafstoranWordmark(),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Backoffice',
+                            style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                          ),
+                        ],
+                      ),
+                    ),
               actions: [
                 IconButton(
                   tooltip: 'Prethodni dan ($optionKeyLabel ←)',
@@ -176,24 +238,49 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 TextButton.icon(
                   onPressed: _pickDate,
                   icon: const Icon(Icons.calendar_today_outlined, size: 18),
-                  label: Text(capitalize(formatLongDate(widget.day))),
+                  label: Text(compact ? formatShortDate(widget.day) : capitalize(formatLongDate(widget.day))),
                 ),
                 IconButton(
                   tooltip: 'Sledeći dan ($optionKeyLabel →)',
                   onPressed: () => _goTo(widget.day.add(const Duration(days: 1))),
                   icon: const Icon(Icons.chevron_right),
                 ),
-                TextButton(onPressed: () => _goTo(bloc.today), child: const Text('Danas')),
-                const SizedBox(width: 8),
-                if (kDebugMode && fake != null)
+                if (!compact) ...[
+                  TextButton(onPressed: () => _goTo(bloc.today), child: const Text('Danas')),
+                  const SizedBox(width: 8),
                   IconButton(
-                    tooltip: 'Simuliraj grešku',
-                    onPressed: () {
-                      fake.failingRequests = 1;
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(const SnackBar(content: Text('Sledeći zahtev neće uspeti.')));
+                    tooltip: 'Paleta komandi ($commandKeyLabel K)',
+                    onPressed: () => showCommandPalette(context, _paletteCommands()),
+                    icon: const Icon(Icons.search),
+                  ),
+                  IconButton(
+                    tooltip: 'Prečice (?)',
+                    onPressed: () => showShortcutsOverview(context),
+                    icon: const Icon(Icons.keyboard_outlined),
+                  ),
+                  if (kDebugMode && fake != null)
+                    IconButton(
+                      tooltip: 'Simuliraj grešku',
+                      onPressed: () => _simulateOutage(fake),
+                      icon: const Icon(Icons.cloud_off_outlined),
+                    ),
+                ] else
+                  PopupMenuButton<String>(
+                    tooltip: 'Više',
+                    onSelected: (value) => switch (value) {
+                      'today' => _goTo(bloc.today),
+                      'palette' => showCommandPalette(context, _paletteCommands()),
+                      'shortcuts' => showShortcutsOverview(context),
+                      'outage' => fake == null ? null : _simulateOutage(fake),
+                      _ => null,
                     },
-                    icon: const Icon(Icons.cloud_off_outlined),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(value: 'today', child: Text('Danas')),
+                      const PopupMenuItem(value: 'palette', child: Text('Paleta komandi')),
+                      const PopupMenuItem(value: 'shortcuts', child: Text('Prečice')),
+                      if (kDebugMode && fake != null)
+                        const PopupMenuItem(value: 'outage', child: Text('Simuliraj grešku')),
+                    ],
                   ),
                 const SizedBox(width: 8),
               ],
@@ -240,55 +327,101 @@ class _LoadedBody extends StatelessWidget {
   final void Function([Reservation? reservation]) onArrival;
   final Future<void> Function([Reservation? reservation]) onCancel;
 
+  Future<void> _showDetailSheet(BuildContext context, Reservation selected) {
+    final schedule = state.schedule;
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SizedBox(
+        height: MediaQuery.sizeOf(sheetContext).height * 0.7,
+        child: ReservationDetailPanel(
+          reservation: selected,
+          guest: schedule.guestOf(selected),
+          table: schedule.tables.where((t) => t.id == selected.tableId).firstOrNull,
+          onConfirm: () {
+            Navigator.pop(sheetContext);
+            onConfirm(selected);
+          },
+          onArrival: () {
+            Navigator.pop(sheetContext);
+            onArrival(selected);
+          },
+          onCancel: () {
+            Navigator.pop(sheetContext);
+            onCancel(selected);
+          },
+          onClose: () => Navigator.pop(sheetContext),
+        ),
+      ),
+    ).then((_) => onSelect(null));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final selected = state.selected;
     final schedule = state.schedule;
-    return Column(
-      children: [
-        if (state.isBusy) const LinearProgressIndicator(minHeight: 3) else const SizedBox(height: 3),
-        if (state.isEmpty)
-          Container(
-            width: double.infinity,
-            color: theme.colorScheme.surfaceContainer,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Semantics(
-              liveRegion: true,
-              child: Text('Nema rezervacija za ovaj dan.', style: theme.textTheme.bodyMedium),
-            ),
-          ),
-        Expanded(
-          child: Row(
-            children: [
-              Expanded(
-                child: ScheduleGrid(
-                  schedule: schedule,
-                  selectedId: state.selectedId,
-                  onSelect: onSelect,
-                  onContextMenu: onContextMenu,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= Breakpoints.medium;
+        if (!wide) {
+          return ScheduleList(
+            schedule: schedule,
+            selectedId: state.selectedId,
+            onSelect: (reservation) {
+              onSelect(reservation);
+              _showDetailSheet(context, reservation);
+            },
+            onContextMenu: onContextMenu,
+          );
+        }
+        return Column(
+          children: [
+            if (state.isBusy) const LinearProgressIndicator(minHeight: 3) else const SizedBox(height: 3),
+            if (state.isEmpty)
+              Container(
+                width: double.infinity,
+                color: theme.colorScheme.surfaceContainer,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text('Nema rezervacija za ovaj dan.', style: theme.textTheme.bodyMedium),
                 ),
               ),
-              if (selected != null) ...[
-                const VerticalDivider(width: 1),
-                SizedBox(
-                  width: 340,
-                  child: ReservationDetailPanel(
-                    reservation: selected,
-                    guest: schedule.guestOf(selected),
-                    table: schedule.tables.where((t) => t.id == selected.tableId).firstOrNull,
-                    busy: state.isBusy,
-                    onConfirm: () => onConfirm(selected),
-                    onArrival: () => onArrival(selected),
-                    onCancel: () => onCancel(selected),
-                    onClose: () => onSelect(null),
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ScheduleGrid(
+                      schedule: schedule,
+                      selectedId: state.selectedId,
+                      onSelect: onSelect,
+                      onContextMenu: onContextMenu,
+                    ),
                   ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
+                  if (selected != null) ...[
+                    const VerticalDivider(width: 1),
+                    SizedBox(
+                      width: 340,
+                      child: ReservationDetailPanel(
+                        reservation: selected,
+                        guest: schedule.guestOf(selected),
+                        table: schedule.tables.where((t) => t.id == selected.tableId).firstOrNull,
+                        busy: state.isBusy,
+                        onConfirm: () => onConfirm(selected),
+                        onArrival: () => onArrival(selected),
+                        onCancel: () => onCancel(selected),
+                        onClose: () => onSelect(null),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

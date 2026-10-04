@@ -24,12 +24,15 @@ final _longDate = DateFormat('EEEE, d. MMMM', serbianLatin);
 final _shortWeekday = DateFormat('EEE', serbianLatin);
 final _dayOfMonth = DateFormat('d.', serbianLatin);
 final _time = DateFormat('HH:mm', serbianLatin);
+final _shortDate = DateFormat('EEE, d. MMM', serbianLatin);
 
 String formatLongDate(DateTime localDate) => _longDate.format(localDate);
 
 String formatShortWeekday(DateTime localDate) => _shortWeekday.format(localDate).replaceAll('.', '');
 
 String formatDayOfMonth(DateTime localDate) => _dayOfMonth.format(localDate);
+
+String formatShortDate(DateTime localDate) => capitalize(_shortDate.format(localDate).replaceAll('..', '.'));
 
 String formatTime(DateTime instant) => _time.format(restaurantTime(instant));
 
