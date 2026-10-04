@@ -63,3 +63,10 @@ final class OpeningHours {
     return starts;
   }
 }
+
+DateTime restaurantTime(DateTime instant) => tz.TZDateTime.from(instant, tz.getLocation(restaurantTimeZone));
+
+DateTime restaurantDay(DateTime instant) {
+  final local = restaurantTime(instant);
+  return DateTime(local.year, local.month, local.day);
+}
