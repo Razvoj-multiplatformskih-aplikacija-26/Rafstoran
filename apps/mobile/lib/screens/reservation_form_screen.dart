@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../models/reservation.dart';
 import '../models/slot_selection.dart';
 import '../text/serbian.dart';
 import '../widgets/party_size_stepper.dart';
+import 'my_reservations_screen.dart';
 
 class ReservationFormScreen extends StatefulWidget {
   const ReservationFormScreen({super.key, required this.selection});
@@ -50,9 +52,20 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
       return;
     }
     HapticFeedback.mediumImpact();
+    final note = _noteController.text.trim();
+    final now = DateTime.now();
+    fakeReservations.add(
+      Reservation(
+        id: 'r-${now.microsecondsSinceEpoch}',
+        start: widget.selection.slot.start,
+        partySize: _partySize,
+        note: note.isEmpty ? null : note,
+        createdAt: now,
+      ),
+    );
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('Rezervacija je poslata. Čeka potvrdu osoblja.')));
-    context.go('/');
+    context.go('/reservations');
   }
 
   @override
