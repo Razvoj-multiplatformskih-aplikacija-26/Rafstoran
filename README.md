@@ -1,4 +1,4 @@
-# Rezervacija stolova
+# Rafstoran
 
 Sistem za rezervacije u restoranu. Gosti rezervišu sto preko mobilne aplikacije, a osoblje vodi rezervacije i raspored stolova iz backoffice aplikacije. Meni, radno vreme i slobodni termini javno su dostupni na vebu.
 
