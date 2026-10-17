@@ -75,5 +75,9 @@ void main() {
     }
     await settle(tester);
     expect(visible(tester, find.text('22:00')), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyN);
+    await settle(tester);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'schedule grid');
   });
 }

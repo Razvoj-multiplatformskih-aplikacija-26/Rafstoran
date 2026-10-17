@@ -77,6 +77,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     _ => null,
   };
 
+  bool get _idle => switch (_bloc.state) {
+    DailyScheduleLoaded(:final isBusy) => !isBusy,
+    _ => false,
+  };
+
+  bool get _canConfirm => _idle && _selected?.status is Pending;
+
+  bool get _canRecordArrival => _idle && _selected?.status is Confirmed;
+
+  bool get _canCancel => _idle && _selected != null && !_selected!.status.isFinal;
+
   void _confirm([Reservation? reservation]) {
     final target = reservation ?? _selected;
     if (target != null) _bloc.add(ScheduleConfirmationRequested(target.id));
@@ -140,24 +151,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   List<PaletteCommand> _paletteCommands() {
     final state = _bloc.state;
-    final selected = _selected;
     return [
-      if (selected != null && selected.status is Pending)
+      if (_canConfirm)
         PaletteCommand(label: 'Potvrdi izabranu rezervaciju', detail: 'C', icon: Icons.check, run: _confirm),
-      if (selected != null && selected.status is Confirmed)
+      if (_canRecordArrival)
         PaletteCommand(label: 'Zabeleži dolazak gosta', detail: 'A', icon: Icons.login, run: _recordArrival),
-      if (selected != null && !selected.status.isFinal)
+      if (_canCancel)
         PaletteCommand(label: 'Otkaži izabranu rezervaciju', detail: 'X', icon: Icons.close, run: _cancel),
       PaletteCommand(label: 'Danas', detail: 'T', icon: Icons.today_outlined, run: () => _goTo(_bloc.today)),
       PaletteCommand(
-        label: 'Sledeći dan',
-        detail: '$optionKeyLabel →',
+        label: 'Naredni dan',
+        detail: 'N',
         icon: Icons.chevron_right,
         run: () => _goTo(widget.day.add(const Duration(days: 1))),
       ),
       PaletteCommand(
         label: 'Prethodni dan',
-        detail: '$optionKeyLabel ←',
+        detail: 'P',
         icon: Icons.chevron_left,
         run: () => _goTo(widget.day.subtract(const Duration(days: 1))),
       ),
@@ -203,9 +213,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       shortcuts: scheduleShortcuts(),
       child: Actions(
         actions: {
-          ConfirmSelectedIntent: CallbackAction<ConfirmSelectedIntent>(onInvoke: (_) => _confirm()),
-          RecordArrivalIntent: CallbackAction<RecordArrivalIntent>(onInvoke: (_) => _recordArrival()),
-          CancelSelectedIntent: CallbackAction<CancelSelectedIntent>(onInvoke: (_) => _cancel()),
+          ConfirmSelectedIntent: GuardedCallbackAction<ConfirmSelectedIntent>(
+            enabled: () => _canConfirm,
+            onInvoke: (_) => _confirm(),
+          ),
+          RecordArrivalIntent: GuardedCallbackAction<RecordArrivalIntent>(
+            enabled: () => _canRecordArrival,
+            onInvoke: (_) => _recordArrival(),
+          ),
+          CancelSelectedIntent: GuardedCallbackAction<CancelSelectedIntent>(
+            enabled: () => _canCancel,
+            onInvoke: (_) => _cancel(),
+          ),
           ClearSelectionIntent: CallbackAction<ClearSelectionIntent>(
             onInvoke: (_) {
               _select(null);
@@ -246,7 +265,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     ),
               actions: [
                 IconButton(
-                  tooltip: 'Prethodni dan ($optionKeyLabel ←)',
+                  tooltip: 'Prethodni dan (P)',
                   onPressed: () => _goTo(widget.day.subtract(const Duration(days: 1))),
                   icon: const Icon(Icons.chevron_left),
                 ),
@@ -256,7 +275,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   label: Text(compact ? formatShortDate(widget.day) : capitalize(formatLongDate(widget.day))),
                 ),
                 IconButton(
-                  tooltip: 'Sledeći dan ($optionKeyLabel →)',
+                  tooltip: 'Naredni dan (N)',
                   onPressed: () => _goTo(widget.day.add(const Duration(days: 1))),
                   icon: const Icon(Icons.chevron_right),
                 ),

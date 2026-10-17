@@ -8,6 +8,15 @@ String get commandKeyLabel => usesCommandKey ? '⌘' : 'Ctrl';
 
 String get optionKeyLabel => usesCommandKey ? '⌥' : 'Alt';
 
+class GuardedCallbackAction<T extends Intent> extends CallbackAction<T> {
+  GuardedCallbackAction({required this.enabled, required super.onInvoke});
+
+  final bool Function() enabled;
+
+  @override
+  bool isEnabled(T intent) => enabled();
+}
+
 class ConfirmSelectedIntent extends Intent {
   const ConfirmSelectedIntent();
 }
@@ -50,6 +59,8 @@ Map<ShortcutActivator, Intent> scheduleShortcuts() => {
   const SingleActivator(LogicalKeyboardKey.keyX): const CancelSelectedIntent(),
   const SingleActivator(LogicalKeyboardKey.escape): const ClearSelectionIntent(),
   const SingleActivator(LogicalKeyboardKey.keyT): const TodayIntent(),
+  const SingleActivator(LogicalKeyboardKey.keyP): const PreviousDayIntent(),
+  const SingleActivator(LogicalKeyboardKey.keyN): const NextDayIntent(),
   const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true): const PreviousDayIntent(),
   const SingleActivator(LogicalKeyboardKey.arrowRight, alt: true): const NextDayIntent(),
   const CharacterActivator('?'): const ShowShortcutsIntent(),
@@ -71,7 +82,7 @@ List<ShortcutDescription> shortcutDescriptions() => [
   const ShortcutDescription('C', 'Potvrdi izabranu rezervaciju'),
   const ShortcutDescription('A', 'Zabeleži dolazak gosta'),
   const ShortcutDescription('X', 'Otkaži izabranu rezervaciju'),
-  ShortcutDescription('$optionKeyLabel ←  /  $optionKeyLabel →', 'Prethodni / sledeći dan'),
+  ShortcutDescription('P  /  N   ili   $optionKeyLabel ←  /  $optionKeyLabel →', 'Prethodni / naredni dan'),
   const ShortcutDescription('T', 'Današnji dan'),
   ShortcutDescription('$commandKeyLabel K', 'Paleta komandi'),
   const ShortcutDescription('?', 'Pregled prečica'),
