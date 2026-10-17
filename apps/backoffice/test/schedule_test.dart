@@ -44,13 +44,28 @@ void main() {
     expect(find.textContaining('Gost se nije javio.'), findsOneWidget);
   });
 
-  testWidgets('a window narrower than 840 pixels shows a list instead of the grid', (tester) async {
-    useWindow(tester, width: 600, height: 900);
+  testWidgets('a window narrower than 840 pixels shows a list and keeps the selection', (tester) async {
+    useWindow(tester, width: 1440, height: 900);
     await pumpBackoffice(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    for (var i = 0; i < 5; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await settle(tester);
 
+    useWindow(tester, width: 600, height: 900);
+    await settle(tester);
     expect(find.byType(ScheduleList), findsOneWidget);
     expect(find.byType(ScheduleGrid), findsNothing);
-    expect(find.text('12:30'), findsOneWidget);
+    expect(
+      tester.getSemantics(find.bySemanticsLabel(RegExp(r'^Tamara Pavlović, .*sto S2'))),
+      containsSemantics(isSelected: true),
+    );
+
+    useWindow(tester, width: 1440, height: 900);
+    await settle(tester);
+    expect(find.text('Bez glutena.'), findsOneWidget);
   });
 
   testWidgets('the schedule works from the keyboard alone, from launch to a confirmation', (tester) async {
