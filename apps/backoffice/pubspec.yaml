@@ -19,6 +19,8 @@ dependencies:
   flutter_bloc: 9.1.1
   flutter_localizations:
     sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
   go_router: 18.0.2
   intl: 0.20.3
   two_dimensional_scrollables: 0.5.5
