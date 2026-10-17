@@ -27,7 +27,7 @@ class SlotsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final bloc = context.read<AvailableSlotsBloc>();
     return Scaffold(
-      appBar: AppBar(title: const RafstoranWordmark(), actions: [if (kDebugMode) const _OutageSwitch()]),
+      appBar: AppBar(title: const RafstoranWordmark(), actions: [if (kDebugMode) const _FakeDataControls()]),
       body: BlocBuilder<AvailableSlotsBloc, AvailableSlotsState>(
         builder: (context, state) {
           return RefreshIndicator(
@@ -120,20 +120,36 @@ class SlotsScreen extends StatelessWidget {
   }
 }
 
-class _OutageSwitch extends StatelessWidget {
-  const _OutageSwitch();
+class _FakeDataControls extends StatelessWidget {
+  const _FakeDataControls();
+
+  void _announce(BuildContext context, String message) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 
   @override
   Widget build(BuildContext context) {
     final fake = context.read<AppDependencies>().fakeRestaurant;
     if (fake == null) return const SizedBox.shrink();
-    return IconButton(
-      tooltip: 'Simuliraj grešku',
-      icon: const Icon(Icons.cloud_off_outlined),
-      onPressed: () {
-        fake.failingRequests = 1;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sledeći zahtev neće uspeti.')));
-      },
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: 'Simuliraj prazan odgovor',
+          icon: const Icon(Icons.inbox_outlined),
+          onPressed: () {
+            fake.emptyResponses = 1;
+            _announce(context, 'Sledeći odgovor biće prazan.');
+          },
+        ),
+        IconButton(
+          tooltip: 'Simuliraj grešku',
+          icon: const Icon(Icons.cloud_off_outlined),
+          onPressed: () {
+            fake.failingRequests = 1;
+            _announce(context, 'Sledeći zahtev neće uspeti.');
+          },
+        ),
+      ],
     );
   }
 }

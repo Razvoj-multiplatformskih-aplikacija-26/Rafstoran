@@ -12,6 +12,7 @@ final class FakeRestaurant implements ReservationRepository, SlotRepository {
   final Duration latency;
   final List<Reservation> _reservations;
   int failingRequests = 0;
+  int emptyResponses = 0;
   int _nextId = 1;
 
   Future<void> _roundTrip() async {
@@ -22,12 +23,19 @@ final class FakeRestaurant implements ReservationRepository, SlotRepository {
     }
   }
 
+  bool _answersEmpty() {
+    if (emptyResponses == 0) return false;
+    emptyResponses--;
+    return true;
+  }
+
   @override
   Future<OpeningHours> openingHours() async => fakeOpeningHours;
 
   @override
   Future<List<SlotAvailability>> availableSlots({required DateTime localDay, required PartySize partySize}) async {
     await _roundTrip();
+    if (_answersEmpty()) return const [];
     return domain.availableSlots(
       openingHours: fakeOpeningHours,
       tables: fakeTables,
@@ -41,6 +49,7 @@ final class FakeRestaurant implements ReservationRepository, SlotRepository {
   @override
   Future<List<Reservation>> reservationsOf(UserId guestId) async {
     await _roundTrip();
+    if (_answersEmpty()) return const [];
     return _reservations.where((r) => r.guestId == guestId).toList();
   }
 
