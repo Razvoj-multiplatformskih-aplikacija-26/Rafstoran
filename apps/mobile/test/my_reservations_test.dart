@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support.dart';
@@ -27,5 +28,18 @@ void main() {
     expect(find.text('Rezervacija je otkazana.'), findsOneWidget);
     expect(find.text('Otkazivanje…'), findsNothing);
     expect(find.text('Otkazana'), findsAtLeastNWidgets(1));
+  });
+
+  testWidgets('pull to refresh finishes when nothing has changed', (tester) async {
+    usePhoneSize(tester);
+    await tester.pumpWidget(appWith(fakeDependencies()));
+    await tester.pump(const Duration(seconds: 1));
+    await openMyReservations(tester);
+
+    await tester.fling(find.byType(Scrollable).last, const Offset(0, 400), 1000);
+    await tester.pump();
+    await settle(tester);
+
+    expect(find.byType(RefreshProgressIndicator), findsNothing);
   });
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:domain/domain.dart';
 import 'package:equatable/equatable.dart';
@@ -12,7 +14,11 @@ final class MyReservationsRequested extends MyReservationsEvent {
 }
 
 final class MyReservationsRefreshed extends MyReservationsEvent {
-  const MyReservationsRefreshed();
+  MyReservationsRefreshed();
+
+  final _handled = Completer<void>();
+
+  Future<void> get handled => _handled.future;
 }
 
 final class ReservationCancellationRequested extends MyReservationsEvent {
@@ -126,7 +132,13 @@ final class MyReservationsBloc extends Bloc<MyReservationsEvent, MyReservationsS
       emit(const MyReservationsLoading());
       await _reload(emit);
     });
-    on<MyReservationsRefreshed>((event, emit) => _reload(emit));
+    on<MyReservationsRefreshed>((event, emit) async {
+      try {
+        await _reload(emit);
+      } finally {
+        event._handled.complete();
+      }
+    });
     on<ReservationCancellationRequested>(_onCancellationRequested);
     on<MyReservationsNoticeAcknowledged>((event, emit) {
       final current = state;

@@ -10,8 +10,9 @@ class MyReservationsScreen extends StatelessWidget {
   const MyReservationsScreen({super.key});
 
   Future<void> _refresh(MyReservationsBloc bloc) {
-    bloc.add(const MyReservationsRefreshed());
-    return bloc.stream.first;
+    final refresh = MyReservationsRefreshed();
+    bloc.add(refresh);
+    return refresh.handled;
   }
 
   void _showNotice(BuildContext context, MyReservationsNotice notice) {

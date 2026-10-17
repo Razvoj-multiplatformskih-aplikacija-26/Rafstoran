@@ -36,7 +36,7 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
     switch (state) {
       case ReservationFormSucceeded():
         HapticFeedback.mediumImpact();
-        context.read<MyReservationsBloc>().add(const MyReservationsRefreshed());
+        context.read<MyReservationsBloc>().add(MyReservationsRefreshed());
         context.read<AvailableSlotsBloc>().add(const AvailableSlotsRefreshed());
         _showMessage(context, 'Rezervacija je poslata. Čeka potvrdu osoblja.');
         context.go('/reservations');
