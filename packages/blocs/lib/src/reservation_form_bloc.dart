@@ -31,6 +31,9 @@ sealed class ReservationFormState extends Equatable {
 
   @override
   List<Object?> get props => [partySize, noteText];
+
+  @override
+  String toString() => '$runtimeType';
 }
 
 final class ReservationFormEditing extends ReservationFormState {

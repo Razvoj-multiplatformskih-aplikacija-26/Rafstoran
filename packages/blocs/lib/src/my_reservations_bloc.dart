@@ -37,6 +37,9 @@ sealed class MyReservationsState extends Equatable {
 
   @override
   List<Object?> get props => const [];
+
+  @override
+  String toString() => '$runtimeType';
 }
 
 final class MyReservationsLoading extends MyReservationsState {
@@ -50,6 +53,9 @@ final class MyReservationsFailure extends MyReservationsState {
 
   @override
   List<Object?> get props => [cause];
+
+  @override
+  String toString() => 'MyReservationsFailure($cause)';
 }
 
 final class MyReservationsEmpty extends MyReservationsState {

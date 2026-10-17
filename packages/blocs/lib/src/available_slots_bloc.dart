@@ -35,6 +35,9 @@ sealed class AvailableSlotsState extends Equatable {
 
   @override
   List<Object?> get props => [day, partySize];
+
+  @override
+  String toString() => '$runtimeType';
 }
 
 final class AvailableSlotsLoading extends AvailableSlotsState {
@@ -48,6 +51,9 @@ final class AvailableSlotsFailure extends AvailableSlotsState {
 
   @override
   List<Object?> get props => [...super.props, cause];
+
+  @override
+  String toString() => 'AvailableSlotsFailure($cause)';
 }
 
 final class AvailableSlotsEmpty extends AvailableSlotsState {

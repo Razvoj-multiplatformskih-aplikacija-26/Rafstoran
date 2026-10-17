@@ -53,6 +53,9 @@ sealed class DailyScheduleState extends Equatable {
 
   @override
   List<Object?> get props => [day];
+
+  @override
+  String toString() => '$runtimeType';
 }
 
 final class DailyScheduleLoading extends DailyScheduleState {
@@ -66,6 +69,9 @@ final class DailyScheduleFailure extends DailyScheduleState {
 
   @override
   List<Object?> get props => [...super.props, cause];
+
+  @override
+  String toString() => 'DailyScheduleFailure($cause)';
 }
 
 final class DailyScheduleLoaded extends DailyScheduleState {
