@@ -205,28 +205,30 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
     Future<Result<Reservation>> Function() action,
   ) async {
     final current = state;
-    if (current is! DailyScheduleLoaded) return;
+    if (current is! DailyScheduleLoaded || current.isBusy) return;
+    final request = ++_request;
     emit(current.copyWith(inFlightId: id, clearNotice: true));
-    final Result<Reservation> result;
     try {
-      result = await action();
+      switch (await action()) {
+        case Failure(:final error):
+          _finish(emit, request, notice: ScheduleActionRejected(error));
+        case Success(:final value):
+          final schedule = await getDailySchedule(current.day);
+          _finish(emit, request, schedule: schedule, notice: ScheduleActionSucceeded(value));
+      }
     } on Exception catch (cause) {
-      emit(current.copyWith(notice: ScheduleActionFailed(cause)));
-      return;
+      _finish(emit, request, notice: ScheduleActionFailed(cause));
     }
-    switch (result) {
-      case Failure(:final error):
-        emit(current.copyWith(notice: ScheduleActionRejected(error)));
-      case Success(:final value):
-        final schedule = await getDailySchedule(current.day);
-        emit(
-          DailyScheduleLoaded(
-            day: current.day,
-            schedule: schedule,
-            selectedId: current.selectedId,
-            notice: ScheduleActionSucceeded(value),
-          ),
-        );
-    }
+  }
+
+  void _finish(
+    Emitter<DailyScheduleState> emit,
+    int request, {
+    DailySchedule? schedule,
+    required ScheduleNotice notice,
+  }) {
+    final latest = state;
+    if (request != _request || latest is! DailyScheduleLoaded) return;
+    emit(latest.copyWith(schedule: schedule, notice: notice));
   }
 }
