@@ -87,6 +87,15 @@ final class DailyScheduleLoaded extends DailyScheduleState {
 
   bool get isBusy => inFlightId != null;
 
+  @override
+  String toString() => [
+    'DailyScheduleLoaded(${schedule.reservations.length} reservations',
+    if (selectedId case final id?) ', selected ${id.value}',
+    if (inFlightId case final id?) ', in flight ${id.value}',
+    if (notice case final notice?) ', ${notice.runtimeType}',
+    ')',
+  ].join();
+
   Reservation? get selected =>
       selectedId == null ? null : schedule.reservations.where((r) => r.id == selectedId).firstOrNull;
 

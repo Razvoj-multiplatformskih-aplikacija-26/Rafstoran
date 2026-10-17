@@ -61,6 +61,9 @@ final class AvailableSlotsLoaded extends AvailableSlotsState {
 
   @override
   List<Object?> get props => [...super.props, slots];
+
+  @override
+  String toString() => 'AvailableSlotsLoaded(${slots.length} slots)';
 }
 
 final class AvailableSlotsBloc extends Bloc<AvailableSlotsEvent, AvailableSlotsState> {

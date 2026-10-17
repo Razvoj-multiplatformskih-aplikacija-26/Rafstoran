@@ -74,6 +74,14 @@ final class MyReservationsLoaded extends MyReservationsState {
   @override
   List<Object?> get props => [upcoming, past, cancellable, notice, cancellingId];
 
+  @override
+  String toString() => [
+    'MyReservationsLoaded(${upcoming.length} upcoming, ${past.length} past',
+    if (cancellingId case final id?) ', cancelling ${id.value}',
+    if (notice case final notice?) ', ${notice.runtimeType}',
+    ')',
+  ].join();
+
   bool canCancel(Reservation reservation) => cancellable.contains(reservation.id);
 
   bool get isBusy => cancellingId != null;
