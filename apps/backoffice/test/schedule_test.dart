@@ -52,4 +52,28 @@ void main() {
     expect(find.byType(ScheduleGrid), findsNothing);
     expect(find.text('12:30'), findsOneWidget);
   });
+
+  testWidgets('the schedule works from the keyboard alone, from launch to a confirmation', (tester) async {
+    useWindow(tester, width: 1440, height: 900);
+    await pumpBackoffice(tester);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    for (var i = 0; i < 5; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await settle(tester);
+    expect(find.text('Bez glutena.'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+    await settle(tester);
+    expect(find.text('Rezervacija je potvrđena.'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    for (var i = 0; i < 15; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    }
+    await settle(tester);
+    expect(visible(tester, find.text('22:00')), findsOneWidget);
+  });
 }

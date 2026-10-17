@@ -1,3 +1,4 @@
+import 'package:design_tokens/design_tokens.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,17 +8,25 @@ import 'package:use_cases/use_cases.dart';
 
 import 'reservation_cell.dart';
 
+typedef GridCursor = ({int row, int column});
+
 class ScheduleGrid extends StatefulWidget {
   const ScheduleGrid({
     super.key,
     required this.schedule,
     required this.selectedId,
+    required this.focusNode,
+    required this.initialCursor,
+    required this.onCursorChanged,
     required this.onSelect,
     required this.onContextMenu,
   });
 
   final DailySchedule schedule;
   final ReservationId? selectedId;
+  final FocusNode focusNode;
+  final GridCursor initialCursor;
+  final ValueChanged<GridCursor> onCursorChanged;
   final ValueChanged<Reservation?> onSelect;
   final void Function(Reservation reservation, Offset globalPosition) onContextMenu;
 
@@ -31,17 +40,44 @@ class _ScheduleGridState extends State<ScheduleGrid> {
   static const _headerHeight = 40.0;
   static const _rowHeight = 60.0;
 
-  final _focusNode = FocusNode(debugLabel: 'schedule grid');
-  int _cursorRow = 0;
-  int _cursorColumn = 0;
+  final _horizontal = ScrollController();
+  final _vertical = ScrollController();
 
   List<DiningTable> get _tables => widget.schedule.tables;
   List<DateTime> get _halfHours => widget.schedule.halfHours;
+  FocusNode get _focusNode => widget.focusNode;
+  late int _cursorRow = widget.initialCursor.row.clamp(0, _tables.length - 1);
+  late int _cursorColumn = widget.initialCursor.column.clamp(0, _halfHours.length - 1);
 
   @override
   void dispose() {
-    _focusNode.dispose();
+    _horizontal.dispose();
+    _vertical.dispose();
     super.dispose();
+  }
+
+  void _revealCursor() {
+    _reveal(_horizontal, start: _cursorColumn * _slotColumnWidth, extent: _slotColumnWidth, pinned: _tableColumnWidth);
+    _reveal(_vertical, start: _cursorRow * _rowHeight, extent: _rowHeight, pinned: _headerHeight);
+  }
+
+  void _reveal(ScrollController controller, {required double start, required double extent, required double pinned}) {
+    if (!controller.hasClients) return;
+    final position = controller.position;
+    final visible = position.viewportDimension - pinned;
+    final double target;
+    if (start < position.pixels) {
+      target = start;
+    } else if (start + extent > position.pixels + visible) {
+      target = start + extent - visible;
+    } else {
+      return;
+    }
+    controller.animateTo(
+      target.clamp(position.minScrollExtent, position.maxScrollExtent),
+      duration: MotionTokens.short,
+      curve: Curves.easeOut,
+    );
   }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
@@ -56,10 +92,11 @@ class _ScheduleGridState extends State<ScheduleGrid> {
     };
     if (dRow != 0 || dColumn != 0) {
       if (HardwareKeyboard.instance.isAltPressed) return KeyEventResult.ignored;
-      setState(() {
-        _cursorRow = (_cursorRow + dRow).clamp(0, _tables.length - 1);
-        _cursorColumn = (_cursorColumn + dColumn).clamp(0, _halfHours.length - 1);
-      });
+      _moveCursor(
+        (_cursorRow + dRow).clamp(0, _tables.length - 1),
+        (_cursorColumn + dColumn).clamp(0, _halfHours.length - 1),
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) => _revealCursor());
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter || key == LogicalKeyboardKey.space) {
@@ -69,11 +106,16 @@ class _ScheduleGridState extends State<ScheduleGrid> {
     return KeyEventResult.ignored;
   }
 
-  void _moveCursorTo(int row, int column) {
+  void _moveCursor(int row, int column) {
     setState(() {
       _cursorRow = row;
       _cursorColumn = column;
     });
+    widget.onCursorChanged((row: row, column: column));
+  }
+
+  void _moveCursorTo(int row, int column) {
+    _moveCursor(row, column);
     _focusNode.requestFocus();
   }
 
@@ -84,6 +126,7 @@ class _ScheduleGridState extends State<ScheduleGrid> {
     final border = BorderSide(color: scheme.outlineVariant);
     return Focus(
       focusNode: _focusNode,
+      autofocus: true,
       onKeyEvent: _onKey,
       child: Semantics(
         container: true,
@@ -91,6 +134,8 @@ class _ScheduleGridState extends State<ScheduleGrid> {
         child: ListenableBuilder(
           listenable: _focusNode,
           builder: (context, _) => TableView.builder(
+            horizontalDetails: ScrollableDetails.horizontal(controller: _horizontal),
+            verticalDetails: ScrollableDetails.vertical(controller: _vertical),
             columnCount: _halfHours.length + 1,
             rowCount: _tables.length + 1,
             pinnedRowCount: 1,

@@ -32,12 +32,21 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
+  final _gridFocus = FocusNode(debugLabel: 'schedule grid');
+  GridCursor _cursor = (row: 0, column: 0);
+
   DailyScheduleBloc get _bloc => context.read<DailyScheduleBloc>();
 
   @override
   void initState() {
     super.initState();
     _syncWithRoute();
+  }
+
+  @override
+  void dispose() {
+    _gridFocus.dispose();
+    super.dispose();
   }
 
   @override
@@ -197,7 +206,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ConfirmSelectedIntent: CallbackAction<ConfirmSelectedIntent>(onInvoke: (_) => _confirm()),
           RecordArrivalIntent: CallbackAction<RecordArrivalIntent>(onInvoke: (_) => _recordArrival()),
           CancelSelectedIntent: CallbackAction<CancelSelectedIntent>(onInvoke: (_) => _cancel()),
-          ClearSelectionIntent: CallbackAction<ClearSelectionIntent>(onInvoke: (_) => _select(null)),
+          ClearSelectionIntent: CallbackAction<ClearSelectionIntent>(
+            onInvoke: (_) {
+              _select(null);
+              _gridFocus.requestFocus();
+              return null;
+            },
+          ),
           PreviousDayIntent: CallbackAction<PreviousDayIntent>(
             onInvoke: (_) => _goTo(widget.day.subtract(const Duration(days: 1))),
           ),
@@ -208,7 +223,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             onInvoke: (_) => showCommandPalette(context, _paletteCommands()),
           ),
         },
-        child: Focus(
+        child: FocusScope(
           autofocus: true,
           child: Scaffold(
             appBar: AppBar(
@@ -295,6 +310,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ),
                 DailyScheduleLoaded() => _LoadedBody(
                   state: state,
+                  gridFocus: _gridFocus,
+                  cursor: _cursor,
+                  onCursorChanged: (cursor) => _cursor = cursor,
                   onSelect: _select,
                   onContextMenu: _showContextMenu,
                   onConfirm: _confirm,
@@ -313,6 +331,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 class _LoadedBody extends StatelessWidget {
   const _LoadedBody({
     required this.state,
+    required this.gridFocus,
+    required this.cursor,
+    required this.onCursorChanged,
     required this.onSelect,
     required this.onContextMenu,
     required this.onConfirm,
@@ -321,6 +342,9 @@ class _LoadedBody extends StatelessWidget {
   });
 
   final DailyScheduleLoaded state;
+  final FocusNode gridFocus;
+  final GridCursor cursor;
+  final ValueChanged<GridCursor> onCursorChanged;
   final ValueChanged<Reservation?> onSelect;
   final void Function(Reservation reservation, Offset position) onContextMenu;
   final void Function([Reservation? reservation]) onConfirm;
@@ -396,6 +420,9 @@ class _LoadedBody extends StatelessWidget {
                     child: ScheduleGrid(
                       schedule: schedule,
                       selectedId: state.selectedId,
+                      focusNode: gridFocus,
+                      initialCursor: cursor,
+                      onCursorChanged: onCursorChanged,
                       onSelect: onSelect,
                       onContextMenu: onContextMenu,
                     ),
