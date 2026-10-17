@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'illustrations.dart';
@@ -69,7 +71,7 @@ class SlotSkeleton extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final columns = constraints.maxWidth >= 480 ? 3 : 2;
-          final width = (constraints.maxWidth - (columns - 1) * 12) / columns;
+          final width = math.max(0.0, (constraints.maxWidth - (columns - 1) * 12) / columns);
           return Wrap(
             spacing: 12,
             runSpacing: 12,
