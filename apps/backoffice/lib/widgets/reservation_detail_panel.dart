@@ -63,25 +63,27 @@ class ReservationDetailPanel extends StatelessWidget {
               child: Text(capitalize(formatInstantDate(reservation.slot.start)), style: muted),
             ),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
-                  StatusBadge(status: status),
-                  const SizedBox(height: 8),
-                  Text(statusDetail, style: muted),
-                  const SizedBox(height: 20),
-                  _Field(label: 'Gost', value: guest?.username ?? 'Nepoznat gost'),
-                  _Field(label: 'Broj osoba', value: peopleLabel(reservation.partySize.value)),
-                  _Field(
-                    label: 'Sto',
-                    value: table == null ? 'Nije dodeljen' : '${table!.label} · ${seatsLabel(table!.capacity)}',
-                  ),
-                  _Field(
-                    label: 'Trajanje',
-                    value: '${formatTime(reservation.slot.start)} do ${formatTime(reservation.slot.end)}',
-                  ),
-                  if (reservation.note case final note?) _Field(label: 'Napomena', value: note.text),
-                ],
+              child: SelectionArea(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  children: [
+                    StatusBadge(status: status),
+                    const SizedBox(height: 8),
+                    Text(statusDetail, style: muted),
+                    const SizedBox(height: 20),
+                    _Field(label: 'Gost', value: guest?.username ?? 'Nepoznat gost'),
+                    _Field(label: 'Broj osoba', value: peopleLabel(reservation.partySize.value)),
+                    _Field(
+                      label: 'Sto',
+                      value: table == null ? 'Nije dodeljen' : '${table!.label} · ${seatsLabel(table!.capacity)}',
+                    ),
+                    _Field(
+                      label: 'Trajanje',
+                      value: '${formatTime(reservation.slot.start)} do ${formatTime(reservation.slot.end)}',
+                    ),
+                    if (reservation.note case final note?) _Field(label: 'Napomena', value: note.text),
+                  ],
+                ),
               ),
             ),
             Padding(

@@ -267,25 +267,38 @@ class _TableHeader extends StatelessWidget {
   }
 }
 
-class _EmptyCell extends StatelessWidget {
+class _EmptyCell extends StatefulWidget {
   const _EmptyCell({required this.focused, required this.onTap});
 
   final bool focused;
   final VoidCallback onTap;
 
   @override
+  State<_EmptyCell> createState() => _EmptyCellState();
+}
+
+class _EmptyCellState extends State<_EmptyCell> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return ExcludeSemantics(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(3),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: focused ? Border.all(color: scheme.onSurface, width: 2) : null,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(3),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: _hovered ? scheme.onSurface.withValues(alpha: 0.05) : null,
+                borderRadius: BorderRadius.circular(8),
+                border: widget.focused ? Border.all(color: scheme.onSurface, width: 2) : null,
+              ),
             ),
           ),
         ),
