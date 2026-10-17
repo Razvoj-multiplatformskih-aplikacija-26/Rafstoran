@@ -8,6 +8,7 @@ environment:
 resolution: workspace
 
 dependencies:
+  collection: 1.19.1
   domain:
     path: ../domain
 

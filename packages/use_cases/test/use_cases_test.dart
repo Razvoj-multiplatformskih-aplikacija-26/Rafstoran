@@ -40,4 +40,16 @@ void main() {
     expect((await inTime(id: created.id, by: guest)).valueOrNull?.status, isA<Cancelled>());
     expect((await restaurant.find(created.id))?.status, isA<Cancelled>());
   });
+
+  test('two daily schedules built from the same data are equal', () async {
+    await create(guest: guest, start: tonight, partySize: two);
+    DailySchedule build() => DailySchedule(
+      day: DateTime(2026, 10, 9),
+      openingHours: standardOpeningHours(),
+      tables: [...tables],
+      reservations: [...restaurant.reservations],
+    );
+    expect(build(), build());
+    expect(build().hashCode, build().hashCode);
+  });
 }

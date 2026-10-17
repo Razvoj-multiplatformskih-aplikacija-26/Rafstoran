@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:domain/domain.dart';
 
 final class DailySchedule {
@@ -36,4 +37,16 @@ final class DailySchedule {
       reservationsFor(table).where((r) => !instant.isBefore(r.slot.start) && instant.isBefore(r.slot.end)).firstOrNull;
 
   User? guestOf(Reservation reservation) => guests[reservation.guestId];
+
+  @override
+  bool operator ==(Object other) =>
+      other is DailySchedule &&
+      other.day == day &&
+      other.hours == hours &&
+      const ListEquality<DiningTable>().equals(other.tables, tables) &&
+      const ListEquality<Reservation>().equals(other.reservations, reservations) &&
+      const MapEquality<UserId, User>().equals(other.guests, guests);
+
+  @override
+  int get hashCode => Object.hash(day, hours, Object.hashAll(tables), Object.hashAll(reservations), guests.length);
 }
