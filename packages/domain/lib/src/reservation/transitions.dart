@@ -24,6 +24,11 @@ ReservationStatus initialStatus({required User by, required DateTime now}) =>
 
 bool hasStarted(Reservation reservation, {required DateTime now}) => !now.toUtc().isBefore(reservation.slot.start);
 
+bool onlyManagerMayCancel(Reservation reservation, {required DateTime now}) =>
+    !reservation.status.isFinal &&
+    !hasStarted(reservation, now: now) &&
+    now.toUtc().isAfter(cancellationDeadline(reservation));
+
 bool isArrivalTime(Reservation reservation, {required DateTime now}) {
   final instant = now.toUtc();
   return !instant.isBefore(reservation.slot.start.subtract(earlyArrival)) && instant.isBefore(reservation.slot.end);

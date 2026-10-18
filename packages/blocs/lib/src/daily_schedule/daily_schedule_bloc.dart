@@ -137,7 +137,10 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
           if (domain.confirmReservation(reservation, by: staff, now: now).isSuccess) ScheduleAction.confirm,
           if (domain.recordArrival(reservation, by: staff, now: now).isSuccess) ScheduleAction.recordArrival,
           if (domain.recordNoShow(reservation, by: staff, now: now).isSuccess) ScheduleAction.recordNoShow,
-          if (domain.cancelReservation(reservation, by: staff, now: now).isSuccess) ScheduleAction.cancel,
+          if (domain.cancelReservation(reservation, by: staff, now: now).isSuccess)
+            ScheduleAction.cancel
+          else if (domain.onlyManagerMayCancel(reservation, now: now))
+            ScheduleAction.managerOnlyCancel,
         },
     };
   }

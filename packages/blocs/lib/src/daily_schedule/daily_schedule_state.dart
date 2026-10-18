@@ -1,6 +1,6 @@
 part of 'daily_schedule_bloc.dart';
 
-enum ScheduleAction { confirm, recordArrival, recordNoShow, cancel }
+enum ScheduleAction { confirm, recordArrival, recordNoShow, cancel, managerOnlyCancel }
 
 typedef ScheduleCursor = ({int row, int column});
 

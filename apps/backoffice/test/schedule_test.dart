@@ -1,3 +1,4 @@
+import 'package:backoffice/widgets/reservation_detail_panel.dart';
 import 'package:backoffice/widgets/schedule_grid.dart';
 import 'package:backoffice/widgets/schedule_list.dart';
 import 'package:flutter/material.dart';
@@ -126,6 +127,9 @@ void main() {
     expect(find.text('Petra Ilić'), findsWidgets);
     expect(find.text('0645550202'), findsOneWidget);
     expect(find.text('Potvrđena'), findsOneWidget);
-    expect(find.text('Nenad Popović'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(ReservationDetailPanel), matching: find.text('Nenad Popović')),
+      findsOneWidget,
+    );
   });
 }

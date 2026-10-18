@@ -37,6 +37,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   DailyScheduleBloc get _bloc => context.read<DailyScheduleBloc>();
 
+  User get _staff => context.read<User>();
+
   @override
   void initState() {
     super.initState();
@@ -89,6 +91,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return _idle && selected != null && _allows(action, selected);
   }
 
+  String? _cancelNote(Reservation reservation) => _allows(ScheduleAction.managerOnlyCancel, reservation)
+      ? 'Manje od ${hoursLabel(cancellationNotice.inHours)} pre termina rezervaciju otkazuje menadžer.'
+      : null;
+
   bool get _canConfirm => _selectedAllows(ScheduleAction.confirm);
 
   bool get _canRecordArrival => _selectedAllows(ScheduleAction.recordArrival);
@@ -134,7 +140,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           const PopupMenuItem(value: 'arrival', child: Text('Gost stigao')),
         if (_allows(ScheduleAction.recordNoShow, reservation))
           const PopupMenuItem(value: 'noShow', child: Text('Gost nije došao')),
-        if (_allows(ScheduleAction.cancel, reservation)) const PopupMenuItem(value: 'cancel', child: Text('Otkaži')),
+        if (_allows(ScheduleAction.cancel, reservation))
+          const PopupMenuItem(value: 'cancel', child: Text('Otkaži'))
+        else if (_allows(ScheduleAction.managerOnlyCancel, reservation))
+          const PopupMenuItem(value: 'cancel', enabled: false, child: Text('Otkaži')),
         const PopupMenuItem(value: 'details', child: Text('Detalji')),
       ],
     );
@@ -339,6 +348,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     onPressed: () => showShortcutsOverview(context),
                     icon: const Icon(Icons.keyboard_outlined),
                   ),
+                  const SizedBox(width: 8),
+                  Text(_staff.username, style: theme.textTheme.labelLarge),
+                  IconButton(
+                    tooltip: 'Odjavi se',
+                    onPressed: () => context.read<SessionBloc>().add(const SessionLogOutRequested()),
+                    icon: const Icon(Icons.logout),
+                  ),
                   if (kDebugMode && fake != null)
                     IconButton(
                       tooltip: 'Simuliraj grešku',
@@ -354,6 +370,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       'palette' => showCommandPalette(context, _paletteCommands()),
                       'shortcuts' => showShortcutsOverview(context),
                       'outage' => fake == null ? null : _simulateOutage(fake),
+                      'logout' => context.read<SessionBloc>().add(const SessionLogOutRequested()),
                       _ => null,
                     },
                     itemBuilder: (context) => [
@@ -363,6 +380,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       const PopupMenuItem(value: 'shortcuts', child: Text('Prečice')),
                       if (kDebugMode && fake != null)
                         const PopupMenuItem(value: 'outage', child: Text('Simuliraj grešku')),
+                      PopupMenuItem(value: 'logout', child: Text('Odjavi se (${_staff.username})')),
                     ],
                   ),
                 const SizedBox(width: 8),
@@ -405,6 +423,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     onArrival: _recordArrival,
                     onNoShow: _recordNoShow,
                     onCancel: _cancel,
+                    cancelNote: _cancelNote,
                   ),
                 },
               ),
@@ -426,6 +445,7 @@ class _LoadedBody extends StatelessWidget {
     required this.onSelect,
     required this.onContextMenu,
     required this.onConfirm,
+    required this.cancelNote,
     required this.onArrival,
     required this.onNoShow,
     required this.onCancel,
@@ -439,6 +459,7 @@ class _LoadedBody extends StatelessWidget {
   final ValueChanged<Reservation?> onSelect;
   final void Function(Reservation reservation, Offset position) onContextMenu;
   final void Function([Reservation? reservation]) onConfirm;
+  final String? Function(Reservation reservation) cancelNote;
   final void Function([Reservation? reservation]) onArrival;
   final void Function([Reservation? reservation]) onNoShow;
   final Future<void> Function([Reservation? reservation]) onCancel;
@@ -469,6 +490,7 @@ class _LoadedBody extends StatelessWidget {
             onArrival: actions.contains(ScheduleAction.recordArrival) ? () => close(onArrival) : null,
             onNoShow: actions.contains(ScheduleAction.recordNoShow) ? () => close(onNoShow) : null,
             onCancel: actions.contains(ScheduleAction.cancel) ? () => close(onCancel) : null,
+            cancelNote: cancelNote(selected),
             onClose: () => Navigator.pop(sheetContext),
           ),
         );
@@ -540,6 +562,7 @@ class _LoadedBody extends StatelessWidget {
                         onArrival: actions.contains(ScheduleAction.recordArrival) ? () => onArrival(selected) : null,
                         onNoShow: actions.contains(ScheduleAction.recordNoShow) ? () => onNoShow(selected) : null,
                         onCancel: actions.contains(ScheduleAction.cancel) ? () => onCancel(selected) : null,
+                        cancelNote: cancelNote(selected),
                         onClose: () => onSelect(null),
                       ),
                     ),

@@ -13,6 +13,7 @@ class ReservationDetailPanel extends StatelessWidget {
     this.onArrival,
     this.onNoShow,
     this.onCancel,
+    this.cancelNote,
     required this.onClose,
     this.busy = false,
   });
@@ -26,6 +27,7 @@ class ReservationDetailPanel extends StatelessWidget {
   final VoidCallback? onArrival;
   final VoidCallback? onNoShow;
   final VoidCallback? onCancel;
+  final String? cancelNote;
   final VoidCallback onClose;
 
   @override
@@ -121,7 +123,7 @@ class ReservationDetailPanel extends StatelessWidget {
                       tonal: true,
                     ),
                   ],
-                  if (cancel != null) ...[
+                  if (cancel != null || cancelNote != null) ...[
                     const SizedBox(height: 8),
                     _ActionButton(
                       label: 'Otkaži',
@@ -130,6 +132,10 @@ class ReservationDetailPanel extends StatelessWidget {
                       onPressed: busy ? null : cancel,
                       tonal: true,
                     ),
+                    if (cancelNote case final note?) ...[
+                      const SizedBox(height: 6),
+                      Text(note, style: muted, textAlign: TextAlign.center),
+                    ],
                   ],
                 ],
               ),
