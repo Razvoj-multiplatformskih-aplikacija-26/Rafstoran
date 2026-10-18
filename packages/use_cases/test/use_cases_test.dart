@@ -34,7 +34,10 @@ void main() {
     final exactlyTwoHours = FixedClock(tonight.subtract(const Duration(hours: 2)));
 
     final tooLate = CancelReservation(reservations: restaurant, clock: oneMinuteLate);
-    expect(await tooLate(id: created.id, by: guest), const Failure<Reservation>(CancellationTooLate()));
+    expect(
+      await tooLate(id: created.id, by: guest),
+      const Failure<Reservation>(CancellationTooLate(notice: cancellationNotice)),
+    );
 
     final inTime = CancelReservation(reservations: restaurant, clock: exactlyTwoHours);
     expect((await inTime(id: created.id, by: guest)).valueOrNull?.status, isA<Cancelled>());

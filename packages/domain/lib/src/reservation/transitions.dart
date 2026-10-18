@@ -51,7 +51,7 @@ Result<Reservation> cancelReservation(
     return Failure(InvalidTransition(from: reservation.status, to: next));
   }
   if (by.role == Role.guest && !guestMayStillCancel(reservation, now: now)) {
-    return const Failure(CancellationTooLate());
+    return const Failure(CancellationTooLate(notice: cancellationNotice));
   }
   if (hasStarted(reservation, now: now)) return const Failure(ReservationStarted());
   return Success(reservation.copyWith(status: next));

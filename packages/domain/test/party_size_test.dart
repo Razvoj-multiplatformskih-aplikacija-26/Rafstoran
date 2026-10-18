@@ -9,8 +9,8 @@ void main() {
     });
 
     test('rejects zero and thirteen people', () {
-      expect(PartySize.parse(0), const Failure<PartySize>(InvalidPartySize(0)));
-      expect(PartySize.parse(13), const Failure<PartySize>(InvalidPartySize(13)));
+      expect(PartySize.parse(0), const Failure<PartySize>(InvalidPartySize(0, min: 1, max: 12)));
+      expect(PartySize.parse(13), const Failure<PartySize>(InvalidPartySize(13, min: 1, max: 12)));
     });
   });
 }

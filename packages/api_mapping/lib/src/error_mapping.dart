@@ -5,17 +5,20 @@ import 'reservation_mapping.dart';
 
 extension DomainErrorMapping on DomainError {
   ProblemDto toProblem() => switch (this) {
-    NoteTooLong(:final length) => ProblemDto(
+    NoteTooLong(:final length, :final max) => ProblemDto(
       status: 422,
       code: ErrorCodes.noteTooLong,
       title: 'Note too long',
       value: length,
+      max: max,
     ),
-    InvalidPartySize(:final size) => ProblemDto(
+    InvalidPartySize(:final size, :final min, :final max) => ProblemDto(
       status: 422,
       code: ErrorCodes.invalidPartySize,
       title: 'Invalid party size',
       value: size,
+      min: min,
+      max: max,
     ),
     SlotInPast() => const ProblemDto(status: 422, code: ErrorCodes.slotInPast, title: 'Slot in the past'),
     SlotNotOnHalfHour() => const ProblemDto(
@@ -28,10 +31,11 @@ extension DomainErrorMapping on DomainError {
       code: ErrorCodes.outsideOpeningHours,
       title: 'Outside opening hours',
     ),
-    CancellationTooLate() => const ProblemDto(
+    CancellationTooLate(:final notice) => ProblemDto(
       status: 422,
       code: ErrorCodes.cancellationTooLate,
       title: 'Cancellation too late',
+      min: notice.inMinutes,
     ),
     InvalidTransition(:final from, :final to) => ProblemDto(
       status: 409,
@@ -48,12 +52,18 @@ extension DomainErrorMapping on DomainError {
 
 extension ProblemMapping on ProblemDto {
   DomainError? toDomainError() => switch (this) {
-    ProblemDto(code: ErrorCodes.noteTooLong, :final value?) => NoteTooLong(value),
-    ProblemDto(code: ErrorCodes.invalidPartySize, :final value?) => InvalidPartySize(value),
+    ProblemDto(code: ErrorCodes.noteTooLong, :final value?, :final max?) => NoteTooLong(value, max: max),
+    ProblemDto(code: ErrorCodes.invalidPartySize, :final value?, :final min?, :final max?) => InvalidPartySize(
+      value,
+      min: min,
+      max: max,
+    ),
     ProblemDto(code: ErrorCodes.slotInPast) => const SlotInPast(),
     ProblemDto(code: ErrorCodes.slotNotOnHalfHour) => const SlotNotOnHalfHour(),
     ProblemDto(code: ErrorCodes.outsideOpeningHours) => const OutsideOpeningHours(),
-    ProblemDto(code: ErrorCodes.cancellationTooLate) => const CancellationTooLate(),
+    ProblemDto(code: ErrorCodes.cancellationTooLate, :final min?) => CancellationTooLate(
+      notice: Duration(minutes: min),
+    ),
     ProblemDto(code: ErrorCodes.invalidTransition, :final from?, :final to?) => InvalidTransition(
       from: from.toDomain(),
       to: to.toDomain(),

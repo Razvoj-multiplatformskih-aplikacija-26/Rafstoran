@@ -13,6 +13,8 @@ String pluralize(int count, {required String one, required String few, required 
 
 String peopleLabel(int count) => '$count ${pluralize(count, one: 'osoba', few: 'osobe', many: 'osoba')}';
 
+String hoursLabel(int count) => '$count ${pluralize(count, one: 'sat', few: 'sata', many: 'sati')}';
+
 String seatsLabel(int count) => '$count ${pluralize(count, one: 'mesto', few: 'mesta', many: 'mesta')}';
 
 String slotsLabel(int count) => '$count ${pluralize(count, one: 'termin', few: 'termina', many: 'termina')}';

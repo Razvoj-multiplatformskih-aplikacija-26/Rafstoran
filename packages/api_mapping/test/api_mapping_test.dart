@@ -29,12 +29,12 @@ void main() {
 
   test('every domain error has a code and comes back as the same error', () {
     final errors = <DomainError>[
-      const NoteTooLong(201),
-      const InvalidPartySize(13),
+      const NoteTooLong(201, max: 200),
+      const InvalidPartySize(13, min: 1, max: 12),
       const SlotInPast(),
       const SlotNotOnHalfHour(),
       const OutsideOpeningHours(),
-      const CancellationTooLate(),
+      const CancellationTooLate(notice: Duration(hours: 2)),
       InvalidTransition(
         from: Arrived(arrivedAt: DateTime.utc(2026, 10, 1)),
         to: const Pending(),

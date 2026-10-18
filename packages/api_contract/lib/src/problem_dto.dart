@@ -2,7 +2,16 @@ import 'json.dart';
 import 'reservation_dto.dart';
 
 final class ProblemDto {
-  const ProblemDto({required this.status, required this.code, required this.title, this.value, this.from, this.to});
+  const ProblemDto({
+    required this.status,
+    required this.code,
+    required this.title,
+    this.value,
+    this.min,
+    this.max,
+    this.from,
+    this.to,
+  });
 
   static const mediaType = 'application/problem+json';
 
@@ -10,6 +19,8 @@ final class ProblemDto {
   final String code;
   final String title;
   final int? value;
+  final int? min;
+  final int? max;
   final ReservationStatusDto? from;
   final ReservationStatusDto? to;
 
@@ -19,6 +30,8 @@ final class ProblemDto {
     'status': status,
     'code': code,
     'value': ?value,
+    'min': ?min,
+    'max': ?max,
     if (from case final from?) 'from': from.toJson(),
     if (to case final to?) 'to': to.toJson(),
   };
@@ -28,6 +41,8 @@ final class ProblemDto {
     code: jsonString(json, 'code'),
     title: jsonOptionalString(json, 'title') ?? '',
     value: jsonOptionalInt(json, 'value'),
+    min: jsonOptionalInt(json, 'min'),
+    max: jsonOptionalInt(json, 'max'),
     from: json['from'] == null ? null : ReservationStatusDto.fromJson(jsonObject(json['from'])),
     to: json['to'] == null ? null : ReservationStatusDto.fromJson(jsonObject(json['to'])),
   );

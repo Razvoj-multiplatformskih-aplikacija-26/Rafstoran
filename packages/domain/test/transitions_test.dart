@@ -78,7 +78,7 @@ void main() {
       final now = start.subtract(const Duration(hours: 1, minutes: 59));
       expect(
         cancelReservation(reservationAt(start), by: guest, now: now),
-        const Failure<Reservation>(CancellationTooLate()),
+        const Failure<Reservation>(CancellationTooLate(notice: Duration(hours: 2))),
       );
     });
 

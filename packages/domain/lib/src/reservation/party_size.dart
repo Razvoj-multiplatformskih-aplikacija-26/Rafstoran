@@ -13,7 +13,7 @@ final class PartySize {
   final int value;
 
   static Result<PartySize> parse(int value) {
-    if (value < min || value > max) return Failure(InvalidPartySize(value));
+    if (value < min || value > max) return Failure(InvalidPartySize(value, min: min, max: max));
     return Success(PartySize._(value));
   }
 

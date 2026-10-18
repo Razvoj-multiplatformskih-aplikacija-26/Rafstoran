@@ -1,13 +1,15 @@
 import 'package:domain/domain.dart';
 
+import 'serbian.dart';
+
 extension DomainErrorMessage on DomainError {
   String get message => switch (this) {
-    NoteTooLong() => 'Napomena može imati najviše ${ReservationNote.maxLength} znakova.',
-    InvalidPartySize() => 'Broj osoba je od ${PartySize.min} do ${PartySize.max}.',
+    NoteTooLong(:final max) => 'Napomena može imati najviše $max znakova.',
+    InvalidPartySize(:final min, :final max) => 'Broj osoba je od $min do $max.',
     SlotInPast() => 'Termin je prošao.',
     SlotNotOnHalfHour() => 'Termin počinje na pun sat ili pola sata.',
     OutsideOpeningHours() => 'Termin je van radnog vremena.',
-    CancellationTooLate() => 'Otkazivanje je moguće najkasnije 2 sata pre termina.',
+    CancellationTooLate(:final notice) => 'Otkazivanje je moguće najkasnije ${hoursLabel(notice.inHours)} pre termina.',
     TooSoonToBook() => 'Termin se rezerviše najkasnije 2 sata unapred.',
     ReservationStarted() => 'Termin je već počeo.',
     ReservationNotStarted() => 'Termin još nije počeo.',

@@ -8,7 +8,7 @@ void main() {
     });
 
     test('rejects a note of 201 characters', () {
-      expect(ReservationNote.parse('đ' * 201), const Failure<ReservationNote>(NoteTooLong(201)));
+      expect(ReservationNote.parse('đ' * 201), const Failure<ReservationNote>(NoteTooLong(201, max: 200)));
     });
 
     test('counts an emoji family as one character', () {

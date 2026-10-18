@@ -19,7 +19,7 @@ final class ReservationNote {
   static Result<ReservationNote> parse(String input) {
     final text = input.trim();
     final length = text.characters.length;
-    if (length > maxLength) return Failure(NoteTooLong(length));
+    if (length > maxLength) return Failure(NoteTooLong(length, max: maxLength));
     return Success(ReservationNote._(text));
   }
 
