@@ -1,0 +1,17 @@
+name: api_mapping
+description: Rafstoran mapping between the domain and the HTTP contract, in one place for the clients and the server.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+resolution: workspace
+
+dependencies:
+  api_contract:
+    path: ../api_contract
+  domain:
+    path: ../domain
+
+dev_dependencies:
+  test: 1.31.1
