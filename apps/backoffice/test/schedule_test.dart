@@ -95,4 +95,13 @@ void main() {
     await settle(tester);
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'schedule grid');
   });
+
+  testWidgets('a link to a reservation opens it once the day has loaded', (tester) async {
+    useWindow(tester, width: 1440, height: 900);
+    tester.binding.platformDispatcher.defaultRouteNameTestValue = '/schedule/2026-10-09?reservation=s-21';
+    addTearDown(tester.binding.platformDispatcher.clearDefaultRouteNameTestValue);
+    await pumpBackoffice(tester);
+
+    expect(find.text('Bez glutena.'), findsOneWidget);
+  });
 }
