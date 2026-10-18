@@ -196,8 +196,17 @@ class _ConfirmStepState extends State<_ConfirmStep> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ReservationFormBloc, ReservationFormState>(
-      listenWhen: (previous, current) => current is ReservationFormSucceeded,
-      listener: (context, state) => Navigator.pop(context, (state as ReservationFormSucceeded).reservation),
+      listenWhen: (previous, current) => switch (current) {
+        ReservationFormSucceeded() || ReservationFormRejected(error: NoTableAvailable()) => true,
+        _ => false,
+      },
+      listener: (context, state) {
+        if (state case ReservationFormSucceeded(:final reservation)) {
+          Navigator.pop(context, reservation);
+        } else {
+          context.read<AvailableSlotsBloc>().add(const AvailableSlotsRefreshed());
+        }
+      },
       builder: (context, state) {
         final bloc = context.read<ReservationFormBloc>();
         final submitting = state is ReservationFormSubmitting;
