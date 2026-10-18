@@ -59,7 +59,7 @@ class _RafstoranAppState extends State<RafstoranApp> {
               home: const Scaffold(body: Center(child: CircularProgressIndicator())),
             ),
             SignedOut(:final reason) => _material(
-              key: const ValueKey('signed-out'),
+              key: ValueKey('signed-out ${reason?.name} $_notice'),
               home: LoginScreen(
                 title: 'Rafstoran',
                 logIn: dependencies.logIn,
