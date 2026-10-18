@@ -1,5 +1,6 @@
 import 'package:backoffice/widgets/schedule_grid.dart';
 import 'package:backoffice/widgets/schedule_list.dart';
+import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -103,5 +104,27 @@ void main() {
     await pumpBackoffice(tester);
 
     expect(find.text('Bez glutena.'), findsOneWidget);
+  });
+
+  testWidgets('staff enter a reservation with the slot and form blocs of the guest app', (tester) async {
+    useWindow(tester, width: 1440, height: 900);
+    await pumpBackoffice(tester);
+
+    await tester.tap(find.text('Nova rezervacija'));
+    await settle(tester);
+    await tester.tap(find.byType(DropdownMenu<User>));
+    await settle(tester);
+    await tester.tap(find.text('Ana Petrović').last);
+    await settle(tester);
+    await tester.tap(find.byType(ChoiceChip).last);
+    await settle(tester);
+    await tester.tap(find.text('Dalje'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), 'Rezervisano telefonom.');
+    await tester.tap(find.text('Sačuvaj'));
+    await settle(tester);
+
+    expect(find.text('Rezervacija je sačuvana.'), findsOneWidget);
+    expect(find.text('Rezervisano telefonom.'), findsOneWidget);
   });
 }
