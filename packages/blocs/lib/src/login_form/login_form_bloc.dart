@@ -1,3 +1,4 @@
+// Ready for copy with its event and state files; adapt User.
 import 'package:bloc/bloc.dart';
 import 'package:domain/domain.dart';
 import 'package:equatable/equatable.dart';

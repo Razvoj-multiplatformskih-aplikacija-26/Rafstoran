@@ -1,3 +1,4 @@
+// Ready for copy as is.
 import 'package:flutter/foundation.dart';
 
 Uri serverAddress() {

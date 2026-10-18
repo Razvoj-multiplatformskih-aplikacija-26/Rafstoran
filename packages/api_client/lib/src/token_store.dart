@@ -1,3 +1,4 @@
+// Ready for copy as is.
 abstract interface class TokenStore {
   Future<String?> read();
 

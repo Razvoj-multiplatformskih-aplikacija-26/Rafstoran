@@ -1,3 +1,4 @@
+// Ready for copy with its event and state files; adapt User.
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';

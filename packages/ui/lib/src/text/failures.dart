@@ -1,3 +1,4 @@
+// Ready for copy as is.
 import 'package:use_cases/use_cases.dart';
 
 const serverUnreachableMessage = 'Nema veze sa serverom.';

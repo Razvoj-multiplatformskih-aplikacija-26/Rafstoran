@@ -1,3 +1,4 @@
+// Ready for copy; adapt the texts.
 import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';

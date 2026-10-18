@@ -1,3 +1,4 @@
+// Ready for copy; adapt User.
 import 'package:api_contract/api_contract.dart';
 import 'package:api_mapping/api_mapping.dart';
 import 'package:domain/domain.dart';

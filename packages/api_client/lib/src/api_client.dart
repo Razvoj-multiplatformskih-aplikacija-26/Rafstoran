@@ -1,3 +1,4 @@
+// Ready for copy; adapt ProblemDto and toDomainError.
 import 'dart:async';
 import 'dart:convert';
 
