@@ -12,6 +12,8 @@ dependencies:
     path: ../api_contract
   domain:
     path: ../domain
+  use_cases:
+    path: ../use_cases
 
 dev_dependencies:
   test: 1.31.1
