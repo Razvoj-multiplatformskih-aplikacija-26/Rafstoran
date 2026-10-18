@@ -1,0 +1,24 @@
+name: server
+description: Rafstoran HTTP server on Relic and PostgreSQL that runs the same domain rules as the clients.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+resolution: workspace
+
+dependencies:
+  api_contract:
+    path: ../../packages/api_contract
+  api_mapping:
+    path: ../../packages/api_mapping
+  domain:
+    path: ../../packages/domain
+  postgres: 3.5.18
+  relic: 1.2.0
+  use_cases:
+    path: ../../packages/use_cases
+
+dev_dependencies:
+  http: 1.6.0
+  test: 1.31.1
