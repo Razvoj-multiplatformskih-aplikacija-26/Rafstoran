@@ -41,6 +41,15 @@ void main() {
     expect((await restaurant.find(created.id))?.status, isA<Cancelled>());
   });
 
+  test('another guest is told that a reservation they may not view does not exist', () async {
+    final created = (await create(by: guest, start: tonight, partySize: two)).valueOrNull!;
+    const otherGuest = User(id: UserId('u-ana'), username: 'guest2', role: Role.guest);
+
+    final cancel = CancelReservation(reservations: restaurant, clock: FixedClock(noon));
+
+    expect(await cancel(id: created.id, by: otherGuest), const Failure<Reservation>(NotFound()));
+  });
+
   test('two daily schedules built from the same data are equal', () async {
     await create(by: guest, start: tonight, partySize: two);
     DailySchedule build() => DailySchedule(

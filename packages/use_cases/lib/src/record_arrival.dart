@@ -11,7 +11,7 @@ final class RecordArrival {
 
   Future<Result<Reservation>> call({required ReservationId id, required User by}) async {
     final reservation = await reservations.find(id);
-    if (reservation == null) return const Failure(NotFound());
+    if (reservation == null || !AccessPolicy.canView(by, reservation)) return const Failure(NotFound());
     return switch (recordArrival(reservation, by: by, now: clock.now())) {
       Failure(:final error) => Failure(error),
       Success(:final value) => await reservations.save(value, from: reservation.status),

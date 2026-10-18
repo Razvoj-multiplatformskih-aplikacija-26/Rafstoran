@@ -11,7 +11,7 @@ final class CancelReservation {
 
   Future<Result<Reservation>> call({required ReservationId id, required User by, String reason = ''}) async {
     final reservation = await reservations.find(id);
-    if (reservation == null) return const Failure(NotFound());
+    if (reservation == null || !AccessPolicy.canView(by, reservation)) return const Failure(NotFound());
     final result = cancelReservation(reservation, by: by, now: clock.now(), reason: reason);
     return switch (result) {
       Failure(:final error) => Failure(error),
