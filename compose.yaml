@@ -1,0 +1,56 @@
+# Ready for copy; adapt the service names, the database and the paths.
+name: rafstoran
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rafstoran}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env first}
+      POSTGRES_DB: ${POSTGRES_DB:-rafstoran}
+    ports:
+      - "${POSTGRES_PORT:-5435}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    image: ghcr.io/amacneil/dbmate:2
+    command: ["--wait", "--no-dump-schema", "up"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-rafstoran}:${POSTGRES_PASSWORD:?Copy .env.example to .env first}@db:5432/${POSTGRES_DB:-rafstoran}?sslmode=disable
+      DBMATE_MIGRATIONS_DIR: /migrations
+    volumes:
+      - ./apps/server/migrations:/migrations:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-rafstoran}:${POSTGRES_PASSWORD:?Copy .env.example to .env first}@db:5432/${POSTGRES_DB:-rafstoran}?sslmode=disable
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8081}
+      RACE_DELAY_MS: ${RACE_DELAY_MS:-0}
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  adminer:
+    image: adminer:5
+    profiles: [tools]
+    ports:
+      - "${ADMINER_PORT:-8082}:8080"
+    depends_on:
+      - db
+
+volumes:
+  db-data:
