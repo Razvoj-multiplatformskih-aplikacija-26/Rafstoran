@@ -25,10 +25,6 @@ abstract final class ApiQuery {
   static const partySize = 'partySize';
 }
 
-abstract final class ApiHeaders {
-  static const userId = 'X-User-Id';
-}
-
 abstract final class ApiCookies {
   static const session = 'rafstoran_session';
 }

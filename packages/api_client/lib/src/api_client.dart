@@ -7,6 +7,9 @@ import 'package:domain/domain.dart';
 import 'package:http/http.dart' as http;
 import 'package:use_cases/use_cases.dart';
 
+import 'platform_client.dart';
+import 'token_store.dart';
+
 sealed class ApiAnswer {
   const ApiAnswer();
 }
@@ -23,27 +26,43 @@ final class ApiRejected extends ApiAnswer {
   final DomainError error;
 }
 
+final class ApiRefused extends ApiAnswer {
+  const ApiRefused(this.problem);
+
+  final ProblemDto problem;
+}
+
 final class ApiClient {
   ApiClient({
     required this.baseUri,
-    required this.userId,
+    TokenStore? tokens,
     http.Client? httpClient,
+    this.keepsSessionInCookie = platformKeepsSessionInCookie,
     this.timeout = const Duration(seconds: 10),
-  }) : _http = httpClient ?? http.Client();
+  }) : tokens = tokens ?? MemoryTokenStore(),
+       _http = httpClient ?? platformHttpClient();
 
   final Uri baseUri;
-  final UserId userId;
+  final TokenStore tokens;
+  final bool keepsSessionInCookie;
   final Duration timeout;
   final http.Client _http;
+  final _expirations = StreamController<void>.broadcast();
+
+  Stream<void> get expirations => _expirations.stream;
 
   Future<ApiAnswer> get(String path, {Map<String, String>? query}) => _send('GET', path, query: query);
 
   Future<ApiAnswer> post(String path, {Map<String, Object?>? body}) => _send('POST', path, body: body);
 
+  Future<ApiAnswer> delete(String path) => _send('DELETE', path);
+
   Future<ApiAnswer> _send(String method, String path, {Map<String, String>? query, Map<String, Object?>? body}) async {
     final request = http.Request(method, baseUri.replace(path: path, queryParameters: query))
-      ..headers[ApiHeaders.userId] = userId.value
       ..headers['Accept'] = 'application/json';
+    if (!keepsSessionInCookie) {
+      if (await tokens.read() case final token?) request.headers['Authorization'] = 'Bearer $token';
+    }
     if (body != null) {
       request
         ..headers['Content-Type'] = 'application/json'
@@ -65,8 +84,15 @@ final class ApiClient {
     final json = readJson(() => response.body.isEmpty ? null : jsonDecode(utf8.decode(response.bodyBytes)));
     if (status >= 200 && status < 300) return ApiAccepted(json);
     if (status >= 400 && status < 500 && json is Map<String, Object?>) {
-      final error = readJson(() => ProblemDto.fromJson(json).toDomainError());
-      if (error != null) return ApiRejected(error);
+      final problem = readJson(() => ProblemDto.fromJson(json));
+      if (problem.code == ErrorCodes.sessionExpired) {
+        _expirations.add(null);
+        throw const RepositoryException('Session expired', failure: RepositoryFailure.sessionExpired);
+      }
+      return switch (problem.toDomainError()) {
+        final error? => ApiRejected(error),
+        null => ApiRefused(problem),
+      };
     }
     throw RepositoryException('Server answered $status', failure: RepositoryFailure.serverError);
   }
@@ -88,11 +114,19 @@ T accepted<T>(ApiAnswer answer, T Function(Object? json) read) => switch (answer
     'Unexpected rejection $error',
     failure: RepositoryFailure.serverError,
   ),
+  ApiRefused(:final problem) => throw RepositoryException(
+    'Refused: ${problem.code}',
+    failure: RepositoryFailure.serverError,
+  ),
 };
 
 Result<T> resultOf<T>(ApiAnswer answer, T Function(Object? json) read) => switch (answer) {
   ApiAccepted(:final json) => Success(readJson(() => read(json))),
   ApiRejected(:final error) => Failure(error),
+  ApiRefused(:final problem) => throw RepositoryException(
+    'Refused: ${problem.code}',
+    failure: RepositoryFailure.serverError,
+  ),
 };
 
 Map<String, Object?> object(Object? json) => switch (json) {

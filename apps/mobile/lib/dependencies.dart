@@ -17,7 +17,7 @@ final class AppDependencies {
        cancelReservation = CancelReservation(reservations: reservations, clock: clock);
 
   factory AppDependencies.server({required Uri baseUri, Clock clock = const SystemClock()}) {
-    final api = ApiClient(baseUri: baseUri, userId: guest.id);
+    final api = ApiClient(baseUri: baseUri);
     return AppDependencies(
       clock: clock,
       user: guest,

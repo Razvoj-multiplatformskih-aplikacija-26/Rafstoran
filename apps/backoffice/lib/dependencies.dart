@@ -21,7 +21,7 @@ final class BackofficeDependencies {
        cancelReservation = CancelReservation(reservations: reservations, clock: clock);
 
   factory BackofficeDependencies.server({required Uri baseUri, Clock clock = const SystemClock()}) {
-    final api = ApiClient(baseUri: baseUri, userId: staffWaiter.id);
+    final api = ApiClient(baseUri: baseUri);
     return BackofficeDependencies(
       clock: clock,
       staff: staffWaiter,

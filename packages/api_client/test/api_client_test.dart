@@ -14,20 +14,27 @@ ReservationRequest lastTableFor(String guest) => ReservationRequest(
   partySize: PartySize.parse(10).valueOrNull!,
 );
 
-HttpReservationRepository reservationsOver(MockClient server) => HttpReservationRepository(
-  ApiClient(baseUri: Uri.parse('http://localhost:8080'), userId: const UserId('u-ana'), httpClient: server),
+HttpReservationRepository reservationsOver(MockClient server, {TokenStore? tokens}) => HttpReservationRepository(
+  ApiClient(
+    baseUri: Uri.parse('http://localhost:8080'),
+    tokens: tokens,
+    httpClient: server,
+    keepsSessionInCookie: false,
+  ),
 );
 
 void main() {
   test('the server taking the last table first reaches the client as NoTableAvailable', () async {
+    final tokens = MemoryTokenStore();
+    await tokens.write('token-of-ana');
     final server = MockClient((request) async {
       expect(request.url.path, ApiPaths.reservations);
-      expect(request.headers[ApiHeaders.userId], 'u-ana');
+      expect(request.headers['Authorization'], 'Bearer token-of-ana');
       final problem = const ProblemDto(status: 409, code: ErrorCodes.noTableAvailable, title: 'No table available');
       return http.Response(jsonEncode(problem.toJson()), 409, headers: {'content-type': ProblemDto.mediaType});
     });
 
-    final result = await reservationsOver(server).create(lastTableFor('u-ana'));
+    final result = await reservationsOver(server, tokens: tokens).create(lastTableFor('u-ana'));
 
     expect(result, const Failure<Reservation>(NoTableAvailable()));
   });
