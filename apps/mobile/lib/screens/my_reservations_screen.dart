@@ -29,7 +29,16 @@ class MyReservationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final bloc = context.read<MyReservationsBloc>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Moje rezervacije')),
+      appBar: AppBar(
+        title: const Text('Moje rezervacije'),
+        actions: [
+          IconButton(
+            tooltip: 'Odjavi se',
+            icon: const Icon(Icons.logout),
+            onPressed: () => context.read<SessionBloc>().add(const SessionLogOutRequested()),
+          ),
+        ],
+      ),
       body: BlocConsumer<MyReservationsBloc, MyReservationsState>(
         listenWhen: (previous, current) => current is MyReservationsLoaded && current.notice != null,
         listener: (context, state) => _showNotice(context, (state as MyReservationsLoaded).notice!),

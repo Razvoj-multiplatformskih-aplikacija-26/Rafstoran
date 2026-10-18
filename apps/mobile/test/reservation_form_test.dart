@@ -3,6 +3,7 @@ import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/dependencies.dart';
 import 'package:mobile/screens/reservation_form_screen.dart';
 
 import 'support.dart';
@@ -19,7 +20,7 @@ void main() {
         BlocProvider(
           create: (_) => ReservationFormBloc(
             createReservation: dependencies.createReservation,
-            user: dependencies.user,
+            user: AppDependencies.guest,
             slot: availability.slot,
             partySize: partySize,
           ),

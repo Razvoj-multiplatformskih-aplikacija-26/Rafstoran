@@ -3,6 +3,7 @@ import 'package:domain/domain.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:session_storage/session_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
@@ -16,5 +17,9 @@ Future<void> main() async {
   initializeDomainTimeZones();
   await initializeDateFormatting(serbianLatin);
   if (kDebugMode) Bloc.observer = ConsoleBlocObserver(debugPrint);
-  runApp(RafstoranApp(dependencies: AppDependencies.server(baseUri: serverAddress())));
+  runApp(
+    RafstoranApp(
+      dependencies: AppDependencies.server(baseUri: serverAddress(), tokens: const SecureTokenStore()),
+    ),
+  );
 }

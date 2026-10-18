@@ -21,6 +21,8 @@ dependencies:
     sdk: flutter
   go_router: 18.0.2
   intl: 0.20.3
+  session_storage:
+    path: ../../packages/session_storage
   ui:
     path: ../../packages/ui
   use_cases:
