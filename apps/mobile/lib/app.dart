@@ -135,6 +135,7 @@ Widget _material({Widget? home, GoRouter? router}) {
     locale: RafstoranApp.locale,
     supportedLocales: const [RafstoranApp.locale],
     localizationsDelegates: delegates,
-    home: home,
+    onGenerateInitialRoutes: (_) => [MaterialPageRoute<void>(builder: (_) => home!)],
+    onGenerateRoute: (_) => MaterialPageRoute<void>(builder: (_) => home!),
   );
 }
