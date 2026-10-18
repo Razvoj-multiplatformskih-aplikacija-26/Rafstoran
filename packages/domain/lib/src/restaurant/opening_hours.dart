@@ -70,3 +70,5 @@ DateTime restaurantDay(DateTime instant) {
   final local = restaurantTime(instant);
   return DateTime(local.year, local.month, local.day);
 }
+
+DateTime addDays(DateTime day, int days) => DateTime(day.year, day.month, day.day + days);

@@ -43,7 +43,7 @@ List<Reservation> seedReservations(DateTime now) {
     String? note,
     ReservationStatus status = const Pending(),
   }) {
-    final day = today.add(Duration(days: dayOffset));
+    final day = addDays(today, dayOffset);
     final start = fakeOpeningHours.localToUtc(day.year, day.month, day.day, LocalTime(hour, minute));
     return Reservation(
       id: ReservationId(id),

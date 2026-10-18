@@ -209,7 +209,7 @@ class _DateChips extends StatelessWidget {
         itemCount: daysAhead,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final date = today.add(Duration(days: index));
+          final date = addDays(today, index);
           return ChoiceChip(
             label: Text(_label(index, date)),
             selected: date == selected,

@@ -58,7 +58,7 @@ List<Reservation> staffSeedReservations(DateTime now) {
     String? note,
     String status = 'pending',
   }) {
-    final day = today.add(Duration(days: dayOffset));
+    final day = addDays(today, dayOffset);
     final start = staffOpeningHours.localToUtc(day.year, day.month, day.day, LocalTime(hour, minute));
     final id = 's-${counter++}';
     final guestId = guestIds[counter % guestIds.length];

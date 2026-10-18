@@ -176,13 +176,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         label: 'Naredni dan',
         detail: 'N',
         icon: Icons.chevron_right,
-        run: () => _goTo(widget.day.add(const Duration(days: 1))),
+        run: () => _goTo(addDays(widget.day, 1)),
       ),
       PaletteCommand(
         label: 'Prethodni dan',
         detail: 'P',
         icon: Icons.chevron_left,
-        run: () => _goTo(widget.day.subtract(const Duration(days: 1))),
+        run: () => _goTo(addDays(widget.day, -1)),
       ),
       PaletteCommand(
         label: 'Prečice',
@@ -245,10 +245,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               return null;
             },
           ),
-          PreviousDayIntent: CallbackAction<PreviousDayIntent>(
-            onInvoke: (_) => _goTo(widget.day.subtract(const Duration(days: 1))),
-          ),
-          NextDayIntent: CallbackAction<NextDayIntent>(onInvoke: (_) => _goTo(widget.day.add(const Duration(days: 1)))),
+          PreviousDayIntent: CallbackAction<PreviousDayIntent>(onInvoke: (_) => _goTo(addDays(widget.day, -1))),
+          NextDayIntent: CallbackAction<NextDayIntent>(onInvoke: (_) => _goTo(addDays(widget.day, 1))),
           TodayIntent: CallbackAction<TodayIntent>(onInvoke: (_) => _goTo(bloc.today)),
           ShowShortcutsIntent: CallbackAction<ShowShortcutsIntent>(onInvoke: (_) => showShortcutsOverview(context)),
           CommandPaletteIntent: CallbackAction<CommandPaletteIntent>(
@@ -279,7 +277,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               actions: [
                 IconButton(
                   tooltip: 'Prethodni dan (P)',
-                  onPressed: () => _goTo(widget.day.subtract(const Duration(days: 1))),
+                  onPressed: () => _goTo(addDays(widget.day, -1)),
                   icon: const Icon(Icons.chevron_left),
                 ),
                 TextButton.icon(
@@ -289,7 +287,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ),
                 IconButton(
                   tooltip: 'Naredni dan (N)',
-                  onPressed: () => _goTo(widget.day.add(const Duration(days: 1))),
+                  onPressed: () => _goTo(addDays(widget.day, 1)),
                   icon: const Icon(Icons.chevron_right),
                 ),
                 if (!compact) ...[
