@@ -4,6 +4,7 @@ export 'src/text/failures.dart';
 export 'src/text/serbian.dart';
 export 'src/theme.dart';
 export 'src/widgets/illustrations.dart';
+export 'src/widgets/login_screen.dart';
 export 'src/widgets/party_size_stepper.dart';
 export 'src/widgets/rafstoran_mark.dart';
 export 'src/widgets/state_views.dart';
