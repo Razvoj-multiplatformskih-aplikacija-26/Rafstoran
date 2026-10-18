@@ -60,7 +60,7 @@ void main() {
     expect(find.byType(ScheduleGrid), findsNothing);
     expect(
       tester.getSemantics(find.bySemanticsLabel(RegExp(r'^Tamara Pavlović, .*sto S2'))),
-      containsSemantics(isSelected: true),
+      isSemantics(isSelected: true),
     );
 
     useWindow(tester, width: 1440, height: 900);
