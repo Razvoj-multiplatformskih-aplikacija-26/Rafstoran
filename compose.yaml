@@ -37,6 +37,9 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-rafstoran}:${POSTGRES_PASSWORD:?Copy .env.example to .env first}@db:5432/${POSTGRES_DB:-rafstoran}?sslmode=disable
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8081}
+      SESSION_TTL_MINUTES: ${SESSION_TTL_MINUTES:-720}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:?Copy .env.example to .env first}
+      JWT_SECRET: ${JWT_SECRET:?Copy .env.example to .env first}
     ports:
       - "${SERVER_PORT:-8080}:8080"
     depends_on:

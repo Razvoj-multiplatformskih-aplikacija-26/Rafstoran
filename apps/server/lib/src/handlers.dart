@@ -6,10 +6,10 @@ import 'package:use_cases/use_cases.dart';
 
 import 'http.dart';
 import 'postgres_restaurant.dart';
-import 'restaurant_store.dart';
+import 'sessions.dart';
 
 final class RestaurantHandlers {
-  RestaurantHandlers({required this.restaurant, required this.users, required Clock clock})
+  RestaurantHandlers({required this.restaurant, required Clock clock})
     : _getAvailableSlots = GetAvailableSlots(slots: restaurant, clock: clock),
       _getDailySchedule = GetDailySchedule(schedules: restaurant),
       _createReservation = CreateReservation(reservations: restaurant, slots: restaurant, clock: clock),
@@ -19,7 +19,6 @@ final class RestaurantHandlers {
       _recordNoShow = RecordNoShow(reservations: restaurant, clock: clock);
 
   final PostgresRestaurant restaurant;
-  final RestaurantStore users;
   final GetAvailableSlots _getAvailableSlots;
   final GetDailySchedule _getDailySchedule;
   final CreateReservation _createReservation;
@@ -31,7 +30,7 @@ final class RestaurantHandlers {
   Future<Response> openingHours(Request request) async => json(200, (await restaurant.openingHours()).toDto().toJson());
 
   Future<Response> slots(Request request) async {
-    final actor = await _actor(request);
+    final actor = currentSession[request]?.user;
     final day = dayFromJson(_query(request, ApiQuery.day));
     final partySize = PartySize.parse(int.parse(_query(request, ApiQuery.partySize)));
     if (partySize case Failure(:final error)) return problem(error);
@@ -39,22 +38,29 @@ final class RestaurantHandlers {
     return json(200, [for (final slot in slots) slot.toDto().toJson()]);
   }
 
-  Future<Response> schedule(Request request) async =>
-      json(200, (await _getDailySchedule(dayFromJson(_query(request, ApiQuery.day)))).toDto().toJson());
+  Future<Response> schedule(Request request) async {
+    if (!_actor(request).role.isStaff) return problem(const NotAllowed());
+    final schedule = await _getDailySchedule(dayFromJson(_query(request, ApiQuery.day)));
+    return json(200, schedule.toDto().toJson());
+  }
 
   Future<Response> reservationsOfGuest(Request request) async {
+    final actor = _actor(request);
     final reservations = await restaurant.reservationsOf(UserId(request.rawPathParameters[#guestId]!));
-    return json(200, [for (final reservation in reservations) reservation.toDto().toJson()]);
+    return json(200, [
+      for (final reservation in reservations)
+        if (AccessPolicy.canView(actor, reservation)) reservation.toDto().toJson(),
+    ]);
   }
 
   Future<Response> find(Request request) async {
     final reservation = await restaurant.find(ReservationId(request.rawPathParameters[#id]!));
-    return reservation == null ? problem(const NotFound()) : json(200, reservation.toDto().toJson());
+    if (reservation == null || !AccessPolicy.canView(_actor(request), reservation)) return problem(const NotFound());
+    return json(200, reservation.toDto().toJson());
   }
 
   Future<Response> create(Request request) async {
-    final actor = await _actor(request);
-    if (actor == null) return badRequest('Unknown user');
+    final actor = _actor(request);
     final body = NewReservationDto.fromJson(await readObject(request));
     final guest = switch (body.guest) {
       null => Success<ReservationGuest>(AccountGuest(actor.id)),
@@ -62,7 +68,7 @@ final class RestaurantHandlers {
     };
     if (guest case Failure(:final error)) return problem(error);
     if (guest.valueOrNull case AccountGuest(:final userId)) {
-      final account = await users.user(userId);
+      final account = await restaurant.user(userId);
       if (account == null || !AccessPolicy.canHoldReservation(account)) return problem(const NotAllowed());
     }
     final partySize = PartySize.parse(body.partySize);
@@ -94,15 +100,10 @@ final class RestaurantHandlers {
     Request request,
     Future<Result<Reservation>> Function(ReservationId id, User actor) change,
   ) async {
-    final actor = await _actor(request);
-    if (actor == null) return badRequest('Unknown user');
-    return respond(await change(ReservationId(request.rawPathParameters[#id]!), actor));
+    return respond(await change(ReservationId(request.rawPathParameters[#id]!), _actor(request)));
   }
 
-  Future<User?> _actor(Request request) async {
-    final id = request.headers[ApiHeaders.userId]?.firstOrNull;
-    return id == null ? null : users.user(UserId(id));
-  }
+  User _actor(Request request) => currentSession.get(request).user;
 
   String _query(Request request, String name) =>
       request.queryParameters.raw[name] ?? (throw FormatException('Missing query parameter $name'));

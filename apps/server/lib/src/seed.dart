@@ -1,10 +1,14 @@
 import 'package:domain/domain.dart';
 import 'package:postgres/postgres.dart';
 
+import 'passwords.dart';
 import 'restaurant_store.dart';
 
 const _guest = User(id: UserId('u-guest'), username: 'Gost', role: Role.guest);
 const _waiter = User(id: UserId('u-waiter'), username: 'Marija Kostić', role: Role.waiter);
+const _manager = User(id: UserId('u-manager'), username: 'Nenad Popović', role: Role.manager);
+
+const _logins = {'u-guest': 'guest1', 'u-ana': 'guest2', 'u-waiter': 'waiter1', 'u-manager': 'manager1'};
 
 const _otherGuests = [
   User(id: UserId('u-ana'), username: 'Ana Petrović', role: Role.guest),
@@ -72,16 +76,29 @@ const _mine = [
   (3, 14, 30, 5, null, 'confirmed'),
 ];
 
-Future<void> seedIfEmpty(Pool<void> database, {required DateTime now}) async {
+Future<void> seedIfEmpty(Pool<void> database, {required DateTime now, required String? demoPassword}) async {
   if (!await RestaurantStore(database).isEmpty()) return;
-  await database.runTx((session) => _seed(session, RestaurantStore(session), now: now));
+  if (demoPassword == null) throw StateError('DEMO_PASSWORD is not set. Copy .env.example to .env.');
+  await database.runTx((session) => _seed(session, RestaurantStore(session), now: now, demoPassword: demoPassword));
 }
 
-Future<void> _seed(Session database, RestaurantStore store, {required DateTime now}) async {
-  for (final user in [_guest, _waiter, ..._otherGuests]) {
+Future<void> _seed(
+  Session database,
+  RestaurantStore store, {
+  required DateTime now,
+  required String demoPassword,
+}) async {
+  for (final user in [_guest, _waiter, _manager, ..._otherGuests]) {
+    final login = _logins[user.id.value];
     await database.execute(
-      Sql.named('INSERT INTO users (id, name, role) VALUES (@id, @name, @role)'),
-      parameters: {'id': user.id.value, 'name': user.username, 'role': user.role.name},
+      Sql.named('INSERT INTO users (id, name, role, login, password_hash) VALUES (@id, @name, @role, @login, @hash)'),
+      parameters: {
+        'id': user.id.value,
+        'name': user.username,
+        'role': user.role.name,
+        'login': login,
+        'hash': login == null ? null : await hashPassword(demoPassword),
+      },
     );
   }
   for (final (id, label, capacity, area) in _tables) {

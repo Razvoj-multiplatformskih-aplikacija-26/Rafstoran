@@ -33,6 +33,8 @@ final class PostgresRestaurant implements ReservationRepository, SlotRepository,
   @override
   Future<Reservation?> find(ReservationId id) => _store.find(id);
 
+  Future<User?> user(UserId id) => _store.user(id);
+
   @override
   Future<Result<Reservation>> create(ReservationRequest request) async {
     final tables = await _store.tables();
