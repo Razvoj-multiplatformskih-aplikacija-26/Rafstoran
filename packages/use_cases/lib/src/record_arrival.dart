@@ -1,5 +1,6 @@
 import 'package:domain/domain.dart';
 
+import 'change_status.dart';
 import 'clock.dart';
 import 'ports/reservation_repository.dart';
 
@@ -9,12 +10,10 @@ final class RecordArrival {
   final ReservationRepository reservations;
   final Clock clock;
 
-  Future<Result<Reservation>> call({required ReservationId id, required User by}) async {
-    final reservation = await reservations.find(id);
-    if (reservation == null || !AccessPolicy.canView(by, reservation)) return const Failure(NotFound());
-    return switch (recordArrival(reservation, by: by, now: clock.now())) {
-      Failure(:final error) => Failure(error),
-      Success(:final value) => await reservations.save(value, from: reservation.status),
-    };
-  }
+  Future<Result<Reservation>> call({required ReservationId id, required User by}) => changeStatus(
+    reservations,
+    id,
+    by: by,
+    change: (reservation) => recordArrival(reservation, by: by, now: clock.now()),
+  );
 }
