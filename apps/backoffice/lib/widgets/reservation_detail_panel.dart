@@ -188,11 +188,13 @@ class _ActionButton extends StatelessWidget {
         ),
       ],
     );
-    return Semantics(
-      hint: 'Prečica $shortcut',
-      child: tonal
-          ? FilledButton.tonal(onPressed: onPressed, child: child)
-          : FilledButton(onPressed: onPressed, child: child),
+    return MergeSemantics(
+      child: Semantics(
+        hint: 'Prečica $shortcut',
+        child: tonal
+            ? FilledButton.tonal(onPressed: onPressed, child: child)
+            : FilledButton(onPressed: onPressed, child: child),
+      ),
     );
   }
 }
