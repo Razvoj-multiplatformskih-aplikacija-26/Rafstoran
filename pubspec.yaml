@@ -17,6 +17,7 @@ workspace:
   - packages/design_tokens
   - packages/api_contract
   - packages/api_mapping
+  - packages/api_client
 
 dev_dependencies:
   flutter_lints: 6.0.0
