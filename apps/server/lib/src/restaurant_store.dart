@@ -6,7 +6,7 @@ const exclusionViolation = '23P01';
 final class RestaurantStore {
   const RestaurantStore(this._database);
 
-  final Pool<void> _database;
+  final Session _database;
 
   Future<bool> isEmpty() async {
     final rows = await _database.execute('SELECT count(*) FROM users');

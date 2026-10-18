@@ -70,8 +70,12 @@ const _mine = [
   (3, 14, 30, 5, null, 'confirmed'),
 ];
 
-Future<void> seedIfEmpty(Pool<void> database, RestaurantStore store, {required DateTime now}) async {
-  if (!await store.isEmpty()) return;
+Future<void> seedIfEmpty(Pool<void> database, {required DateTime now}) async {
+  if (!await RestaurantStore(database).isEmpty()) return;
+  await database.runTx((session) => _seed(session, RestaurantStore(session), now: now));
+}
+
+Future<void> _seed(Session database, RestaurantStore store, {required DateTime now}) async {
   for (final user in [_guest, _waiter, ..._otherGuests]) {
     await database.execute(
       Sql.named('INSERT INTO users (id, name, role) VALUES (@id, @name, @role)'),
@@ -95,16 +99,17 @@ Future<void> seedIfEmpty(Pool<void> database, RestaurantStore store, {required D
   final tables = await store.tables();
   final today = restaurantDay(now);
   final seeded = <Reservation>[];
+  DateTime notAfterNow(DateTime instant) => instant.isAfter(now) ? now : instant;
 
   Future<void> seed(UserId guest, int dayOffset, int hour, int minute, int size, String? note, String kind) async {
-    final day = today.add(Duration(days: dayOffset));
+    final day = addDays(today, dayOffset);
     final start = openingHours.localToUtc(day.year, day.month, day.day, LocalTime(hour, minute));
     if (!openingHours.covers(start, TimeSlot.duration)) return;
     final slot = TimeSlot.existing(start);
     final partySize = PartySize.parse(size).valueOrNull!;
     final table = assignTable(tables: tables, reservations: seeded, slot: slot, partySize: partySize).valueOrNull;
     if (table == null) return;
-    final createdAt = start.subtract(const Duration(days: 2));
+    final createdAt = notAfterNow(start.subtract(const Duration(days: 2)));
     seeded.add(
       await store.insert(
         guestId: guest,
@@ -114,12 +119,12 @@ Future<void> seedIfEmpty(Pool<void> database, RestaurantStore store, {required D
         createdAt: createdAt,
         note: note == null ? null : ReservationNote.parse(note).valueOrNull,
         status: switch (kind) {
-          'confirmed' => Confirmed(confirmedBy: _waiter.id, at: createdAt.add(const Duration(hours: 1))),
+          'confirmed' => Confirmed(confirmedBy: _waiter.id, at: notAfterNow(createdAt.add(const Duration(hours: 1)))),
           'arrived' => Arrived(arrivedAt: start.add(const Duration(minutes: 4))),
           'cancelled' => Cancelled(
             reason: 'Promena plana.',
             cancelledBy: guest,
-            at: createdAt.add(const Duration(hours: 2)),
+            at: notAfterNow(createdAt.add(const Duration(hours: 2))),
           ),
           _ => const Pending(),
         },
