@@ -13,7 +13,10 @@ final class ServerConfig {
     databaseUrl:
         environment['DATABASE_URL'] ??
         (throw StateError('DATABASE_URL is not set. Copy .env.example to .env in the repository root.')),
-    corsOrigins: (environment['CORS_ORIGINS'] ?? 'http://localhost:8081').split(','),
+    corsOrigins: [
+      for (final origin in (environment['CORS_ORIGINS'] ?? 'http://localhost:8081').split(','))
+        if (origin.trim().isNotEmpty) origin.trim(),
+    ],
     raceDelay: Duration(milliseconds: int.parse(environment['RACE_DELAY_MS'] ?? '0')),
   );
 

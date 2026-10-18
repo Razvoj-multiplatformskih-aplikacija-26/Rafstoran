@@ -26,5 +26,6 @@ COPY --from=build /runtime/ /
 COPY --from=build /server /app/server
 WORKDIR /app
 ENV HOST=0.0.0.0
+USER 65532:65532
 EXPOSE 8080
 CMD ["/app/server"]

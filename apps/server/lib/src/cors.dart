@@ -7,16 +7,22 @@ Middleware allowOrigins(List<String> origins) =>
       final origin = request.headers.origin?.toString();
       final allowed = origin != null && origins.contains(origin);
       if (request.method == Method.options) {
-        return Response.noContent(headers: allowed ? Headers.build((headers) => _allow(headers, origin)) : null);
+        return Response.noContent(
+          headers: Headers.build((headers) => allowed ? _allow(headers, origin) : _vary(headers)),
+        );
       }
       final result = await next(request);
-      if (!allowed || result is! Response) return result;
-      return result.copyWith(headers: result.headers.transform((headers) => _allow(headers, origin)));
+      if (result is! Response) return result;
+      return result.copyWith(
+        headers: result.headers.transform((headers) => allowed ? _allow(headers, origin) : _vary(headers)),
+      );
     };
 
 void _allow(MutableHeaders headers, String origin) {
   headers['Access-Control-Allow-Origin'] = [origin];
   headers['Access-Control-Allow-Methods'] = ['GET, POST, DELETE, OPTIONS'];
   headers['Access-Control-Allow-Headers'] = ['Content-Type, ${ApiHeaders.userId}'];
-  headers['Vary'] = ['Origin'];
+  _vary(headers);
 }
+
+void _vary(MutableHeaders headers) => headers['Vary'] = ['Origin'];
