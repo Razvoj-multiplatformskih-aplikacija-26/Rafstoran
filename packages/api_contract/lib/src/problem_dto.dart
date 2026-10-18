@@ -15,6 +15,8 @@ final class ProblemDto {
 
   static const mediaType = 'application/problem+json';
 
+  static String typeOf(String code) => 'tag:raf.rs,2026:rafstoran/problem/$code';
+
   final int status;
   final String code;
   final String title;
@@ -25,7 +27,7 @@ final class ProblemDto {
   final ReservationStatusDto? to;
 
   Map<String, Object?> toJson() => {
-    'type': 'about:blank',
+    'type': typeOf(code),
     'title': title,
     'status': status,
     'code': code,
