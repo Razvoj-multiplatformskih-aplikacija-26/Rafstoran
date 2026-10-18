@@ -40,7 +40,9 @@ const staffGuests = {
 
 const staffWaiter = User(id: UserId('u-waiter'), username: 'Marija Kostić', role: Role.waiter);
 
-const staffMembers = {UserId('u-waiter'): staffWaiter};
+const staffManager = User(id: UserId('u-manager'), username: 'Nenad Popović', role: Role.manager);
+
+const staffMembers = {UserId('u-waiter'): staffWaiter, UserId('u-manager'): staffManager};
 
 const _waiter = UserId('u-waiter');
 

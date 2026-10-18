@@ -83,10 +83,10 @@ void main() {
       );
     });
 
-    test('lets staff cancel ten minutes before the start', () {
+    test('lets the manager cancel ten minutes before the start', () {
       final result = cancelReservation(
         reservationAt(start, status: confirmed),
-        by: waiter,
+        by: manager,
         now: start.subtract(const Duration(minutes: 10)),
         reason: 'gost se nije javio',
       );

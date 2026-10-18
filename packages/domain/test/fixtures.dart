@@ -15,6 +15,7 @@ DateTime belgrade(int year, int month, int day, int hour, [int minute = 0]) =>
 
 const guest = User(id: UserId('u-guest'), username: 'guest1', role: Role.guest);
 const waiter = User(id: UserId('u-waiter'), username: 'waiter1', role: Role.waiter);
+const manager = User(id: UserId('u-manager'), username: 'manager1', role: Role.manager);
 
 Reservation reservationAt(
   DateTime start, {

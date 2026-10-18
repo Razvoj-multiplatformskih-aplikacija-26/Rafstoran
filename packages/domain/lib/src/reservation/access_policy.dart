@@ -1,12 +1,16 @@
 import '../user.dart';
 import 'reservation.dart';
 import 'reservation_guest.dart';
+import 'transitions.dart';
 
 abstract final class AccessPolicy {
   static bool canView(User user, Reservation reservation) => user.role.isStaff || reservation.guest.isAccount(user.id);
 
-  static bool canCancel(User user, Reservation reservation) =>
-      user.role.isStaff || reservation.guest.isAccount(user.id);
+  static bool canCancel(User user, Reservation reservation, {required DateTime now}) => switch (user.role) {
+    Role.manager => true,
+    Role.waiter => !now.toUtc().isAfter(cancellationDeadline(reservation)),
+    Role.guest => reservation.guest.isAccount(user.id),
+  };
 
   static bool canCreateReservation(User user, {required ReservationGuest guest}) =>
       user.role.isStaff ? !guest.isAccount(user.id) : guest.isAccount(user.id);

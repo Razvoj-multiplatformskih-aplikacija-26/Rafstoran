@@ -126,6 +126,6 @@ void main() {
     expect(find.text('Petra Ilić'), findsWidgets);
     expect(find.text('0645550202'), findsOneWidget);
     expect(find.text('Potvrđena'), findsOneWidget);
-    expect(find.text('Marija Kostić'), findsOneWidget);
+    expect(find.text('Nenad Popović'), findsOneWidget);
   });
 }

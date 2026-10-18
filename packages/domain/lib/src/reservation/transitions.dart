@@ -45,7 +45,7 @@ Result<Reservation> cancelReservation(
   required DateTime now,
   String reason = '',
 }) {
-  if (!AccessPolicy.canCancel(by, reservation)) return const Failure(NotAllowed());
+  if (!AccessPolicy.canCancel(by, reservation, now: now)) return const Failure(NotAllowed());
   final next = Cancelled(reason: reason, cancelledBy: by.id, at: now.toUtc());
   if (!canTransition(reservation.status, next)) {
     return Failure(InvalidTransition(from: reservation.status, to: next));
