@@ -30,11 +30,17 @@ int? jsonOptionalInt(Map<String, Object?> json, String key) => switch (json[key]
   _ => throw FormatException('Expected "$key" to be an integer', json),
 };
 
-DateTime jsonInstant(Map<String, Object?> json, String key) => DateTime.parse(jsonString(json, key)).toUtc();
+DateTime jsonInstant(Map<String, Object?> json, String key) => _instant(jsonString(json, key), key);
 
 DateTime? jsonOptionalInstant(Map<String, Object?> json, String key) => switch (jsonOptionalString(json, key)) {
   null => null,
-  final String value => DateTime.parse(value).toUtc(),
+  final String value => _instant(value, key),
 };
+
+DateTime _instant(String value, String key) {
+  final parsed = DateTime.parse(value);
+  if (!parsed.isUtc) throw FormatException('Expected "$key" with a time zone, like 2026-10-29T17:00:00Z', value);
+  return parsed;
+}
 
 String instantToJson(DateTime instant) => instant.toUtc().toIso8601String();

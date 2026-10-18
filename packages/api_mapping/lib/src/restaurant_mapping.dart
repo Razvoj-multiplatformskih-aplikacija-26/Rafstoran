@@ -49,7 +49,9 @@ String dayToJson(DateTime localDay) =>
 
 DateTime dayFromJson(String value) {
   final parsed = DateTime.parse(value);
-  return DateTime(parsed.year, parsed.month, parsed.day);
+  final day = DateTime(parsed.year, parsed.month, parsed.day);
+  if (dayToJson(day) != value) throw FormatException('Expected a day like 2026-10-29', value);
+  return day;
 }
 
 LocalTime _localTime(String value) => switch (value.split(':')) {
