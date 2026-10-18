@@ -1,3 +1,4 @@
+import 'package:api_client/api_client.dart';
 import 'package:domain/domain.dart';
 import 'package:use_cases/use_cases.dart';
 
@@ -18,6 +19,17 @@ final class BackofficeDependencies {
        recordArrival = RecordArrival(reservations: reservations, clock: clock),
        recordNoShow = RecordNoShow(reservations: reservations, clock: clock),
        cancelReservation = CancelReservation(reservations: reservations, clock: clock);
+
+  factory BackofficeDependencies.server({required Uri baseUri, Clock clock = const SystemClock()}) {
+    final api = ApiClient(baseUri: baseUri, userId: staffWaiter.id);
+    return BackofficeDependencies(
+      clock: clock,
+      staff: staffWaiter,
+      schedules: HttpScheduleRepository(api),
+      reservations: HttpReservationRepository(api),
+      slots: HttpSlotRepository(api),
+    );
+  }
 
   factory BackofficeDependencies.fake({Clock clock = const SystemClock(), Duration? latency}) {
     final schedule = latency == null ? FakeSchedule(clock: clock) : FakeSchedule(clock: clock, latency: latency);

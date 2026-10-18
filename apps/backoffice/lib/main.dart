@@ -16,5 +16,11 @@ Future<void> main() async {
   initializeDomainTimeZones();
   await initializeDateFormatting(serbianLatin);
   if (kDebugMode) Bloc.observer = ConsoleBlocObserver(debugPrint);
-  runApp(BackofficeApp(dependencies: BackofficeDependencies.fake()));
+  runApp(
+    BackofficeApp(
+      dependencies: BackofficeDependencies.server(
+        baseUri: Uri.parse(const String.fromEnvironment('SERVER_URL', defaultValue: 'http://localhost:8080')),
+      ),
+    ),
+  );
 }
