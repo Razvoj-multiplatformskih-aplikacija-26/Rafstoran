@@ -1,3 +1,4 @@
+import 'package:api_client/api_client.dart';
 import 'package:domain/domain.dart';
 import 'package:use_cases/use_cases.dart';
 
@@ -15,16 +16,28 @@ final class AppDependencies {
        getMyReservations = GetMyReservations(reservations: reservations),
        cancelReservation = CancelReservation(reservations: reservations, clock: clock);
 
+  factory AppDependencies.server({required Uri baseUri, Clock clock = const SystemClock()}) {
+    final api = ApiClient(baseUri: baseUri, userId: guest.id);
+    return AppDependencies(
+      clock: clock,
+      user: guest,
+      reservations: HttpReservationRepository(api),
+      slots: HttpSlotRepository(api),
+    );
+  }
+
   factory AppDependencies.fake({Clock clock = const SystemClock(), Duration? latency}) {
     final restaurant = latency == null ? FakeRestaurant(clock: clock) : FakeRestaurant(clock: clock, latency: latency);
     return AppDependencies(
       clock: clock,
-      user: const User(id: UserId('u-guest'), username: 'gost', role: Role.guest),
+      user: guest,
       reservations: restaurant,
       slots: restaurant,
       fakeRestaurant: restaurant,
     );
   }
+
+  static const guest = User(id: UserId('u-guest'), username: 'Gost', role: Role.guest);
 
   final Clock clock;
   final User user;

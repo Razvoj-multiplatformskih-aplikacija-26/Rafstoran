@@ -7,6 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
 import 'dependencies.dart';
+import 'server_address.dart';
 
 import 'package:ui/ui.dart';
 
@@ -15,5 +16,5 @@ Future<void> main() async {
   initializeDomainTimeZones();
   await initializeDateFormatting(serbianLatin);
   if (kDebugMode) Bloc.observer = ConsoleBlocObserver(debugPrint);
-  runApp(RafstoranApp(dependencies: AppDependencies.fake()));
+  runApp(RafstoranApp(dependencies: AppDependencies.server(baseUri: serverAddress())));
 }
