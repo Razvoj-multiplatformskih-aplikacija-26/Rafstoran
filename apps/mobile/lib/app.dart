@@ -55,9 +55,11 @@ class _RafstoranAppState extends State<RafstoranApp> {
         child: BlocBuilder<SessionBloc, SessionState>(
           builder: (context, session) => switch (session) {
             SessionUnknown() => _material(
+              key: const ValueKey('session-unknown'),
               home: const Scaffold(body: Center(child: CircularProgressIndicator())),
             ),
             SignedOut(:final reason) => _material(
+              key: const ValueKey('signed-out'),
               home: LoginScreen(
                 title: 'Rafstoran',
                 logIn: dependencies.logIn,
@@ -122,7 +124,7 @@ class _SignedInAppState extends State<_SignedInApp> {
   }
 }
 
-Widget _material({Widget? home, GoRouter? router}) {
+Widget _material({Key? key, Widget? home, GoRouter? router}) {
   const delegates = [
     GlobalMaterialLocalizations.delegate,
     GlobalWidgetsLocalizations.delegate,
@@ -130,6 +132,7 @@ Widget _material({Widget? home, GoRouter? router}) {
   ];
   if (router != null) {
     return MaterialApp.router(
+      key: key,
       title: 'Rafstoran',
       theme: RafTheme.light(),
       darkTheme: RafTheme.dark(),
@@ -141,6 +144,7 @@ Widget _material({Widget? home, GoRouter? router}) {
     );
   }
   return MaterialApp(
+    key: key,
     title: 'Rafstoran',
     theme: RafTheme.light(),
     darkTheme: RafTheme.dark(),

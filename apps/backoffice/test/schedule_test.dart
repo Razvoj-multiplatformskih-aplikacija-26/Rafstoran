@@ -1,9 +1,12 @@
+import 'package:backoffice/data/fake_schedule.dart';
+import 'package:backoffice/dependencies.dart';
 import 'package:backoffice/widgets/reservation_detail_panel.dart';
 import 'package:backoffice/widgets/schedule_grid.dart';
 import 'package:backoffice/widgets/schedule_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:use_cases/use_cases.dart';
 
 import 'support.dart';
 
@@ -131,5 +134,16 @@ void main() {
       find.descendant(of: find.byType(ReservationDetailPanel), matching: find.text('Nenad Popović')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('a waiter sees the cancel action disabled and why', (tester) async {
+    useWindow(tester, width: 600, height: 900);
+    final asWaiter = BackofficeDependencies.fake(clock: FixedClock(fridayAfternoon), staff: staffWaiter);
+    await pumpBackoffice(tester, dependencies: asWaiter);
+
+    await tester.tap(visible(tester, find.text('Na čekanju')));
+    await settle(tester);
+
+    expect(find.text('Rezervaciju otkazuje menadžer.'), findsOneWidget);
   });
 }
