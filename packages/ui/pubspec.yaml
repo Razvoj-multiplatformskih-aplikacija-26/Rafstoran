@@ -15,6 +15,8 @@ dependencies:
   flutter:
     sdk: flutter
   intl: 0.20.3
+  use_cases:
+    path: ../use_cases
 
 dev_dependencies:
   flutter_lints: 6.0.0

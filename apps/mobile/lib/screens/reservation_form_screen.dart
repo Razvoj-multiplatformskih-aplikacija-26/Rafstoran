@@ -42,10 +42,10 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
         context.go('/reservations');
       case ReservationFormRejected(:final error):
         _showMessage(context, error.message);
-      case ReservationFormFailed():
+      case ReservationFormFailed(:final cause):
         _showMessage(
           context,
-          'Rezervacija nije poslata.',
+          'Rezervacija nije poslata. ${failureMessage(cause)}',
           action: SnackBarAction(label: 'Pokušaj ponovo', onPressed: () => bloc.add(const ReservationFormSubmitted())),
         );
       case ReservationFormEditing() || ReservationFormSubmitting():

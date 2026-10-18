@@ -94,9 +94,9 @@ class SlotsScreen extends StatelessWidget {
                         padding: EdgeInsets.fromLTRB(16, 0, 16, 24),
                         sliver: SliverToBoxAdapter(child: SlotSkeleton()),
                       ),
-                      AvailableSlotsFailure() => SliverFillRemaining(
+                      AvailableSlotsFailure(:final cause) => SliverFillRemaining(
                         hasScrollBody: false,
-                        child: FailureView(onRetry: () => bloc.add(const AvailableSlotsRefreshed())),
+                        child: FailureView(cause: cause, onRetry: () => bloc.add(const AvailableSlotsRefreshed())),
                       ),
                       AvailableSlotsEmpty() => const SliverFillRemaining(
                         hasScrollBody: false,

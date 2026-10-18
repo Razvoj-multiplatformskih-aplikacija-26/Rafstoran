@@ -19,7 +19,7 @@ class MyReservationsScreen extends StatelessWidget {
     final message = switch (notice) {
       ReservationCancelled() => 'Rezervacija je otkazana.',
       CancellationRejected(:final error) => error.message,
-      CancellationFailed() => 'Otkazivanje nije uspelo.',
+      CancellationFailed(:final cause) => 'Otkazivanje nije uspelo. ${failureMessage(cause)}',
     };
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     context.read<MyReservationsBloc>().add(const MyReservationsNoticeAcknowledged());
@@ -44,9 +44,9 @@ class MyReservationsScreen extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     children: const [ReservationListSkeleton()],
                   ),
-                  MyReservationsFailure() => ListView(
+                  MyReservationsFailure(:final cause) => ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    children: [FailureView(onRetry: () => bloc.add(const MyReservationsRequested()))],
+                    children: [FailureView(cause: cause, onRetry: () => bloc.add(const MyReservationsRequested()))],
                   ),
                   MyReservationsEmpty() => ListView(
                     physics: const AlwaysScrollableScrollPhysics(),

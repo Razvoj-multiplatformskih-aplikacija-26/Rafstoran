@@ -132,8 +132,9 @@ class _GuestStep extends StatelessWidget {
               height: 160,
               child: switch (slots) {
                 AvailableSlotsLoading() => const Center(child: CircularProgressIndicator()),
-                AvailableSlotsFailure() => Center(
+                AvailableSlotsFailure(:final cause) => Center(
                   child: FailureView(
+                    cause: cause,
                     onRetry: () => context.read<AvailableSlotsBloc>().add(const AvailableSlotsRefreshed()),
                   ),
                 ),
@@ -206,7 +207,7 @@ class _ConfirmStepState extends State<_ConfirmStep> {
         };
         final problem = switch (state) {
           ReservationFormRejected(:final error) => error.message,
-          ReservationFormFailed() => 'Rezervacija nije sačuvana.',
+          ReservationFormFailed(:final cause) => 'Rezervacija nije sačuvana. ${failureMessage(cause)}',
           _ => null,
         };
         return AlertDialog(

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../text/failures.dart';
 import 'illustrations.dart';
 
 class Skeleton extends StatefulWidget {
@@ -164,10 +165,10 @@ class EmptyView extends StatelessWidget {
 }
 
 class FailureView extends StatelessWidget {
-  const FailureView({super.key, required this.onRetry, this.title = 'Podaci trenutno nisu dostupni.'});
+  const FailureView({super.key, required this.onRetry, this.cause});
 
   final VoidCallback onRetry;
-  final String title;
+  final Object? cause;
 
   @override
   Widget build(BuildContext context) {
@@ -181,7 +182,7 @@ class FailureView extends StatelessWidget {
           const SizedBox(height: 20),
           Semantics(
             liveRegion: true,
-            child: Text(title, style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
+            child: Text(failureMessage(cause), style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
           ),
           const SizedBox(height: 16),
           FilledButton.tonalIcon(

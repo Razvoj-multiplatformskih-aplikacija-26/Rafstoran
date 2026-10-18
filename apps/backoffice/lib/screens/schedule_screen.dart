@@ -236,7 +236,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         Pending() => 'Rezervacija je ažurirana.',
       },
       ScheduleActionRejected(:final error) => error.message,
-      ScheduleActionFailed() => 'Izmena nije sačuvana.',
+      ScheduleActionFailed(:final cause) => 'Izmena nije sačuvana. ${failureMessage(cause)}',
     };
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     _bloc.add(const DailyScheduleNoticeAcknowledged());
@@ -390,8 +390,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 listener: (context, state) => _showNotice(context, (state as DailyScheduleLoaded).notice!),
                 builder: (context, state) => switch (state) {
                   DailyScheduleLoading() => const Center(child: CircularProgressIndicator()),
-                  DailyScheduleFailure() => Center(
-                    child: FailureView(onRetry: () => bloc.add(DailyScheduleRequested(widget.day))),
+                  DailyScheduleFailure(:final cause) => Center(
+                    child: FailureView(cause: cause, onRetry: () => bloc.add(DailyScheduleRequested(widget.day))),
                   ),
                   DailyScheduleLoaded() => _LoadedBody(
                     state: state,
