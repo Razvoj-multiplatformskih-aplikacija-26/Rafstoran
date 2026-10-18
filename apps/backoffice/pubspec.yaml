@@ -25,6 +25,8 @@ dependencies:
     sdk: flutter
   go_router: 18.0.2
   intl: 0.20.3
+  session_storage:
+    path: ../../packages/session_storage
   two_dimensional_scrollables: 0.5.5
   ui:
     path: ../../packages/ui

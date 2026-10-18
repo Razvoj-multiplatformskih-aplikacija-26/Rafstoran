@@ -21,6 +21,57 @@ class BackofficeApp extends StatefulWidget {
 }
 
 class _BackofficeAppState extends State<BackofficeApp> {
+  late final SessionBloc _session = SessionBloc(
+    restoreSession: widget.dependencies.restoreSession,
+    logOut: widget.dependencies.logOut,
+    expirations: widget.dependencies.sessionExpirations,
+  )..add(const SessionRestoreRequested());
+
+  @override
+  void dispose() {
+    _session.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dependencies = widget.dependencies;
+    return RepositoryProvider.value(
+      value: dependencies,
+      child: BlocProvider.value(
+        value: _session,
+        child: BlocBuilder<SessionBloc, SessionState>(
+          builder: (context, session) => switch (session) {
+            SessionUnknown() => _material(
+              home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+            ),
+            SignedOut(:final reason) => _material(
+              home: LoginScreen(
+                title: 'Rafstoran Backoffice',
+                logIn: dependencies.logIn,
+                reason: reason,
+                onSignedIn: (user) => _session.add(SessionStarted(user)),
+              ),
+            ),
+            SignedIn(:final user) => _SignedInApp(key: ValueKey(user.id), staff: user, dependencies: dependencies),
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _SignedInApp extends StatefulWidget {
+  const _SignedInApp({super.key, required this.staff, required this.dependencies});
+
+  final User staff;
+  final BackofficeDependencies dependencies;
+
+  @override
+  State<_SignedInApp> createState() => _SignedInAppState();
+}
+
+class _SignedInAppState extends State<_SignedInApp> {
   late final GoRouter _router = createRouter();
 
   @override
@@ -33,7 +84,7 @@ class _BackofficeAppState extends State<BackofficeApp> {
   Widget build(BuildContext context) {
     final dependencies = widget.dependencies;
     return RepositoryProvider.value(
-      value: dependencies,
+      value: widget.staff,
       child: BlocProvider(
         create: (_) => DailyScheduleBloc(
           getDailySchedule: dependencies.getDailySchedule,
@@ -42,23 +93,41 @@ class _BackofficeAppState extends State<BackofficeApp> {
           recordNoShow: dependencies.recordNoShow,
           cancelReservation: dependencies.cancelReservation,
           clock: dependencies.clock,
-          staff: dependencies.staff,
+          staff: widget.staff,
         )..add(DailyScheduleRequested(restaurantDay(dependencies.clock.now()))),
-        child: MaterialApp.router(
-          title: 'Rafstoran Backoffice',
-          theme: RafTheme.light(),
-          darkTheme: RafTheme.dark(),
-          themeMode: ThemeMode.system,
-          locale: BackofficeApp.locale,
-          supportedLocales: const [BackofficeApp.locale],
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          routerConfig: _router,
-        ),
+        child: _material(router: _router),
       ),
     );
   }
+}
+
+Widget _material({Widget? home, GoRouter? router}) {
+  const delegates = [
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+  ];
+  if (router != null) {
+    return MaterialApp.router(
+      title: 'Rafstoran Backoffice',
+      theme: RafTheme.light(),
+      darkTheme: RafTheme.dark(),
+      themeMode: ThemeMode.system,
+      locale: BackofficeApp.locale,
+      supportedLocales: const [BackofficeApp.locale],
+      localizationsDelegates: delegates,
+      routerConfig: router,
+    );
+  }
+  return MaterialApp(
+    title: 'Rafstoran Backoffice',
+    theme: RafTheme.light(),
+    darkTheme: RafTheme.dark(),
+    themeMode: ThemeMode.system,
+    locale: BackofficeApp.locale,
+    supportedLocales: const [BackofficeApp.locale],
+    localizationsDelegates: delegates,
+    onGenerateInitialRoutes: (_) => [MaterialPageRoute<void>(builder: (_) => home!)],
+    onGenerateRoute: (_) => MaterialPageRoute<void>(builder: (_) => home!),
+  );
 }

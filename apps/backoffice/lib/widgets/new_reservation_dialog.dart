@@ -22,14 +22,14 @@ Future<Reservation?> showNewReservationDialog(
           create: (_) => AvailableSlotsBloc(
             getAvailableSlots: dependencies.getAvailableSlots,
             clock: dependencies.clock,
-            user: dependencies.staff,
+            user: context.read<User>(),
           )..add(AvailableSlotsDaySelected(day)),
         ),
         BlocProvider(create: (_) => NewReservationBloc(accounts: accounts)),
       ],
       child: _NewReservationDialog(
         day: day,
-        staff: dependencies.staff,
+        staff: context.read<User>(),
         createReservation: dependencies.createReservation,
       ),
     ),
