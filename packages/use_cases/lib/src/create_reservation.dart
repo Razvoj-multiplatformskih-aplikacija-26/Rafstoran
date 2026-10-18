@@ -13,18 +13,26 @@ final class CreateReservation {
   final Clock clock;
 
   Future<Result<Reservation>> call({
-    required User guest,
+    required User by,
+    UserId? forGuest,
     required DateTime start,
     required PartySize partySize,
     ReservationNote? note,
   }) async {
-    if (!AccessPolicy.canCreateReservation(guest)) return const Failure(NotAllowed());
+    final guestId = forGuest ?? by.id;
+    if (!AccessPolicy.canCreateReservation(by, forGuest: guestId)) return const Failure(NotAllowed());
     final openingHours = await slots.openingHours();
     final slot = TimeSlot.parse(start, now: clock.now(), openingHours: openingHours);
     return switch (slot) {
       Failure(:final error) => Failure(error),
       Success(:final value) => reservations.create(
-        ReservationRequest(guestId: guest.id, slot: value, partySize: partySize, note: note),
+        ReservationRequest(
+          guestId: guestId,
+          slot: value,
+          partySize: partySize,
+          note: note,
+          enteredBy: guestId == by.id ? null : by.id,
+        ),
       ),
     };
   }

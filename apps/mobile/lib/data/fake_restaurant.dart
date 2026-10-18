@@ -83,6 +83,7 @@ final class FakeRestaurant implements ReservationRepository, SlotRepository {
       note: request.note,
       tableId: table.id,
       createdAt: clock.now(),
+      enteredBy: request.enteredBy,
     );
     _reservations.add(reservation);
     return reservation;

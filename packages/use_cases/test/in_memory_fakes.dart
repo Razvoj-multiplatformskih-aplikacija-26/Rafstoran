@@ -66,6 +66,7 @@ final class InMemoryRestaurant implements ReservationRepository, SlotRepository 
       note: request.note,
       tableId: table.id,
       createdAt: clock.now(),
+      enteredBy: request.enteredBy,
     );
     reservations.add(reservation);
     return reservation;

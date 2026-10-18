@@ -218,6 +218,7 @@ final class FakeSchedule implements ScheduleRepository, ReservationRepository, S
       note: request.note,
       tableId: table.id,
       createdAt: clock.now(),
+      enteredBy: request.enteredBy,
     );
     _reservations.add(reservation);
     return reservation;

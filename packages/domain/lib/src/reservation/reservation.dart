@@ -17,6 +17,7 @@ final class Reservation {
     this.note,
     this.tableId,
     this.status = const Pending(),
+    this.enteredBy,
   });
 
   final ReservationId id;
@@ -27,6 +28,7 @@ final class Reservation {
   final DiningTableId? tableId;
   final ReservationStatus status;
   final DateTime createdAt;
+  final UserId? enteredBy;
 
   bool get isActive => status.isActive;
 
@@ -40,6 +42,7 @@ final class Reservation {
       note: note,
       tableId: tableId ?? this.tableId,
       status: status ?? this.status,
+      enteredBy: enteredBy,
     );
   }
 
@@ -53,10 +56,11 @@ final class Reservation {
       other.note == note &&
       other.tableId == tableId &&
       other.status == status &&
-      other.createdAt == createdAt;
+      other.createdAt == createdAt &&
+      other.enteredBy == enteredBy;
 
   @override
-  int get hashCode => Object.hash(id, guestId, slot, partySize, note, tableId, status, createdAt);
+  int get hashCode => Object.hash(id, guestId, slot, partySize, note, tableId, status, createdAt, enteredBy);
 
   @override
   String toString() => 'Reservation($id, ${slot.start.toIso8601String()}, $partySize, $status)';

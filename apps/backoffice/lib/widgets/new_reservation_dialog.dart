@@ -20,16 +20,27 @@ Future<Reservation?> showNewReservationDialog(
       create: (_) =>
           AvailableSlotsBloc(getAvailableSlots: dependencies.getAvailableSlots, clock: dependencies.clock)
             ..add(AvailableSlotsDaySelected(day)),
-      child: _NewReservationDialog(day: day, guests: guests, createReservation: dependencies.createReservation),
+      child: _NewReservationDialog(
+        day: day,
+        guests: guests,
+        staff: dependencies.staff,
+        createReservation: dependencies.createReservation,
+      ),
     ),
   );
 }
 
 class _NewReservationDialog extends StatefulWidget {
-  const _NewReservationDialog({required this.day, required this.guests, required this.createReservation});
+  const _NewReservationDialog({
+    required this.day,
+    required this.guests,
+    required this.staff,
+    required this.createReservation,
+  });
 
   final DateTime day;
   final List<User> guests;
+  final User staff;
   final CreateReservation createReservation;
 
   @override
@@ -50,7 +61,8 @@ class _NewReservationDialogState extends State<_NewReservationDialog> {
       return BlocProvider(
         create: (_) => ReservationFormBloc(
           createReservation: widget.createReservation,
-          guest: guest,
+          user: widget.staff,
+          forGuest: guest.id,
           slot: slot,
           partySize: slots.partySize,
         ),

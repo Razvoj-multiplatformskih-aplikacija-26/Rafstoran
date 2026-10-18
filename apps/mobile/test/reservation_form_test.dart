@@ -19,7 +19,7 @@ void main() {
         BlocProvider(
           create: (_) => ReservationFormBloc(
             createReservation: dependencies.createReservation,
-            guest: dependencies.user,
+            user: dependencies.user,
             slot: availability.slot,
             partySize: partySize,
           ),

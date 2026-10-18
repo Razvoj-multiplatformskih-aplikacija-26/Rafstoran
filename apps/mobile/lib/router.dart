@@ -44,7 +44,7 @@ GoRouter createRouter() {
                           return BlocProvider(
                             create: (_) => ReservationFormBloc(
                               createReservation: dependencies.createReservation,
-                              guest: dependencies.user,
+                              user: dependencies.user,
                               slot: selection.availability.slot,
                               partySize: selection.partySize,
                             ),

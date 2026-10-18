@@ -21,7 +21,7 @@ void main() {
   });
 
   test('CreateReservation stores a valid request with the smallest free table', () async {
-    final result = await create(guest: guest, start: tonight, partySize: two);
+    final result = await create(by: guest, start: tonight, partySize: two);
     final reservation = result.valueOrNull!;
     expect(reservation.tableId, const DiningTableId('t-2'));
     expect(reservation.status, const Pending());
@@ -29,7 +29,7 @@ void main() {
   });
 
   test('CancelReservation decides the two-hour window with the injected clock, not the wall clock', () async {
-    final created = (await create(guest: guest, start: tonight, partySize: two)).valueOrNull!;
+    final created = (await create(by: guest, start: tonight, partySize: two)).valueOrNull!;
     final oneMinuteLate = FixedClock(tonight.subtract(const Duration(hours: 1, minutes: 59)));
     final exactlyTwoHours = FixedClock(tonight.subtract(const Duration(hours: 2)));
 
@@ -42,7 +42,7 @@ void main() {
   });
 
   test('two daily schedules built from the same data are equal', () async {
-    await create(guest: guest, start: tonight, partySize: two);
+    await create(by: guest, start: tonight, partySize: two);
     DailySchedule build() => DailySchedule(
       day: DateTime(2026, 10, 9),
       openingHours: standardOpeningHours(),
@@ -51,5 +51,21 @@ void main() {
     );
     expect(build(), build());
     expect(build().hashCode, build().hashCode);
+  });
+
+  test('staff create a reservation for a guest and are recorded as the ones who entered it', () async {
+    const waiter = User(id: UserId('u-waiter'), username: 'Konobar', role: Role.waiter);
+    final reservation = (await create(by: waiter, forGuest: guest.id, start: tonight, partySize: two)).valueOrNull!;
+    expect(reservation.guestId, guest.id);
+    expect(reservation.enteredBy, waiter.id);
+  });
+
+  test('a guest creates reservations only for themselves', () async {
+    final own = (await create(by: guest, start: tonight, partySize: two)).valueOrNull!;
+    expect(own.enteredBy, isNull);
+    expect(
+      await create(by: guest, forGuest: const UserId('u-other'), start: tonight, partySize: two),
+      const Failure<Reservation>(NotAllowed()),
+    );
   });
 }
