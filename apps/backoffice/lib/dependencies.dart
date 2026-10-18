@@ -22,7 +22,7 @@ final class BackofficeDependencies {
     final schedule = latency == null ? FakeSchedule(clock: clock) : FakeSchedule(clock: clock, latency: latency);
     return BackofficeDependencies(
       clock: clock,
-      staff: const User(id: UserId('u-waiter'), username: 'Konobar', role: Role.waiter),
+      staff: staffWaiter,
       schedules: schedule,
       reservations: schedule,
       slots: schedule,

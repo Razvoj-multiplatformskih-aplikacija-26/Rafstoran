@@ -106,7 +106,7 @@ void main() {
     expect(find.text('Bez glutena.'), findsOneWidget);
   });
 
-  testWidgets('staff enter a reservation with the slot and form blocs of the guest app', (tester) async {
+  testWidgets('staff enter a reservation for a guest with the slot and form blocs of the guest app', (tester) async {
     useWindow(tester, width: 1440, height: 900);
     await pumpBackoffice(tester);
 
@@ -126,5 +126,6 @@ void main() {
 
     expect(find.text('Rezervacija je sačuvana.'), findsOneWidget);
     expect(find.text('Rezervisano telefonom.'), findsOneWidget);
+    expect(find.text('Konobar'), findsOneWidget);
   });
 }

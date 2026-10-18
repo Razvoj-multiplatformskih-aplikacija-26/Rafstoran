@@ -38,6 +38,10 @@ const staffGuests = {
   UserId('u-luka'): User(id: UserId('u-luka'), username: 'Luka Marković', role: Role.guest),
 };
 
+const staffWaiter = User(id: UserId('u-waiter'), username: 'Konobar', role: Role.waiter);
+
+const staffMembers = {UserId('u-waiter'): staffWaiter};
+
 const _waiter = UserId('u-waiter');
 
 List<Reservation> staffSeedReservations(DateTime now) {
@@ -155,6 +159,7 @@ final class FakeSchedule implements ScheduleRepository, ReservationRepository, S
       tables: staffTables,
       reservations: _reservations.where((r) => restaurantDay(r.slot.start) == localDay).toList(),
       guests: staffGuests,
+      staff: staffMembers,
     );
   }
 

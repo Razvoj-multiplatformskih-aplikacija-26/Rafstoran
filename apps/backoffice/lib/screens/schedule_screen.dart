@@ -406,6 +406,7 @@ class _LoadedBody extends StatelessWidget {
         child: ReservationDetailPanel(
           reservation: selected,
           guest: schedule.guestOf(selected),
+          enteredBy: schedule.enteredByOf(selected),
           table: schedule.tables.where((t) => t.id == selected.tableId).firstOrNull,
           onConfirm: () {
             Navigator.pop(sheetContext);
@@ -478,6 +479,7 @@ class _LoadedBody extends StatelessWidget {
                       child: ReservationDetailPanel(
                         reservation: selected,
                         guest: schedule.guestOf(selected),
+                        enteredBy: schedule.enteredByOf(selected),
                         table: schedule.tables.where((t) => t.id == selected.tableId).firstOrNull,
                         busy: state.isBusy,
                         onConfirm: () => onConfirm(selected),

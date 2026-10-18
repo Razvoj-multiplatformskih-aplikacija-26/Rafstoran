@@ -8,6 +8,7 @@ final class DailySchedule {
     required this.tables,
     required this.reservations,
     this.guests = const {},
+    this.staff = const {},
   });
 
   final DateTime day;
@@ -15,6 +16,7 @@ final class DailySchedule {
   final List<DiningTable> tables;
   final List<Reservation> reservations;
   final Map<UserId, User> guests;
+  final Map<UserId, User> staff;
 
   DayHours? get hours => openingHours.forWeekday(day.weekday);
 
@@ -38,6 +40,8 @@ final class DailySchedule {
 
   User? guestOf(Reservation reservation) => guests[reservation.guestId];
 
+  User? enteredByOf(Reservation reservation) => staff[reservation.enteredBy];
+
   @override
   bool operator ==(Object other) =>
       other is DailySchedule &&
@@ -45,7 +49,8 @@ final class DailySchedule {
       other.hours == hours &&
       const ListEquality<DiningTable>().equals(other.tables, tables) &&
       const ListEquality<Reservation>().equals(other.reservations, reservations) &&
-      const MapEquality<UserId, User>().equals(other.guests, guests);
+      const MapEquality<UserId, User>().equals(other.guests, guests) &&
+      const MapEquality<UserId, User>().equals(other.staff, staff);
 
   @override
   int get hashCode => Object.hash(day, hours, Object.hashAll(tables), Object.hashAll(reservations), guests.length);

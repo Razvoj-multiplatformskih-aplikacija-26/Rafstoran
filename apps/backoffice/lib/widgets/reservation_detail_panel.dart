@@ -8,6 +8,7 @@ class ReservationDetailPanel extends StatelessWidget {
     required this.reservation,
     required this.guest,
     required this.table,
+    this.enteredBy,
     required this.onConfirm,
     required this.onArrival,
     required this.onCancel,
@@ -19,6 +20,7 @@ class ReservationDetailPanel extends StatelessWidget {
   final bool busy;
   final User? guest;
   final DiningTable? table;
+  final User? enteredBy;
   final VoidCallback onConfirm;
   final VoidCallback onArrival;
   final VoidCallback onCancel;
@@ -82,6 +84,7 @@ class ReservationDetailPanel extends StatelessWidget {
                       value: '${formatTime(reservation.slot.start)} do ${formatTime(reservation.slot.end)}',
                     ),
                     if (reservation.note case final note?) _Field(label: 'Napomena', value: note.text),
+                    if (reservation.enteredBy != null) _Field(label: 'Uneo', value: enteredBy?.username ?? 'Osoblje'),
                   ],
                 ),
               ),
