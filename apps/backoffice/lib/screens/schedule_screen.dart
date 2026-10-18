@@ -319,26 +319,30 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 const SizedBox(width: 8),
               ],
             ),
-            body: BlocConsumer<DailyScheduleBloc, DailyScheduleState>(
-              listenWhen: (previous, current) => current is DailyScheduleLoaded && current.notice != null,
-              listener: (context, state) => _showNotice(context, (state as DailyScheduleLoaded).notice!),
-              builder: (context, state) => switch (state) {
-                DailyScheduleLoading() => const Center(child: CircularProgressIndicator()),
-                DailyScheduleFailure() => Center(
-                  child: FailureView(onRetry: () => bloc.add(DailyScheduleRequested(widget.day))),
-                ),
-                DailyScheduleLoaded() => _LoadedBody(
-                  state: state,
-                  gridFocus: _gridFocus,
-                  cursor: _cursor,
-                  onCursorChanged: (cursor) => _cursor = cursor,
-                  onSelect: _select,
-                  onContextMenu: _showContextMenu,
-                  onConfirm: _confirm,
-                  onArrival: _recordArrival,
-                  onCancel: _cancel,
-                ),
-              },
+            body: BlocListener<DailyScheduleBloc, DailyScheduleState>(
+              listenWhen: (previous, current) => previous is! DailyScheduleLoaded && current is DailyScheduleLoaded,
+              listener: (context, state) => _syncWithRoute(),
+              child: BlocConsumer<DailyScheduleBloc, DailyScheduleState>(
+                listenWhen: (previous, current) => current is DailyScheduleLoaded && current.notice != null,
+                listener: (context, state) => _showNotice(context, (state as DailyScheduleLoaded).notice!),
+                builder: (context, state) => switch (state) {
+                  DailyScheduleLoading() => const Center(child: CircularProgressIndicator()),
+                  DailyScheduleFailure() => Center(
+                    child: FailureView(onRetry: () => bloc.add(DailyScheduleRequested(widget.day))),
+                  ),
+                  DailyScheduleLoaded() => _LoadedBody(
+                    state: state,
+                    gridFocus: _gridFocus,
+                    cursor: _cursor,
+                    onCursorChanged: (cursor) => _cursor = cursor,
+                    onSelect: _select,
+                    onContextMenu: _showContextMenu,
+                    onConfirm: _confirm,
+                    onArrival: _recordArrival,
+                    onCancel: _cancel,
+                  ),
+                },
+              ),
             ),
           ),
         ),
