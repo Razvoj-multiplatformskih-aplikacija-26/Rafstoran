@@ -60,8 +60,8 @@ void main() {
     await admin.close();
     database = Pool<void>.withUrl(Uri.parse(databaseUrl).replace(path: '/rafstoran_test').toString());
     await migrateWithDbmate(Uri.parse(databaseUrl));
+    await seedIfEmpty(database, now: DateTime.now());
     final store = RestaurantStore(database);
-    await seedIfEmpty(database, store, now: DateTime.now());
     const clock = SystemClock();
     final restaurant = PostgresRestaurant(store, clock: clock, raceDelay: const Duration(milliseconds: 300));
     final handlers = RestaurantHandlers(restaurant: restaurant, users: store, clock: clock);
@@ -82,6 +82,17 @@ void main() {
 
     expect(answers.map((answer) => answer.statusCode), unorderedEquals([201, 409]));
     expect(codeOf(answers.firstWhere((answer) => answer.statusCode == 409)), ErrorCodes.noTableAvailable);
+  });
+
+  test('guests booking one slot at the same moment each get a table while tables are free', () async {
+    final start = await slotWithOneTableForTen();
+    final guests = ['u-ana', 'u-marko', 'u-jelena', 'u-nikola'];
+
+    final answers = await Future.wait([for (final guest in guests) reserve(guest, start, partySize: 2)]);
+
+    expect(answers.map((answer) => answer.statusCode), everyElement(201));
+    final tables = {for (final answer in answers) (jsonDecode(answer.body) as Map<String, Object?>)['tableId']};
+    expect(tables, hasLength(guests.length));
   });
 
   test('a note of 201 characters sent around the app is refused by the same rule as in the app', () async {

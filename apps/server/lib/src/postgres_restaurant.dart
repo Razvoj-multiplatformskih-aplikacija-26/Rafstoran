@@ -36,30 +36,33 @@ final class PostgresRestaurant implements ReservationRepository, SlotRepository,
 
   @override
   Future<Result<Reservation>> create(ReservationRequest request) async {
-    final table = assignTable(
-      tables: await _store.tables(),
-      reservations: await _store.reservationsOverlapping(request.slot),
-      slot: request.slot,
-      partySize: request.partySize,
-    );
-    if (table case Failure(:final error)) return Failure(error);
-    await Future<void>.delayed(raceDelay);
-    try {
-      return Success(
-        await _store.insert(
-          guestId: request.guestId,
-          slot: request.slot,
-          partySize: request.partySize,
-          note: request.note,
-          tableId: table.valueOrNull!.id,
-          createdAt: clock.now(),
-          enteredBy: request.enteredBy,
-        ),
+    final tables = await _store.tables();
+    for (var attempt = 0; attempt <= tables.length; attempt++) {
+      final table = assignTable(
+        tables: tables,
+        reservations: await _store.reservationsOverlapping(request.slot),
+        slot: request.slot,
+        partySize: request.partySize,
       );
-    } on ServerException catch (error) {
-      if (error.code == exclusionViolation) return const Failure(NoTableAvailable());
-      rethrow;
+      if (table case Failure(:final error)) return Failure(error);
+      await Future<void>.delayed(raceDelay);
+      try {
+        return Success(
+          await _store.insert(
+            guestId: request.guestId,
+            slot: request.slot,
+            partySize: request.partySize,
+            note: request.note,
+            tableId: table.valueOrNull!.id,
+            createdAt: clock.now(),
+            enteredBy: request.enteredBy,
+          ),
+        );
+      } on ServerException catch (error) {
+        if (error.code != exclusionViolation) rethrow;
+      }
     }
+    return const Failure(NoTableAvailable());
   }
 
   @override
