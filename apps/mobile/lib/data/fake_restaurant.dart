@@ -94,10 +94,10 @@ final class FakeRestaurant implements ReservationRepository, SlotRepository {
   }
 
   @override
-  Future<Reservation> save(Reservation reservation) async {
+  Future<Result<Reservation>> save(Reservation reservation, {required ReservationStatus from}) async {
     await _roundTrip();
     final index = _reservations.indexWhere((r) => r.id == reservation.id);
     _reservations[index] = reservation;
-    return reservation;
+    return Success(reservation);
   }
 }

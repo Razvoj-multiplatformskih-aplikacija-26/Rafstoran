@@ -15,7 +15,7 @@ final class CancelReservation {
     final result = cancelReservation(reservation, by: by, now: clock.now(), reason: reason);
     return switch (result) {
       Failure(:final error) => Failure(error),
-      Success(:final value) => Success(await reservations.save(value)),
+      Success(:final value) => await reservations.save(value, from: reservation.status),
     };
   }
 }

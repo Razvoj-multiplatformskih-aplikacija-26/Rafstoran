@@ -77,10 +77,10 @@ final class InMemoryRestaurant implements ReservationRepository, SlotRepository 
   }
 
   @override
-  Future<Reservation> save(Reservation reservation) async {
+  Future<Result<Reservation>> save(Reservation reservation, {required ReservationStatus from}) async {
     final index = reservations.indexWhere((r) => r.id == reservation.id);
     reservations[index] = reservation;
-    return reservation;
+    return Success(reservation);
   }
 }
 

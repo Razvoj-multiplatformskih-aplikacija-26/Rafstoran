@@ -14,7 +14,7 @@ final class ConfirmReservation {
     if (reservation == null) return const Failure(NotFound());
     return switch (confirmReservation(reservation, by: by, now: clock.now())) {
       Failure(:final error) => Failure(error),
-      Success(:final value) => Success(await reservations.save(value)),
+      Success(:final value) => await reservations.save(value, from: reservation.status),
     };
   }
 }

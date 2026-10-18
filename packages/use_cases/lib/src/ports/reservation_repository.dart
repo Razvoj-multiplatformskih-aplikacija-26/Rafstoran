@@ -9,5 +9,5 @@ abstract interface class ReservationRepository {
 
   Future<Result<Reservation>> create(ReservationRequest request);
 
-  Future<Reservation> save(Reservation reservation);
+  Future<Result<Reservation>> save(Reservation reservation, {required ReservationStatus from});
 }
