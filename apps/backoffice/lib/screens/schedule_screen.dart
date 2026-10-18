@@ -11,6 +11,7 @@ import '../data/fake_schedule.dart';
 import '../dependencies.dart';
 import '../shortcuts.dart';
 import '../widgets/command_palette.dart';
+import '../widgets/new_reservation_dialog.dart';
 import '../widgets/reservation_detail_panel.dart';
 import '../widgets/schedule_grid.dart';
 import '../widgets/schedule_list.dart';
@@ -134,6 +135,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
+  Future<void> _newReservation() async {
+    final state = _bloc.state;
+    if (state is! DailyScheduleLoaded) return;
+    final guests = state.schedule.guests.values.toList()..sort((a, b) => a.username.compareTo(b.username));
+    final created = await showNewReservationDialog(context, day: widget.day, guests: guests);
+    if (!mounted || created == null) return;
+    _select(created);
+    _bloc.add(const DailyScheduleRefreshed());
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rezervacija je sačuvana.')));
+  }
+
   void _simulateOutage(FakeSchedule fake) {
     fake.failingRequests = 1;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sledeći zahtev neće uspeti.')));
@@ -158,6 +170,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         PaletteCommand(label: 'Zabeleži dolazak gosta', detail: 'A', icon: Icons.login, run: _recordArrival),
       if (_canCancel)
         PaletteCommand(label: 'Otkaži izabranu rezervaciju', detail: 'X', icon: Icons.close, run: _cancel),
+      PaletteCommand(label: 'Nova rezervacija', icon: Icons.add, run: _newReservation),
       PaletteCommand(label: 'Danas', detail: 'T', icon: Icons.today_outlined, run: () => _goTo(_bloc.today)),
       PaletteCommand(
         label: 'Naredni dan',
@@ -282,6 +295,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 if (!compact) ...[
                   TextButton(onPressed: () => _goTo(bloc.today), child: const Text('Danas')),
                   const SizedBox(width: 8),
+                  FilledButton.tonalIcon(
+                    onPressed: _newReservation,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Nova rezervacija'),
+                  ),
+                  const SizedBox(width: 8),
                   IconButton(
                     tooltip: 'Paleta komandi ($commandKeyLabel K)',
                     onPressed: () => showCommandPalette(context, _paletteCommands()),
@@ -303,6 +322,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     tooltip: 'Više',
                     onSelected: (value) => switch (value) {
                       'today' => _goTo(bloc.today),
+                      'new' => _newReservation(),
                       'palette' => showCommandPalette(context, _paletteCommands()),
                       'shortcuts' => showShortcutsOverview(context),
                       'outage' => fake == null ? null : _simulateOutage(fake),
@@ -310,6 +330,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     },
                     itemBuilder: (context) => [
                       const PopupMenuItem(value: 'today', child: Text('Danas')),
+                      const PopupMenuItem(value: 'new', child: Text('Nova rezervacija')),
                       const PopupMenuItem(value: 'palette', child: Text('Paleta komandi')),
                       const PopupMenuItem(value: 'shortcuts', child: Text('Prečice')),
                       if (kDebugMode && fake != null)

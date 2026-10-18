@@ -9,8 +9,11 @@ final class BackofficeDependencies {
     required this.staff,
     required ScheduleRepository schedules,
     required ReservationRepository reservations,
+    required SlotRepository slots,
     this.fakeSchedule,
   }) : getDailySchedule = GetDailySchedule(schedules: schedules),
+       getAvailableSlots = GetAvailableSlots(slots: slots),
+       createReservation = CreateReservation(reservations: reservations, slots: slots, clock: clock),
        confirmReservation = ConfirmReservation(reservations: reservations, clock: clock),
        recordArrival = RecordArrival(reservations: reservations, clock: clock),
        cancelReservation = CancelReservation(reservations: reservations, clock: clock);
@@ -22,6 +25,7 @@ final class BackofficeDependencies {
       staff: const User(id: UserId('u-waiter'), username: 'Konobar', role: Role.waiter),
       schedules: schedule,
       reservations: schedule,
+      slots: schedule,
       fakeSchedule: schedule,
     );
   }
@@ -29,6 +33,8 @@ final class BackofficeDependencies {
   final Clock clock;
   final User staff;
   final GetDailySchedule getDailySchedule;
+  final GetAvailableSlots getAvailableSlots;
+  final CreateReservation createReservation;
   final ConfirmReservation confirmReservation;
   final RecordArrival recordArrival;
   final CancelReservation cancelReservation;

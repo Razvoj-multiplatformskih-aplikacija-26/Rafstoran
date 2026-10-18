@@ -1,4 +1,5 @@
 import 'package:domain/domain.dart';
+import 'package:domain/domain.dart' as domain;
 import 'package:use_cases/use_cases.dart';
 
 final staffOpeningHours = OpeningHours({
@@ -127,7 +128,7 @@ List<Reservation> staffSeedReservations(DateTime now) {
   ];
 }
 
-final class FakeSchedule implements ScheduleRepository, ReservationRepository {
+final class FakeSchedule implements ScheduleRepository, ReservationRepository, SlotRepository {
   FakeSchedule({required this.clock, this.latency = const Duration(milliseconds: 400)})
     : _reservations = staffSeedReservations(clock.now());
 
@@ -135,6 +136,7 @@ final class FakeSchedule implements ScheduleRepository, ReservationRepository {
   final Duration latency;
   final List<Reservation> _reservations;
   int failingRequests = 0;
+  int _nextId = 1;
 
   Future<void> _roundTrip() async {
     await Future<void>.delayed(latency);
@@ -177,8 +179,47 @@ final class FakeSchedule implements ScheduleRepository, ReservationRepository {
   }
 
   @override
+  Future<OpeningHours> openingHours() async => staffOpeningHours;
+
+  @override
+  Future<List<SlotAvailability>> availableSlots({required DateTime localDay, required PartySize partySize}) async {
+    await _roundTrip();
+    return domain.availableSlots(
+      openingHours: staffOpeningHours,
+      tables: staffTables,
+      reservations: _reservations,
+      localDay: localDay,
+      partySize: partySize,
+      now: clock.now(),
+    );
+  }
+
+  @override
   Future<Result<Reservation>> create(ReservationRequest request) async {
     await _roundTrip();
-    return const Failure(NotAllowed());
+    final table = assignTable(
+      tables: staffTables,
+      reservations: _reservations,
+      slot: request.slot,
+      partySize: request.partySize,
+    );
+    return switch (table) {
+      Failure(:final error) => Failure(error),
+      Success(:final value) => Success(_store(request, value)),
+    };
+  }
+
+  Reservation _store(ReservationRequest request, DiningTable table) {
+    final reservation = Reservation(
+      id: ReservationId('staff-${_nextId++}'),
+      guestId: request.guestId,
+      slot: request.slot,
+      partySize: request.partySize,
+      note: request.note,
+      tableId: table.id,
+      createdAt: clock.now(),
+    );
+    _reservations.add(reservation);
+    return reservation;
   }
 }
