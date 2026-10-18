@@ -53,6 +53,8 @@ final class RestaurantHandlers {
     final actor = await _actor(request);
     if (actor == null) return badRequest('Unknown user');
     final body = NewReservationDto.fromJson(await readObject(request));
+    final guest = await users.user(UserId(body.guestId));
+    if (guest == null || !AccessPolicy.canHoldReservation(guest)) return problem(const NotAllowed());
     final partySize = PartySize.parse(body.partySize);
     if (partySize case Failure(:final error)) return problem(error);
     final note = ReservationNote.parse(body.note ?? '');
