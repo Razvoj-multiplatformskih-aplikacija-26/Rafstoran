@@ -33,6 +33,18 @@ class _RafstoranAppState extends State<RafstoranApp> {
     super.dispose();
   }
 
+  String? _notice;
+
+  Future<void> _signedIn(User user) async {
+    if (user.role != Role.guest) {
+      await widget.dependencies.logOut();
+      setState(() => _notice = 'Aplikacija je za goste. Osoblje koristi backoffice.');
+      return;
+    }
+    _notice = null;
+    _session.add(SessionStarted(user));
+  }
+
   @override
   Widget build(BuildContext context) {
     final dependencies = widget.dependencies;
@@ -50,7 +62,8 @@ class _RafstoranAppState extends State<RafstoranApp> {
                 title: 'Rafstoran',
                 logIn: dependencies.logIn,
                 reason: reason,
-                onSignedIn: (user) => _session.add(SessionStarted(user)),
+                notice: _notice,
+                onSignedIn: _signedIn,
               ),
             ),
             SignedIn(:final user) => _SignedInApp(key: ValueKey(user.id), user: user, dependencies: dependencies),

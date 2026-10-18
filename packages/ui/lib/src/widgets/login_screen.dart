@@ -8,12 +8,20 @@ import '../text/failures.dart';
 import 'rafstoran_mark.dart';
 
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key, required this.title, required this.logIn, required this.onSignedIn, this.reason});
+  const LoginScreen({
+    super.key,
+    required this.title,
+    required this.logIn,
+    required this.onSignedIn,
+    this.reason,
+    this.notice,
+  });
 
   final String title;
   final LogIn logIn;
   final void Function(User user) onSignedIn;
   final SignOutReason? reason;
+  final String? notice;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +32,7 @@ class LoginScreen extends StatelessWidget {
           if (state case LoginSucceeded(:final user)) onSignedIn(user);
         },
         child: Scaffold(
-          body: _LoginForm(title: title, reason: reason),
+          body: _LoginForm(title: title, reason: reason, notice: notice),
         ),
       ),
     );
@@ -32,10 +40,11 @@ class LoginScreen extends StatelessWidget {
 }
 
 class _LoginForm extends StatefulWidget {
-  const _LoginForm({required this.title, this.reason});
+  const _LoginForm({required this.title, this.reason, this.notice});
 
   final String title;
   final SignOutReason? reason;
+  final String? notice;
 
   @override
   State<_LoginForm> createState() => _LoginFormState();
@@ -63,6 +72,7 @@ class _LoginFormState extends State<_LoginForm> {
     final message = switch (state) {
       LoginRejected() => 'Pogrešno korisničko ime ili lozinka.',
       LoginFailed(:final cause) => failureMessage(cause),
+      _ when widget.notice != null => widget.notice,
       _ => switch (widget.reason) {
         SignOutReason.expired => sessionExpiredMessage,
         SignOutReason.unreachable => serverUnreachableMessage,
