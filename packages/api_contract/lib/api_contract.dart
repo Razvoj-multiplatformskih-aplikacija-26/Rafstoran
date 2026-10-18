@@ -3,3 +3,4 @@ export 'src/paths.dart';
 export 'src/problem_dto.dart';
 export 'src/reservation_dto.dart';
 export 'src/restaurant_dto.dart';
+export 'src/session_dto.dart';

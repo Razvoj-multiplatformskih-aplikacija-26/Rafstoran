@@ -4,6 +4,8 @@ abstract final class ApiPaths {
   static const slots = '/api/v1/slots';
   static const reservations = '/api/v1/reservations';
   static const schedule = '/api/v1/schedule';
+  static const sessions = '/api/v1/sessions';
+  static const currentSession = '/api/v1/sessions/current';
 
   static String reservation(String id) => '$reservations/$id';
 
@@ -25,4 +27,8 @@ abstract final class ApiQuery {
 
 abstract final class ApiHeaders {
   static const userId = 'X-User-Id';
+}
+
+abstract final class ApiCookies {
+  static const session = 'rafstoran_session';
 }

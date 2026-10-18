@@ -20,4 +20,6 @@ abstract final class ErrorCodes {
   static const unsupportedMediaType = 'unsupported-media-type';
   static const payloadTooLarge = 'payload-too-large';
   static const serverError = 'server-error';
+  static const invalidCredentials = 'invalid-credentials';
+  static const sessionExpired = 'session-expired';
 }
