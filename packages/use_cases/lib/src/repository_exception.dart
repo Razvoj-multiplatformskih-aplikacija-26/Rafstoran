@@ -1,4 +1,4 @@
-enum RepositoryFailure { unavailable, unreachable, serverError }
+enum RepositoryFailure { unavailable, unreachable, serverError, sessionExpired }
 
 final class RepositoryException implements Exception {
   const RepositoryException(this.message, {this.failure = RepositoryFailure.unavailable, this.cause});
