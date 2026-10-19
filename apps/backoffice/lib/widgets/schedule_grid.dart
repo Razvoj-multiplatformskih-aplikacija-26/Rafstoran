@@ -55,6 +55,29 @@ class _ScheduleGridState extends State<ScheduleGrid> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCursorColumn());
   }
 
+  @override
+  void didUpdateWidget(ScheduleGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedId != null && widget.selectedId != oldWidget.selectedId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _revealSelected());
+    }
+  }
+
+  void _revealSelected() {
+    final selected = widget.schedule.reservations.where((r) => r.id == widget.selectedId).firstOrNull;
+    if (selected == null) return;
+    final first = _halfHours.indexWhere((h) => !h.isBefore(selected.slot.start));
+    final end = _halfHours.indexWhere((h) => !h.isBefore(selected.slot.end));
+    if (first < 0) return;
+    final last = end < 0 ? _halfHours.length : end;
+    _reveal(
+      _horizontal,
+      start: first * _slotColumnWidth,
+      extent: (last - first) * _slotColumnWidth,
+      pinned: _tableColumnWidth,
+    );
+  }
+
   void _scrollToCursorColumn() {
     if (!_horizontal.hasClients) return;
     final position = _horizontal.position;
