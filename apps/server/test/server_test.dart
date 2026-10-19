@@ -88,7 +88,7 @@ void main() {
     await admin.close();
     database = Pool<void>.withUrl(Uri.parse(config.databaseUrl).replace(path: '/rafstoran_test').toString());
     await migrateWithDbmate(Uri.parse(config.databaseUrl));
-    await seedIfEmpty(database, now: DateTime.now(), demoPassword: demoPassword);
+    await seedDemoData(database, now: DateTime.now(), demoPassword: demoPassword);
     final hash = await hashPassword(demoPassword);
     for (var n = 1; n <= testGuests; n++) {
       await database.execute(
@@ -185,18 +185,27 @@ void main() {
     },
   );
 
-  test('a token whose time has passed gets 401 and a code the clients understand', () async {
-    final expired = JWT({
-      'name': 'Gost',
-      'role': 'guest',
-      'exp': DateTime.now().subtract(const Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000,
-    }, subject: 'u-guest').sign(SecretKey(jwtSecret), noIssueAt: true);
+  test(
+    'a token whose time has passed or that names another algorithm gets 401 and a code the clients understand',
+    () async {
+      final expired = JWT({
+        'name': 'Gost',
+        'role': 'guest',
+        'exp': DateTime.now().subtract(const Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000,
+      }, subject: 'u-guest').sign(SecretKey(jwtSecret), noIssueAt: true);
+      final otherAlgorithm = JWT(
+        const {'name': 'Gost', 'role': 'guest'},
+        subject: 'u-guest',
+      ).sign(SecretKey(jwtSecret), algorithm: JWTAlgorithm.HS512, expiresIn: const Duration(hours: 1));
+      final mine = base.replace(path: ApiPaths.reservationsOfGuest('u-guest'));
 
-    final answer = await http.get(base.replace(path: ApiPaths.reservationsOfGuest('u-guest')), headers: as(expired));
+      final answers = [await http.get(mine, headers: as(expired)), await http.get(mine, headers: as(otherAlgorithm))];
 
-    expect(answer.statusCode, 401);
-    expect(codeOf(answer), ErrorCodes.sessionExpired);
-  });
+      expect(answers.map((answer) => answer.statusCode), [401, 401]);
+      expect(answers.map(codeOf), everyElement(ErrorCodes.sessionExpired));
+      expect(answers.first.headers['www-authenticate'], 'Bearer');
+    },
+  );
 
   test('two staff changing the same reservation at once: one wins, the other is told it already changed', () async {
     final created = await reserve(await logIn('test9'), 'u-test-9', await slotWithOneTableForTen(), partySize: 2);

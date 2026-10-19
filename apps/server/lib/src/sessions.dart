@@ -18,22 +18,27 @@ final class Session {
 
 final currentSession = ContextProperty<Session>('session');
 
+const _signInRequired = ProblemDto(status: 401, code: ErrorCodes.signInRequired, title: 'Sign in required');
 const _sessionExpired = ProblemDto(status: 401, code: ErrorCodes.sessionExpired, title: 'Session expired');
 const _invalidCredentials = ProblemDto(status: 401, code: ErrorCodes.invalidCredentials, title: 'Invalid credentials');
+const _algorithm = JWTAlgorithm.HS256;
 
 final class SessionHandlers {
-  SessionHandlers({required this.accounts, required String secret, required this.ttl}) : _key = SecretKey(secret);
+  SessionHandlers({required this.accounts, required String secret, required this.ttl, this.secureCookie = false})
+    : _key = SecretKey(secret),
+      _noAccountHash = hashPassword('no such account');
 
   final AccountStore accounts;
   final Duration ttl;
+  final bool secureCookie;
   final SecretKey _key;
+  final Future<String> _noAccountHash;
 
   Handler signedIn(Handler handler) => (Request request) async {
-    final session = switch (_tokenOf(request)) {
-      final token? => _verify(token),
-      null => null,
-    };
-    if (session == null) return problemResponse(_sessionExpired);
+    final token = _tokenOf(request);
+    if (token == null) return _unauthorized(_signInRequired);
+    final session = _verify(token);
+    if (session == null) return _unauthorized(_sessionExpired);
     currentSession[request] = session;
     return handler(request);
   };
@@ -50,29 +55,19 @@ final class SessionHandlers {
   Future<Response> logIn(Request request) async {
     final body = LoginDto.fromJson(await readObject(request));
     final account = await accounts.account(body.username);
-    if (account == null || !await verifyPassword(body.password, account.passwordHash)) {
-      return problemResponse(_invalidCredentials);
-    }
+    final matches = await verifyPassword(body.password, account?.passwordHash ?? await _noAccountHash);
+    if (account == null || !matches) return _unauthorized(_invalidCredentials);
     final user = account.user;
     final token = JWT({
       'name': user.username,
       'role': user.role.name,
-    }, subject: user.id.value).sign(_key, expiresIn: ttl);
-    final session = _verify(token)!;
-    final dto = SessionDto(user: user.toDto(), expiresAt: session.expiresAt, token: body.cookie ? null : token);
+    }, subject: user.id.value).sign(_key, algorithm: _algorithm, expiresIn: ttl);
+    final expiresAt = _verify(token)!.expiresAt;
+    final dto = SessionDto(user: user.toDto(), expiresAt: expiresAt, token: body.cookie ? null : token);
     final response = json(201, dto.toJson());
     if (!body.cookie) return response;
     return response.copyWith(
-      headers: response.headers.transform(
-        (headers) => headers.setCookie = SetCookieHeader(
-          name: ApiCookies.session,
-          value: token,
-          path: Uri.parse('/'),
-          maxAge: ttl.inSeconds,
-          httpOnly: true,
-          sameSite: SameSite.lax,
-        ),
-      ),
+      headers: response.headers.transform((headers) => headers.setCookie = _cookie(token, maxAge: ttl.inSeconds)),
     );
   }
 
@@ -81,15 +76,29 @@ final class SessionHandlers {
     return json(200, SessionDto(user: session.user.toDto(), expiresAt: session.expiresAt).toJson());
   }
 
-  Future<Response> logOut(Request request) async => Response.noContent(
-    headers: Headers.build(
-      (headers) =>
-          headers.setCookie = SetCookieHeader(name: ApiCookies.session, value: 'x', path: Uri.parse('/'), maxAge: 0),
-    ),
+  Future<Response> logOut(Request request) async =>
+      Response.noContent(headers: Headers.build((headers) => headers.setCookie = _cookie('', maxAge: 0)));
+
+  SetCookieHeader _cookie(String value, {required int maxAge}) => SetCookieHeader(
+    name: ApiCookies.session,
+    value: value,
+    path: Uri.parse('/'),
+    maxAge: maxAge,
+    httpOnly: true,
+    secure: secureCookie,
+    sameSite: SameSite.lax,
   );
+
+  Response _unauthorized(ProblemDto problem) {
+    final response = problemResponse(problem);
+    return response.copyWith(
+      headers: response.headers.transform((headers) => headers['WWW-Authenticate'] = ['Bearer']),
+    );
+  }
 
   Session? _verify(String token) {
     try {
+      if (JWT.decode(token).header?['alg'] != _algorithm.name) return null;
       return switch (JWT.verify(token, _key).payload) {
         {'sub': final String id, 'name': final String name, 'role': final String role, 'exp': final int exp} => Session(
           user: User(id: UserId(id), username: name, role: Role.values.byName(role)),
@@ -98,6 +107,8 @@ final class SessionHandlers {
         _ => null,
       };
     } on JWTException {
+      return null;
+    } on ArgumentError {
       return null;
     }
   }

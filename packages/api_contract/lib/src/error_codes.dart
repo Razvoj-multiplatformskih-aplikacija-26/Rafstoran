@@ -22,4 +22,5 @@ abstract final class ErrorCodes {
   static const serverError = 'server-error';
   static const invalidCredentials = 'invalid-credentials';
   static const sessionExpired = 'session-expired';
+  static const signInRequired = 'sign-in-required';
 }
