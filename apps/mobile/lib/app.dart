@@ -36,7 +36,7 @@ class _RafstoranAppState extends State<RafstoranApp> {
   String? _notice;
 
   Future<void> _signedIn(User user) async {
-    if (user.role != Role.guest) {
+    if (!AccessPolicy.canHoldReservation(user)) {
       await widget.dependencies.logOut();
       setState(() => _notice = 'Aplikacija je za goste. Osoblje koristi backoffice.');
       return;
@@ -56,7 +56,9 @@ class _RafstoranAppState extends State<RafstoranApp> {
           builder: (context, session) => switch (session) {
             SessionUnknown() => _material(
               key: const ValueKey('session-unknown'),
-              home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+              home: const Scaffold(
+                body: Center(child: CircularProgressIndicator(semanticsLabel: 'Učitavanje')),
+              ),
             ),
             SignedOut(:final reason) => _material(
               key: ValueKey('signed-out ${reason?.name} $_notice'),

@@ -36,7 +36,7 @@ class _BackofficeAppState extends State<BackofficeApp> {
   String? _notice;
 
   Future<void> _signedIn(User user) async {
-    if (!user.role.isStaff) {
+    if (!AccessPolicy.canViewSchedule(user)) {
       await widget.dependencies.logOut();
       setState(() => _notice = 'Backoffice je za osoblje restorana.');
       return;
@@ -56,7 +56,9 @@ class _BackofficeAppState extends State<BackofficeApp> {
           builder: (context, session) => switch (session) {
             SessionUnknown() => _material(
               key: const ValueKey('session-unknown'),
-              home: const Scaffold(body: Center(child: CircularProgressIndicator())),
+              home: const Scaffold(
+                body: Center(child: CircularProgressIndicator(semanticsLabel: 'Učitavanje')),
+              ),
             ),
             SignedOut(:final reason) => _material(
               key: ValueKey('signed-out ${reason?.name} $_notice'),

@@ -128,7 +128,10 @@ class _LoginFormState extends State<_LoginForm> {
                 FilledButton(
                   onPressed: busy ? null : _submit,
                   child: busy
-                      ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, semanticsLabel: 'Prijava u toku'),
+                        )
                       : const Text('Prijavi se'),
                 ),
               ],
