@@ -11,12 +11,17 @@ Future<void> main() async {
   initializeDomainTimeZones();
   final config = ServerConfig.fromEnvironment(serverEnvironment());
   final database = Pool<void>.withUrl(config.databaseUrl);
-  await seedIfEmpty(database, now: DateTime.now(), demoPassword: config.demoPassword);
+  await seedDemoData(database, now: DateTime.now(), demoPassword: config.demoPassword);
   final store = RestaurantStore(database);
   const clock = SystemClock();
   final restaurant = PostgresRestaurant(store, clock: clock);
   final handlers = RestaurantHandlers(restaurant: restaurant, clock: clock);
-  final sessions = SessionHandlers(accounts: AccountStore(database), secret: config.jwtSecret, ttl: config.sessionTtl);
+  final sessions = SessionHandlers(
+    accounts: AccountStore(database),
+    secret: config.jwtSecret,
+    ttl: config.sessionTtl,
+    secureCookie: config.secureCookie,
+  );
   final server = RelicServer(() => IOAdapter.bind(InternetAddress(config.host), port: config.port));
   await server.mountAndStart(buildHandler(handlers, sessions, corsOrigins: config.corsOrigins));
   stdout.writeln('Rafstoran server on http://${config.host}:${config.port}');

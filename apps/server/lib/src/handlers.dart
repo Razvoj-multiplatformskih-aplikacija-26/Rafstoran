@@ -39,7 +39,7 @@ final class RestaurantHandlers {
   }
 
   Future<Response> schedule(Request request) async {
-    if (!_actor(request).role.isStaff) return problem(const NotAllowed());
+    if (!AccessPolicy.canViewSchedule(_actor(request))) return problem(const NotAllowed());
     final schedule = await _getDailySchedule(dayFromJson(_query(request, ApiQuery.day)));
     return json(200, schedule.toDto().toJson());
   }

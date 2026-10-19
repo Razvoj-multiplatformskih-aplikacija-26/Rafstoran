@@ -76,10 +76,43 @@ const _mine = [
   (3, 14, 30, 5, null, 'confirmed'),
 ];
 
-Future<void> seedIfEmpty(Pool<void> database, {required DateTime now, required String? demoPassword}) async {
-  if (!await RestaurantStore(database).isEmpty()) return;
+Future<void> seedDemoData(Pool<void> database, {required DateTime now, required String? demoPassword}) async {
+  final empty = await RestaurantStore(database).isEmpty();
+  final missing = empty ? const <User>[] : await _usersWithoutAccount(database);
+  if (!empty && missing.isEmpty) return;
   if (demoPassword == null) throw StateError('DEMO_PASSWORD is not set. Copy .env.example to .env.');
-  await database.runTx((session) => _seed(session, RestaurantStore(session), now: now, demoPassword: demoPassword));
+  await database.runTx(
+    (session) => empty
+        ? _seed(session, RestaurantStore(session), now: now, demoPassword: demoPassword)
+        : _addAccounts(session, missing, demoPassword: demoPassword),
+  );
+}
+
+Future<List<User>> _usersWithoutAccount(Session database) async {
+  final rows = await database.execute('SELECT id FROM users WHERE login IS NOT NULL');
+  final withAccount = {for (final row in rows) row[0]! as String};
+  return [
+    for (final user in [_guest, _waiter, _manager, ..._otherGuests])
+      if (_logins.containsKey(user.id.value) && !withAccount.contains(user.id.value)) user,
+  ];
+}
+
+Future<void> _addAccounts(Session database, List<User> users, {required String demoPassword}) async {
+  for (final user in users) {
+    await database.execute(
+      Sql.named(
+        'INSERT INTO users (id, name, role, login, password_hash) VALUES (@id, @name, @role, @login, @hash) '
+        'ON CONFLICT (id) DO UPDATE SET login = EXCLUDED.login, password_hash = EXCLUDED.password_hash',
+      ),
+      parameters: {
+        'id': user.id.value,
+        'name': user.username,
+        'role': user.role.name,
+        'login': _logins[user.id.value],
+        'hash': await hashPassword(demoPassword),
+      },
+    );
+  }
 }
 
 Future<void> _seed(

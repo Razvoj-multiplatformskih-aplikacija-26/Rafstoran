@@ -1,10 +1,13 @@
+import 'dart:convert';
+
 final class ServerConfig {
   const ServerConfig({
     required this.host,
     required this.port,
     required this.databaseUrl,
     required this.corsOrigins,
-    this.sessionTtl = const Duration(hours: 12),
+    this.sessionTtl = const Duration(hours: 8),
+    this.secureCookie = false,
     this.demoPassword,
     required this.jwtSecret,
   });
@@ -19,11 +22,10 @@ final class ServerConfig {
       for (final origin in (environment['CORS_ORIGINS'] ?? 'http://localhost:8081').split(','))
         if (origin.trim().isNotEmpty) origin.trim(),
     ],
-    sessionTtl: Duration(minutes: int.parse(environment['SESSION_TTL_MINUTES'] ?? '720')),
+    sessionTtl: Duration(minutes: int.parse(environment['SESSION_TTL_MINUTES'] ?? '480')),
+    secureCookie: environment['COOKIE_SECURE'] == 'true',
     demoPassword: environment['DEMO_PASSWORD'],
-    jwtSecret:
-        environment['JWT_SECRET'] ??
-        (throw StateError('JWT_SECRET is not set. Copy .env.example to .env in the repository root.')),
+    jwtSecret: _jwtSecret(environment['JWT_SECRET']),
   );
 
   final String host;
@@ -31,6 +33,13 @@ final class ServerConfig {
   final String databaseUrl;
   final List<String> corsOrigins;
   final Duration sessionTtl;
+  final bool secureCookie;
   final String? demoPassword;
   final String jwtSecret;
 }
+
+String _jwtSecret(String? secret) => switch (secret) {
+  null => throw StateError('JWT_SECRET is not set. Copy .env.example to .env in the repository root.'),
+  final secret when utf8.encode(secret).length < 32 => throw StateError('JWT_SECRET must have at least 32 bytes.'),
+  final secret => secret,
+};
