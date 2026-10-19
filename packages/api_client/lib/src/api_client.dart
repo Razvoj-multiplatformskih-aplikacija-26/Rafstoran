@@ -86,7 +86,7 @@ final class ApiClient {
     if (status >= 200 && status < 300) return ApiAccepted(json);
     if (status >= 400 && status < 500 && json is Map<String, Object?>) {
       final problem = readJson(() => ProblemDto.fromJson(json));
-      if (problem.code == ErrorCodes.sessionExpired) {
+      if (problem.code case ErrorCodes.sessionExpired || ErrorCodes.signInRequired) {
         _expirations.add(null);
         throw const RepositoryException('Session expired', failure: RepositoryFailure.sessionExpired);
       }
@@ -117,7 +117,7 @@ T accepted<T>(ApiAnswer answer, T Function(Object? json) read) => switch (answer
   ),
   ApiRefused(:final problem) => throw RepositoryException(
     'Refused: ${problem.code}',
-    failure: RepositoryFailure.serverError,
+    failure: RepositoryFailure.refused,
   ),
 };
 
@@ -126,7 +126,7 @@ Result<T> resultOf<T>(ApiAnswer answer, T Function(Object? json) read) => switch
   ApiRejected(:final error) => Failure(error),
   ApiRefused(:final problem) => throw RepositoryException(
     'Refused: ${problem.code}',
-    failure: RepositoryFailure.serverError,
+    failure: RepositoryFailure.refused,
   ),
 };
 
