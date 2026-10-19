@@ -16,6 +16,7 @@ dependencies:
   domain:
     path: ../../packages/domain
   hashlib: 2.4.2
+  pool: 1.5.3
   postgres: 3.5.18
   relic: 1.2.0
   use_cases:
