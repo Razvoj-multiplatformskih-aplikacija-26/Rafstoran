@@ -40,7 +40,7 @@ class ScheduleList extends StatelessWidget {
           for (final reservation in entry.value) ...[
             _ReservationTile(
               reservation: reservation,
-              guest: schedule.guestOf(reservation),
+              guestName: schedule.guestNameOf(reservation),
               table: schedule.tables.where((t) => t.id == reservation.tableId).firstOrNull,
               selected: reservation.id == selectedId,
               onTap: () => onSelect(reservation),
@@ -57,7 +57,7 @@ class ScheduleList extends StatelessWidget {
 class _ReservationTile extends StatelessWidget {
   const _ReservationTile({
     required this.reservation,
-    required this.guest,
+    required this.guestName,
     required this.table,
     required this.selected,
     required this.onTap,
@@ -65,7 +65,7 @@ class _ReservationTile extends StatelessWidget {
   });
 
   final Reservation reservation;
-  final User? guest;
+  final String? guestName;
   final DiningTable? table;
   final bool selected;
   final VoidCallback onTap;
@@ -75,7 +75,7 @@ class _ReservationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final guestName = guest?.username ?? 'Gost';
+    final guestName = this.guestName ?? 'Gost';
     final tableLabel = table?.label ?? '—';
     return Semantics(
       button: true,

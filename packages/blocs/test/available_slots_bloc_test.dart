@@ -15,8 +15,9 @@ void main() {
   AvailableSlotsBloc build({bool failing = false}) {
     final restaurant = FakeRestaurant(clock: clock, failing: failing);
     return AvailableSlotsBloc(
-      getAvailableSlots: GetAvailableSlots(slots: restaurant),
+      getAvailableSlots: GetAvailableSlots(slots: restaurant, clock: clock),
       clock: clock,
+      user: guest,
     );
   }
 
@@ -27,7 +28,7 @@ void main() {
       act: (bloc) => bloc.add(const AvailableSlotsRequested()),
       expect: () => [
         isA<AvailableSlotsLoading>(),
-        isA<AvailableSlotsLoaded>().having((s) => s.slots.length, 'slots', 18),
+        isA<AvailableSlotsLoaded>().having((s) => s.slots.length, 'slots', 15),
       ],
     );
 

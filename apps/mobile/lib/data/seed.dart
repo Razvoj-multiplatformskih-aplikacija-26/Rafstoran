@@ -24,17 +24,16 @@ const fakeTables = [
   DiningTable(id: DiningTableId('t-09'), label: 'T3', capacity: 4, area: TableArea.terrace),
   DiningTable(id: DiningTableId('t-10'), label: 'T4', capacity: 6, area: TableArea.terrace),
   DiningTable(id: DiningTableId('t-11'), label: 'B1', capacity: 4, area: TableArea.garden),
-  DiningTable(id: DiningTableId('t-12'), label: 'B2', capacity: 10, area: TableArea.garden),
+  DiningTable(id: DiningTableId('t-12'), label: 'B2', capacity: 12, area: TableArea.garden),
 ];
 
 const _waiter = UserId('u-waiter');
-const _otherGuests = [UserId('u-ana'), UserId('u-marko'), UserId('u-jelena'), UserId('u-nikola')];
 
 List<Reservation> seedReservations(DateTime now) {
   final today = restaurantDay(now);
   Reservation seed({
     required String id,
-    required UserId guestId,
+    UserId? guestId,
     required int dayOffset,
     required int hour,
     required int partySize,
@@ -47,7 +46,7 @@ List<Reservation> seedReservations(DateTime now) {
     final start = fakeOpeningHours.localToUtc(day.year, day.month, day.day, LocalTime(hour, minute));
     return Reservation(
       id: ReservationId(id),
-      guestId: guestId,
+      guest: AccountGuest(guestId ?? UserId('u-$id')),
       slot: TimeSlot.existing(start),
       partySize: PartySize.parse(partySize).valueOrNull!,
       note: note == null ? null : ReservationNote.parse(note).valueOrNull,
@@ -138,7 +137,7 @@ List<Reservation> seedReservations(DateTime now) {
       hour: 20,
       partySize: 2,
       tableId: 't-01',
-      status: Arrived(arrivedAt: weekAgo),
+      status: NoShow(recordedBy: _waiter, at: weekAgo.add(const Duration(minutes: 40))),
     ),
     seed(
       id: 'r-10',
@@ -164,91 +163,18 @@ List<Reservation> seedReservations(DateTime now) {
       status: Arrived(arrivedAt: monthAgo),
     ),
     for (var day = 0; day < 14; day++) ...[
-      seed(id: 'o-$day-a', guestId: _otherGuests[day % 4], dayOffset: day, hour: 19, partySize: 2, tableId: 't-01'),
-      seed(
-        id: 'o-$day-b',
-        guestId: _otherGuests[(day + 1) % 4],
-        dayOffset: day,
-        hour: 19,
-        partySize: 2,
-        tableId: 't-02',
-      ),
-      seed(
-        id: 'o-$day-c',
-        guestId: _otherGuests[(day + 2) % 4],
-        dayOffset: day,
-        hour: 20,
-        partySize: 2,
-        tableId: 't-07',
-      ),
-      seed(
-        id: 'o-$day-d',
-        guestId: _otherGuests[(day + 3) % 4],
-        dayOffset: day,
-        hour: 20,
-        partySize: 4,
-        tableId: 't-03',
-      ),
-      seed(
-        id: 'o-$day-e',
-        guestId: _otherGuests[day % 4],
-        dayOffset: day,
-        hour: 20,
-        minute: 30,
-        partySize: 4,
-        tableId: 't-04',
-      ),
-      seed(
-        id: 'o-$day-f',
-        guestId: _otherGuests[(day + 1) % 4],
-        dayOffset: day,
-        hour: 20,
-        minute: 30,
-        partySize: 4,
-        tableId: 't-08',
-      ),
-      seed(
-        id: 'o-$day-g',
-        guestId: _otherGuests[(day + 2) % 4],
-        dayOffset: day,
-        hour: 20,
-        partySize: 6,
-        tableId: 't-05',
-      ),
-      seed(
-        id: 'o-$day-h',
-        guestId: _otherGuests[(day + 3) % 4],
-        dayOffset: day,
-        hour: 21,
-        partySize: 4,
-        tableId: 't-09',
-      ),
-      seed(id: 'o-$day-i', guestId: _otherGuests[day % 4], dayOffset: day, hour: 20, partySize: 6, tableId: 't-10'),
-      seed(
-        id: 'o-$day-j',
-        guestId: _otherGuests[(day + 1) % 4],
-        dayOffset: day,
-        hour: 20,
-        minute: 30,
-        partySize: 4,
-        tableId: 't-11',
-      ),
-      seed(
-        id: 'o-$day-k',
-        guestId: _otherGuests[(day + 2) % 4],
-        dayOffset: day,
-        hour: 20,
-        partySize: 8,
-        tableId: 't-06',
-      ),
-      seed(
-        id: 'o-$day-l',
-        guestId: _otherGuests[(day + 3) % 4],
-        dayOffset: day,
-        hour: 20,
-        partySize: 10,
-        tableId: 't-12',
-      ),
+      seed(id: 'o-$day-a', dayOffset: day, hour: 19, partySize: 2, tableId: 't-01'),
+      seed(id: 'o-$day-b', dayOffset: day, hour: 19, partySize: 2, tableId: 't-02'),
+      seed(id: 'o-$day-c', dayOffset: day, hour: 20, partySize: 2, tableId: 't-07'),
+      seed(id: 'o-$day-d', dayOffset: day, hour: 20, partySize: 4, tableId: 't-03'),
+      seed(id: 'o-$day-e', dayOffset: day, hour: 20, minute: 30, partySize: 4, tableId: 't-04'),
+      seed(id: 'o-$day-f', dayOffset: day, hour: 20, minute: 30, partySize: 4, tableId: 't-08'),
+      seed(id: 'o-$day-g', dayOffset: day, hour: 20, partySize: 6, tableId: 't-05'),
+      seed(id: 'o-$day-h', dayOffset: day, hour: 21, partySize: 4, tableId: 't-09'),
+      seed(id: 'o-$day-i', dayOffset: day, hour: 20, partySize: 6, tableId: 't-10'),
+      seed(id: 'o-$day-j', dayOffset: day, hour: 20, minute: 30, partySize: 4, tableId: 't-11'),
+      seed(id: 'o-$day-k', dayOffset: day, hour: 20, partySize: 8, tableId: 't-06'),
+      seed(id: 'o-$day-l', dayOffset: day, hour: 20, partySize: 10, tableId: 't-12'),
     ],
   ];
 }

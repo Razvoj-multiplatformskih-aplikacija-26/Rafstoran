@@ -14,24 +14,27 @@ final class CreateReservation {
 
   Future<Result<Reservation>> call({
     required User by,
-    UserId? forGuest,
+    ReservationGuest? guest,
     required DateTime start,
     required PartySize partySize,
     ReservationNote? note,
   }) async {
-    final guestId = forGuest ?? by.id;
-    if (!AccessPolicy.canCreateReservation(by, forGuest: guestId)) return const Failure(NotAllowed());
+    final forGuest = guest ?? AccountGuest(by.id);
+    if (!AccessPolicy.canCreateReservation(by, guest: forGuest)) return const Failure(NotAllowed());
+    final now = clock.now();
     final openingHours = await slots.openingHours();
-    final slot = TimeSlot.parse(start, now: clock.now(), openingHours: openingHours);
+    final slot = TimeSlot.parse(start, now: now, openingHours: openingHours);
     return switch (slot) {
       Failure(:final error) => Failure(error),
+      Success(:final value) when !mayBook(value, by: by, now: now) => const Failure(TooSoonToBook()),
       Success(:final value) => reservations.create(
         ReservationRequest(
-          guestId: guestId,
+          guest: forGuest,
           slot: value,
           partySize: partySize,
+          status: initialStatus(by: by, now: now),
           note: note,
-          enteredBy: guestId == by.id ? null : by.id,
+          enteredBy: forGuest.isAccount(by.id) ? null : by.id,
         ),
       ),
     };

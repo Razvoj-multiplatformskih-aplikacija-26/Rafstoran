@@ -6,24 +6,26 @@ class ReservationDetailPanel extends StatelessWidget {
   const ReservationDetailPanel({
     super.key,
     required this.reservation,
-    required this.guest,
+    required this.guestName,
     required this.table,
     this.enteredBy,
-    required this.onConfirm,
-    required this.onArrival,
-    required this.onCancel,
+    this.onConfirm,
+    this.onArrival,
+    this.onNoShow,
+    this.onCancel,
     required this.onClose,
     this.busy = false,
   });
 
   final Reservation reservation;
   final bool busy;
-  final User? guest;
+  final String? guestName;
   final DiningTable? table;
   final User? enteredBy;
-  final VoidCallback onConfirm;
-  final VoidCallback onArrival;
-  final VoidCallback onCancel;
+  final VoidCallback? onConfirm;
+  final VoidCallback? onArrival;
+  final VoidCallback? onNoShow;
+  final VoidCallback? onCancel;
   final VoidCallback onClose;
 
   @override
@@ -37,7 +39,12 @@ class ReservationDetailPanel extends StatelessWidget {
       Confirmed(:final at) => 'Potvrđena ${formatDateAndTime(at)}.',
       Cancelled(:final reason, :final at) => 'Otkazana ${formatDateAndTime(at)}.${reason.isEmpty ? '' : ' $reason'}',
       Arrived(:final arrivedAt) => 'Gost je stigao u ${formatTime(arrivedAt)}.',
+      NoShow(:final at) => 'Zabeleženo ${formatDateAndTime(at)}.',
     };
+    final confirm = onConfirm;
+    final arrival = onArrival;
+    final noShow = onNoShow;
+    final cancel = onCancel;
     return Semantics(
       container: true,
       label: 'Detalj rezervacije',
@@ -73,15 +80,16 @@ class ReservationDetailPanel extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(statusDetail, style: muted),
                     const SizedBox(height: 20),
-                    _Field(label: 'Gost', value: guest?.username ?? 'Nepoznat gost'),
+                    _Field(label: 'Gost', value: guestName ?? 'Nepoznat gost'),
+                    if (reservation.guest case ContactGuest(:final phone)) _Field(label: 'Telefon', value: phone.value),
                     _Field(label: 'Broj osoba', value: peopleLabel(reservation.partySize.value)),
                     _Field(
                       label: 'Sto',
                       value: table == null ? 'Nije dodeljen' : '${table!.label} · ${seatsLabel(table!.capacity)}',
                     ),
                     _Field(
-                      label: 'Trajanje',
-                      value: '${formatTime(reservation.slot.start)} do ${formatTime(reservation.slot.end)}',
+                      label: 'Vreme',
+                      value: '${formatTime(reservation.slot.start)}–${formatTime(reservation.slot.end)}',
                     ),
                     if (reservation.note case final note?) _Field(label: 'Napomena', value: note.text),
                     if (reservation.enteredBy != null) _Field(label: 'Uneo', value: enteredBy?.username ?? 'Osoblje'),
@@ -94,28 +102,32 @@ class ReservationDetailPanel extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (status is Pending)
-                    _ActionButton(
-                      label: 'Potvrdi',
-                      shortcut: 'C',
-                      icon: Icons.check,
-                      onPressed: busy ? null : onConfirm,
-                    ),
-                  if (status is Confirmed) ...[
+                  if (confirm != null)
+                    _ActionButton(label: 'Potvrdi', shortcut: 'C', icon: Icons.check, onPressed: busy ? null : confirm),
+                  if (arrival != null)
                     _ActionButton(
                       label: 'Gost stigao',
                       shortcut: 'A',
                       icon: Icons.login,
-                      onPressed: busy ? null : onArrival,
+                      onPressed: busy ? null : arrival,
+                    ),
+                  if (noShow != null) ...[
+                    const SizedBox(height: 8),
+                    _ActionButton(
+                      label: 'Gost nije došao',
+                      shortcut: 'D',
+                      icon: Icons.person_off_outlined,
+                      onPressed: busy ? null : noShow,
+                      tonal: true,
                     ),
                   ],
-                  if (!status.isFinal) ...[
+                  if (cancel != null) ...[
                     const SizedBox(height: 8),
                     _ActionButton(
                       label: 'Otkaži',
                       shortcut: 'X',
                       icon: Icons.close,
-                      onPressed: busy ? null : onCancel,
+                      onPressed: busy ? null : cancel,
                       tonal: true,
                     ),
                   ],

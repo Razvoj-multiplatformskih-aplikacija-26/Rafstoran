@@ -16,7 +16,7 @@ void main() {
 
   final reservation = Reservation(
     id: const ReservationId('r-1'),
-    guestId: guest.id,
+    guest: AccountGuest(guest.id),
     slot: TimeSlot.existing(tonight),
     partySize: PartySize.parse(2).valueOrNull!,
     tableId: const DiningTableId('t-2'),

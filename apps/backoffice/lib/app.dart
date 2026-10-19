@@ -39,6 +39,7 @@ class _BackofficeAppState extends State<BackofficeApp> {
           getDailySchedule: dependencies.getDailySchedule,
           confirmReservation: dependencies.confirmReservation,
           recordArrival: dependencies.recordArrival,
+          recordNoShow: dependencies.recordNoShow,
           cancelReservation: dependencies.cancelReservation,
           clock: dependencies.clock,
           staff: dependencies.staff,

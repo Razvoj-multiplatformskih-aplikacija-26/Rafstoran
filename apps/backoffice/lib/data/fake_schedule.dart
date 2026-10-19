@@ -24,7 +24,7 @@ const staffTables = [
   DiningTable(id: DiningTableId('t-09'), label: 'T3', capacity: 4, area: TableArea.terrace),
   DiningTable(id: DiningTableId('t-10'), label: 'T4', capacity: 6, area: TableArea.terrace),
   DiningTable(id: DiningTableId('t-11'), label: 'B1', capacity: 4, area: TableArea.garden),
-  DiningTable(id: DiningTableId('t-12'), label: 'B2', capacity: 10, area: TableArea.garden),
+  DiningTable(id: DiningTableId('t-12'), label: 'B2', capacity: 12, area: TableArea.garden),
 ];
 
 const staffGuests = {
@@ -38,99 +38,239 @@ const staffGuests = {
   UserId('u-luka'): User(id: UserId('u-luka'), username: 'Luka Marković', role: Role.guest),
 };
 
-const staffWaiter = User(id: UserId('u-waiter'), username: 'Konobar', role: Role.waiter);
+const staffWaiter = User(id: UserId('u-waiter'), username: 'Marija Kostić', role: Role.waiter);
 
 const staffMembers = {UserId('u-waiter'): staffWaiter};
 
 const _waiter = UserId('u-waiter');
 
+enum _Plan { pending, confirmed, cancelled }
+
+enum _Outcome { arrived, noShow }
+
+typedef _Entry = ({
+  int minutes,
+  String tableId,
+  int partySize,
+  _Plan plan,
+  _Outcome outcome,
+  String? note,
+  (String, String)? caller,
+});
+
+const _day = <_Entry>[
+  (
+    minutes: -360,
+    tableId: 't-01',
+    partySize: 2,
+    plan: _Plan.confirmed,
+    outcome: _Outcome.arrived,
+    note: null,
+    caller: null,
+  ),
+  (
+    minutes: -330,
+    tableId: 't-03',
+    partySize: 4,
+    plan: _Plan.confirmed,
+    outcome: _Outcome.arrived,
+    note: 'Poslovni ručak.',
+    caller: null,
+  ),
+  (
+    minutes: -300,
+    tableId: 't-05',
+    partySize: 6,
+    plan: _Plan.confirmed,
+    outcome: _Outcome.noShow,
+    note: null,
+    caller: ('Ivana Ristić', '063 777 2020'),
+  ),
+  (
+    minutes: -270,
+    tableId: 't-07',
+    partySize: 2,
+    plan: _Plan.confirmed,
+    outcome: _Outcome.arrived,
+    note: null,
+    caller: null,
+  ),
+  (
+    minutes: -240,
+    tableId: 't-02',
+    partySize: 2,
+    plan: _Plan.cancelled,
+    outcome: _Outcome.arrived,
+    note: 'Bez laktoze.',
+    caller: null,
+  ),
+  (
+    minutes: -210,
+    tableId: 't-09',
+    partySize: 4,
+    plan: _Plan.pending,
+    outcome: _Outcome.arrived,
+    note: null,
+    caller: null,
+  ),
+  (
+    minutes: -60,
+    tableId: 't-08',
+    partySize: 4,
+    plan: _Plan.confirmed,
+    outcome: _Outcome.arrived,
+    note: 'Visoka stolica za dete.',
+    caller: null,
+  ),
+  (
+    minutes: -30,
+    tableId: 't-07',
+    partySize: 2,
+    plan: _Plan.confirmed,
+    outcome: _Outcome.noShow,
+    note: null,
+    caller: null,
+  ),
+  (
+    minutes: 0,
+    tableId: 't-06',
+    partySize: 8,
+    plan: _Plan.confirmed,
+    outcome: _Outcome.arrived,
+    note: 'Rođendan, torta stiže kasnije.',
+    caller: null,
+  ),
+  (
+    minutes: 30,
+    tableId: 't-04',
+    partySize: 4,
+    plan: _Plan.confirmed,
+    outcome: _Outcome.arrived,
+    note: null,
+    caller: null,
+  ),
+  (
+    minutes: 90,
+    tableId: 't-02',
+    partySize: 2,
+    plan: _Plan.pending,
+    outcome: _Outcome.arrived,
+    note: 'Bez glutena.',
+    caller: null,
+  ),
+  (
+    minutes: 90,
+    tableId: 't-09',
+    partySize: 4,
+    plan: _Plan.confirmed,
+    outcome: _Outcome.arrived,
+    note: 'Sto pored prozora, ako je moguće.',
+    caller: null,
+  ),
+  (
+    minutes: 120,
+    tableId: 't-10',
+    partySize: 6,
+    plan: _Plan.pending,
+    outcome: _Outcome.arrived,
+    note: null,
+    caller: null,
+  ),
+  (
+    minutes: 120,
+    tableId: 't-12',
+    partySize: 12,
+    plan: _Plan.confirmed,
+    outcome: _Outcome.arrived,
+    note: 'Proslava diplome.',
+    caller: null,
+  ),
+  (
+    minutes: 150,
+    tableId: 't-11',
+    partySize: 4,
+    plan: _Plan.pending,
+    outcome: _Outcome.arrived,
+    note: null,
+    caller: null,
+  ),
+  (
+    minutes: 150,
+    tableId: 't-01',
+    partySize: 2,
+    plan: _Plan.confirmed,
+    outcome: _Outcome.arrived,
+    note: null,
+    caller: ('Petar Lukić', '064 555 0101'),
+  ),
+  (
+    minutes: 60,
+    tableId: 't-03',
+    partySize: 4,
+    plan: _Plan.cancelled,
+    outcome: _Outcome.arrived,
+    note: null,
+    caller: null,
+  ),
+];
+
+DateTime _earlier(DateTime a, DateTime b) => a.isBefore(b) ? a : b;
+
 List<Reservation> staffSeedReservations(DateTime now) {
   final today = restaurantDay(now);
-  final guestIds = staffGuests.keys.toList();
-  var counter = 0;
+  final local = restaurantTime(now);
+  final anchor = ((local.hour * 60 + local.minute) ~/ 30 * 30).clamp(14 * 60, 20 * 60);
+  final accounts = staffGuests.keys.toList();
 
-  Reservation seed({
-    required int dayOffset,
-    required int hour,
-    required int partySize,
-    required String tableId,
-    int minute = 0,
-    String? note,
-    String status = 'pending',
-  }) {
+  Reservation seed(int dayOffset, int index, _Entry entry, ReservationGuest guest) {
     final day = addDays(today, dayOffset);
-    final start = staffOpeningHours.localToUtc(day.year, day.month, day.day, LocalTime(hour, minute));
-    final id = 's-${counter++}';
-    final guestId = guestIds[counter % guestIds.length];
-    final confirmedAt = start.subtract(const Duration(hours: 20));
+    final start = staffOpeningHours
+        .localToUtc(day.year, day.month, day.day, LocalTime(anchor ~/ 60, anchor % 60))
+        .add(Duration(minutes: entry.minutes));
+    final end = start.add(TimeSlot.duration);
+    final decidedAt = _earlier(start.subtract(const Duration(hours: 20)), now.subtract(const Duration(hours: 1)));
+    final arrivedAt = start.add(const Duration(minutes: 4));
+    final undecided = entry.plan == _Plan.confirmed ? Confirmed(confirmedBy: _waiter, at: decidedAt) : const Pending();
+    final ReservationStatus status = switch (entry.plan) {
+      _Plan.cancelled => Cancelled(
+        reason: 'Gost otkazao.',
+        cancelledBy: guest is AccountGuest ? guest.userId : _waiter,
+        at: decidedAt,
+      ),
+      _ when now.isBefore(start) => undecided,
+      _ when entry.outcome == _Outcome.arrived && !now.isBefore(arrivedAt) => Arrived(arrivedAt: arrivedAt),
+      _ when entry.outcome == _Outcome.noShow && !now.isBefore(end) => NoShow(
+        recordedBy: _waiter,
+        at: start.add(const Duration(minutes: 30)),
+      ),
+      _ => undecided,
+    };
     return Reservation(
-      id: ReservationId(id),
-      guestId: guestId,
+      id: ReservationId('s-${dayOffset + 1}${(index + 1).toString().padLeft(2, '0')}'),
+      guest: guest,
       slot: TimeSlot.existing(start),
-      partySize: PartySize.parse(partySize).valueOrNull!,
-      note: note == null ? null : ReservationNote.parse(note).valueOrNull,
-      tableId: DiningTableId(tableId),
-      status: switch (status) {
-        'confirmed' => Confirmed(confirmedBy: _waiter, at: confirmedAt),
-        'arrived' => Arrived(arrivedAt: start.add(const Duration(minutes: 4))),
-        'cancelled' => Cancelled(reason: 'Gost otkazao.', cancelledBy: guestId, at: confirmedAt),
-        _ => const Pending(),
-      },
-      createdAt: start.subtract(const Duration(days: 2)),
+      partySize: PartySize.parse(entry.partySize).valueOrNull!,
+      note: entry.note == null ? null : ReservationNote.parse(entry.note!).valueOrNull,
+      tableId: DiningTableId(entry.tableId),
+      status: status,
+      createdAt: _earlier(start.subtract(const Duration(days: 2)), now.subtract(const Duration(hours: 2))),
+      enteredBy: guest is ContactGuest ? _waiter : null,
     );
   }
 
   return [
-    for (final offset in [-1, 0, 1, 2]) ...[
-      seed(dayOffset: offset, hour: 12, minute: 30, partySize: 2, tableId: 't-01', status: 'arrived'),
-      seed(dayOffset: offset, hour: 13, partySize: 4, tableId: 't-03', status: 'arrived', note: 'Poslovni ručak.'),
-      seed(dayOffset: offset, hour: 13, minute: 30, partySize: 6, tableId: 't-05', status: 'confirmed'),
-      seed(dayOffset: offset, hour: 14, partySize: 2, tableId: 't-07', status: 'confirmed'),
-      seed(dayOffset: offset, hour: 14, minute: 30, partySize: 2, tableId: 't-02', note: 'Bez glutena.'),
-      seed(dayOffset: offset, hour: 15, minute: 30, partySize: 4, tableId: 't-09'),
-      seed(
-        dayOffset: offset,
-        hour: 18,
-        partySize: 4,
-        tableId: 't-08',
-        status: 'confirmed',
-        note: 'Visoka stolica za dete.',
-      ),
-      seed(dayOffset: offset, hour: 18, minute: 30, partySize: 2, tableId: 't-02'),
-      seed(
-        dayOffset: offset,
-        hour: 19,
-        partySize: 8,
-        tableId: 't-06',
-        status: 'confirmed',
-        note: 'Rođendan, torta stiže u 20h.',
-      ),
-      seed(dayOffset: offset, hour: 19, minute: 30, partySize: 4, tableId: 't-04', status: 'confirmed'),
-      seed(dayOffset: offset, hour: 20, partySize: 2, tableId: 't-01'),
-      seed(
-        dayOffset: offset,
-        hour: 20,
-        partySize: 4,
-        tableId: 't-09',
-        status: 'confirmed',
-        note: 'Sto pored prozora, ako je moguće.',
-      ),
-      seed(dayOffset: offset, hour: 20, minute: 30, partySize: 6, tableId: 't-10'),
-      seed(
-        dayOffset: offset,
-        hour: 20,
-        minute: 30,
-        partySize: 10,
-        tableId: 't-12',
-        status: 'confirmed',
-        note: 'Proslava diplome.',
-      ),
-      seed(dayOffset: offset, hour: 21, partySize: 4, tableId: 't-11'),
-      seed(dayOffset: offset, hour: 21, partySize: 2, tableId: 't-07', status: 'cancelled'),
-      seed(dayOffset: offset, hour: 15, partySize: 4, tableId: 't-03', status: 'cancelled'),
-    ],
+    for (final dayOffset in [-1, 0, 1, 2])
+      for (final (index, entry) in _day.indexed)
+        if (seed(dayOffset, index, entry, _guestFor(entry, index, accounts)) case final reservation
+            when staffOpeningHours.covers(reservation.slot.start, TimeSlot.duration))
+          reservation,
   ];
 }
+
+ReservationGuest _guestFor(_Entry entry, int index, List<UserId> accounts) => switch (entry.caller) {
+  (final name, final phone) => ContactGuest.parse(name: name, phone: phone).valueOrNull!,
+  null => AccountGuest(accounts[index % accounts.length]),
+};
 
 final class FakeSchedule implements ScheduleRepository, ReservationRepository, SlotRepository {
   FakeSchedule({required this.clock, this.latency = const Duration(milliseconds: 400)})
@@ -180,7 +320,7 @@ final class FakeSchedule implements ScheduleRepository, ReservationRepository, S
   @override
   Future<List<Reservation>> reservationsOf(UserId guestId) async {
     await _roundTrip();
-    return _reservations.where((r) => r.guestId == guestId).toList();
+    return _reservations.where((r) => r.guest.isAccount(guestId)).toList();
   }
 
   @override
@@ -202,6 +342,9 @@ final class FakeSchedule implements ScheduleRepository, ReservationRepository, S
   @override
   Future<Result<Reservation>> create(ReservationRequest request) async {
     await _roundTrip();
+    if (!guestIsFree(guest: request.guest, slot: request.slot, reservations: _reservations)) {
+      return const Failure(GuestAlreadyBooked());
+    }
     final table = assignTable(
       tables: staffTables,
       reservations: _reservations,
@@ -217,11 +360,12 @@ final class FakeSchedule implements ScheduleRepository, ReservationRepository, S
   Reservation _store(ReservationRequest request, DiningTable table) {
     final reservation = Reservation(
       id: ReservationId('staff-${_nextId++}'),
-      guestId: request.guestId,
+      guest: request.guest,
       slot: request.slot,
       partySize: request.partySize,
       note: request.note,
       tableId: table.id,
+      status: request.status,
       createdAt: clock.now(),
       enteredBy: request.enteredBy,
     );

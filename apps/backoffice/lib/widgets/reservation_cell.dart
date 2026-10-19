@@ -6,7 +6,7 @@ class ReservationCell extends StatefulWidget {
   const ReservationCell({
     super.key,
     required this.reservation,
-    required this.guest,
+    required this.guestName,
     required this.selected,
     required this.focused,
     required this.onTap,
@@ -14,7 +14,7 @@ class ReservationCell extends StatefulWidget {
   });
 
   final Reservation reservation;
-  final User? guest;
+  final String? guestName;
   final bool selected;
   final bool focused;
   final VoidCallback onTap;
@@ -29,16 +29,16 @@ class _ReservationCellState extends State<ReservationCell> {
 
   @override
   Widget build(BuildContext context) {
-    final ReservationCell(:reservation, :guest, :selected, :focused, :onTap, :onContextMenu) = widget;
+    final ReservationCell(:reservation, :selected, :focused, :onTap, :onContextMenu) = widget;
     final theme = Theme.of(context);
     final colors = theme.statusColors;
     final (background, foreground) = switch (reservation.status) {
       Pending() => (colors.pending, colors.onPending),
       Confirmed() => (colors.confirmed, colors.onConfirmed),
-      Cancelled() => (colors.cancelled, colors.onCancelled),
+      Cancelled() || NoShow() => (colors.cancelled, colors.onCancelled),
       Arrived() => (colors.arrived, colors.onArrived),
     };
-    final guestName = guest?.username ?? 'Gost';
+    final guestName = widget.guestName ?? 'Gost';
     final outline = selected
         ? theme.colorScheme.primary
         : focused

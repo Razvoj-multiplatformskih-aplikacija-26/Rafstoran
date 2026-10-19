@@ -3,6 +3,7 @@ import 'package:meta/meta.dart';
 import '../identifiers.dart';
 import '../restaurant/time_slot.dart';
 import 'party_size.dart';
+import 'reservation_guest.dart';
 import 'reservation_note.dart';
 import 'reservation_status.dart';
 
@@ -10,7 +11,7 @@ import 'reservation_status.dart';
 final class Reservation {
   const Reservation({
     required this.id,
-    required this.guestId,
+    required this.guest,
     required this.slot,
     required this.partySize,
     required this.createdAt,
@@ -21,7 +22,7 @@ final class Reservation {
   });
 
   final ReservationId id;
-  final UserId guestId;
+  final ReservationGuest guest;
   final TimeSlot slot;
   final PartySize partySize;
   final ReservationNote? note;
@@ -35,7 +36,7 @@ final class Reservation {
   Reservation copyWith({ReservationStatus? status, DiningTableId? tableId}) {
     return Reservation(
       id: id,
-      guestId: guestId,
+      guest: guest,
       slot: slot,
       partySize: partySize,
       createdAt: createdAt,
@@ -50,7 +51,7 @@ final class Reservation {
   bool operator ==(Object other) =>
       other is Reservation &&
       other.id == id &&
-      other.guestId == guestId &&
+      other.guest == guest &&
       other.slot == slot &&
       other.partySize == partySize &&
       other.note == note &&
@@ -60,7 +61,7 @@ final class Reservation {
       other.enteredBy == enteredBy;
 
   @override
-  int get hashCode => Object.hash(id, guestId, slot, partySize, note, tableId, status, createdAt, enteredBy);
+  int get hashCode => Object.hash(id, guest, slot, partySize, note, tableId, status, createdAt, enteredBy);
 
   @override
   String toString() => 'Reservation($id, ${slot.start.toIso8601String()}, $partySize, $status)';

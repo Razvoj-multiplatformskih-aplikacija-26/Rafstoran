@@ -10,5 +10,6 @@ export 'src/ports/reservation_repository.dart';
 export 'src/ports/schedule_repository.dart';
 export 'src/ports/slot_repository.dart';
 export 'src/record_arrival.dart';
+export 'src/record_no_show.dart';
 export 'src/repository_exception.dart';
 export 'src/reservation_request.dart';

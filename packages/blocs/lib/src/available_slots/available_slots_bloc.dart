@@ -7,13 +7,17 @@ part 'available_slots_event.dart';
 part 'available_slots_state.dart';
 
 final class AvailableSlotsBloc extends Bloc<AvailableSlotsEvent, AvailableSlotsState> {
-  AvailableSlotsBloc({required this.getAvailableSlots, required this.clock, PartySize? initialPartySize})
-    : super(
-        AvailableSlotsLoading(
-          day: restaurantDay(clock.now()),
-          partySize: initialPartySize ?? PartySize.parse(2).valueOrNull!,
-        ),
-      ) {
+  AvailableSlotsBloc({
+    required this.getAvailableSlots,
+    required this.clock,
+    required this.user,
+    PartySize? initialPartySize,
+  }) : super(
+         AvailableSlotsLoading(
+           day: restaurantDay(clock.now()),
+           partySize: initialPartySize ?? PartySize.parse(2).valueOrNull!,
+         ),
+       ) {
     on<AvailableSlotsRequested>((event, emit) => _load(emit, day: state.day, partySize: state.partySize));
     on<AvailableSlotsRefreshed>((event, emit) => _load(emit, day: state.day, partySize: state.partySize));
     on<AvailableSlotsDaySelected>((event, emit) => _load(emit, day: event.day, partySize: state.partySize));
@@ -22,6 +26,7 @@ final class AvailableSlotsBloc extends Bloc<AvailableSlotsEvent, AvailableSlotsS
 
   final GetAvailableSlots getAvailableSlots;
   final Clock clock;
+  final User user;
   int _request = 0;
 
   DateTime get today => restaurantDay(clock.now());
@@ -30,7 +35,7 @@ final class AvailableSlotsBloc extends Bloc<AvailableSlotsEvent, AvailableSlotsS
     final request = ++_request;
     emit(AvailableSlotsLoading(day: day, partySize: partySize));
     try {
-      final slots = await getAvailableSlots(localDay: day, partySize: partySize);
+      final slots = await getAvailableSlots(by: user, localDay: day, partySize: partySize);
       if (request != _request) return;
       emit(
         slots.isEmpty

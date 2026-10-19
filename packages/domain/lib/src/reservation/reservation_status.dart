@@ -7,11 +7,11 @@ sealed class ReservationStatus {
 
   bool get isActive => switch (this) {
     Pending() || Confirmed() || Arrived() => true,
-    Cancelled() => false,
+    Cancelled() || NoShow() => false,
   };
 
   bool get isFinal => switch (this) {
-    Cancelled() || Arrived() => true,
+    Cancelled() || Arrived() || NoShow() => true,
     Pending() || Confirmed() => false,
   };
 }
@@ -75,10 +75,27 @@ final class Arrived extends ReservationStatus {
   String toString() => 'Arrived(at $arrivedAt)';
 }
 
+@immutable
+final class NoShow extends ReservationStatus {
+  const NoShow({required this.recordedBy, required this.at});
+
+  final UserId recordedBy;
+  final DateTime at;
+
+  @override
+  bool operator ==(Object other) => other is NoShow && other.recordedBy == recordedBy && other.at == at;
+
+  @override
+  int get hashCode => Object.hash(recordedBy, at);
+
+  @override
+  String toString() => 'NoShow(by $recordedBy at $at)';
+}
+
 bool canTransition(ReservationStatus from, ReservationStatus to) => switch ((from, to)) {
   (Pending(), Confirmed()) => true,
-  (Pending(), Cancelled()) => true,
-  (Confirmed(), Cancelled()) => true,
-  (Confirmed(), Arrived()) => true,
+  (Pending() || Confirmed(), Cancelled()) => true,
+  (Pending() || Confirmed(), Arrived()) => true,
+  (Pending() || Confirmed(), NoShow()) => true,
   _ => false,
 };

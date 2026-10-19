@@ -53,18 +53,20 @@ void main() {
     expect(build().hashCode, build().hashCode);
   });
 
-  test('staff create a reservation for a guest and are recorded as the ones who entered it', () async {
-    const waiter = User(id: UserId('u-waiter'), username: 'Konobar', role: Role.waiter);
-    final reservation = (await create(by: waiter, forGuest: guest.id, start: tonight, partySize: two)).valueOrNull!;
-    expect(reservation.guestId, guest.id);
+  test('staff enter a phone reservation that is confirmed and records who entered it', () async {
+    const waiter = User(id: UserId('u-waiter'), username: 'Marija Kostić', role: Role.waiter);
+    final caller = ContactGuest.parse(name: 'Ana Petrović', phone: '064 123 4567').valueOrNull!;
+    final reservation = (await create(by: waiter, guest: caller, start: tonight, partySize: two)).valueOrNull!;
+    expect(reservation.guest, caller);
     expect(reservation.enteredBy, waiter.id);
+    expect(reservation.status, isA<Confirmed>());
   });
 
   test('a guest creates reservations only for themselves', () async {
     final own = (await create(by: guest, start: tonight, partySize: two)).valueOrNull!;
     expect(own.enteredBy, isNull);
     expect(
-      await create(by: guest, forGuest: const UserId('u-other'), start: tonight, partySize: two),
+      await create(by: guest, guest: const AccountGuest(UserId('u-other')), start: tonight, partySize: two),
       const Failure<Reservation>(NotAllowed()),
     );
   });

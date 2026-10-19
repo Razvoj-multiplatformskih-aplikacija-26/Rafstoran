@@ -38,7 +38,10 @@ final class DailySchedule {
   Reservation? reservationAt(DiningTable table, DateTime instant) =>
       reservationsFor(table).where((r) => !instant.isBefore(r.slot.start) && instant.isBefore(r.slot.end)).firstOrNull;
 
-  User? guestOf(Reservation reservation) => guests[reservation.guestId];
+  String? guestNameOf(Reservation reservation) => switch (reservation.guest) {
+    AccountGuest(:final userId) => guests[userId]?.username,
+    ContactGuest(:final name) => name.text,
+  };
 
   User? enteredByOf(Reservation reservation) => staff[reservation.enteredBy];
 

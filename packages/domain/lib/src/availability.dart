@@ -3,6 +3,7 @@ import 'package:meta/meta.dart';
 import 'errors.dart';
 import 'reservation/party_size.dart';
 import 'reservation/reservation.dart';
+import 'reservation/reservation_guest.dart';
 import 'restaurant/dining_table.dart';
 import 'restaurant/opening_hours.dart';
 import 'restaurant/time_slot.dart';
@@ -65,6 +66,9 @@ List<DiningTable> freeTablesFor({
       if (table.capacity >= partySize.value && !isTaken(table)) table,
   ];
 }
+
+bool guestIsFree({required ReservationGuest guest, required TimeSlot slot, required List<Reservation> reservations}) =>
+    !reservations.any((r) => r.isActive && r.guest.isSameGuestAs(guest) && r.slot.overlaps(slot));
 
 Result<DiningTable> assignTable({
   required List<DiningTable> tables,

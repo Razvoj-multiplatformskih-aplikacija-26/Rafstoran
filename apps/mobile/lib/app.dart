@@ -37,9 +37,11 @@ class _RafstoranAppState extends State<RafstoranApp> {
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (_) =>
-                AvailableSlotsBloc(getAvailableSlots: dependencies.getAvailableSlots, clock: dependencies.clock)
-                  ..add(const AvailableSlotsRequested()),
+            create: (_) => AvailableSlotsBloc(
+              getAvailableSlots: dependencies.getAvailableSlots,
+              clock: dependencies.clock,
+              user: dependencies.user,
+            )..add(const AvailableSlotsRequested()),
           ),
           BlocProvider(
             create: (_) => MyReservationsBloc(

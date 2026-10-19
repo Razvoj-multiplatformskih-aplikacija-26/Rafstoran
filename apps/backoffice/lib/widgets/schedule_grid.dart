@@ -50,6 +50,19 @@ class _ScheduleGridState extends State<ScheduleGrid> {
   late int _cursorColumn = widget.initialCursor.column.clamp(0, _halfHours.length - 1);
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCursorColumn());
+  }
+
+  void _scrollToCursorColumn() {
+    if (!_horizontal.hasClients) return;
+    final position = _horizontal.position;
+    final offset = (_cursorColumn - 2) * _slotColumnWidth;
+    _horizontal.jumpTo(offset.clamp(position.minScrollExtent, position.maxScrollExtent));
+  }
+
+  @override
   void dispose() {
     _horizontal.dispose();
     _vertical.dispose();
@@ -213,7 +226,7 @@ class _ScheduleGridState extends State<ScheduleGrid> {
       columnMergeSpan: span,
       child: ReservationCell(
         reservation: reservation,
-        guest: widget.schedule.guestOf(reservation),
+        guestName: widget.schedule.guestNameOf(reservation),
         selected: reservation.id == widget.selectedId,
         focused: cursorInside,
         onTap: () {

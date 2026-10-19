@@ -11,6 +11,7 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
     required this.getDailySchedule,
     required this.confirmReservation,
     required this.recordArrival,
+    required this.recordNoShow,
     required this.cancelReservation,
     required this.clock,
     required this.staff,
@@ -27,6 +28,7 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
       (event, emit) => _act(emit, event.id, () => confirmReservation(id: event.id, by: staff)),
     );
     on<ScheduleArrivalRequested>((event, emit) => _act(emit, event.id, () => recordArrival(id: event.id, by: staff)));
+    on<ScheduleNoShowRequested>((event, emit) => _act(emit, event.id, () => recordNoShow(id: event.id, by: staff)));
     on<ScheduleCancellationRequested>(
       (event, emit) => _act(emit, event.id, () => cancelReservation(id: event.id, by: staff, reason: event.reason)),
     );
@@ -39,6 +41,7 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
   final GetDailySchedule getDailySchedule;
   final ConfirmReservation confirmReservation;
   final RecordArrival recordArrival;
+  final RecordNoShow recordNoShow;
   final CancelReservation cancelReservation;
   final Clock clock;
   final User staff;

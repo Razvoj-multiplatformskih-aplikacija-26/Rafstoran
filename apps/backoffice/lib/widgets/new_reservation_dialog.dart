@@ -11,18 +11,20 @@ import '../dependencies.dart';
 Future<Reservation?> showNewReservationDialog(
   BuildContext context, {
   required DateTime day,
-  required List<User> guests,
+  required List<User> accounts,
 }) {
   final dependencies = context.read<BackofficeDependencies>();
   return showDialog<Reservation>(
     context: context,
     builder: (_) => BlocProvider(
-      create: (_) =>
-          AvailableSlotsBloc(getAvailableSlots: dependencies.getAvailableSlots, clock: dependencies.clock)
-            ..add(AvailableSlotsDaySelected(day)),
+      create: (_) => AvailableSlotsBloc(
+        getAvailableSlots: dependencies.getAvailableSlots,
+        clock: dependencies.clock,
+        user: dependencies.staff,
+      )..add(AvailableSlotsDaySelected(day)),
       child: _NewReservationDialog(
         day: day,
-        guests: guests,
+        accounts: accounts,
         staff: dependencies.staff,
         createReservation: dependencies.createReservation,
       ),
@@ -33,13 +35,13 @@ Future<Reservation?> showNewReservationDialog(
 class _NewReservationDialog extends StatefulWidget {
   const _NewReservationDialog({
     required this.day,
-    required this.guests,
+    required this.accounts,
     required this.staff,
     required this.createReservation,
   });
 
   final DateTime day;
-  final List<User> guests;
+  final List<User> accounts;
   final User staff;
   final CreateReservation createReservation;
 
@@ -48,25 +50,45 @@ class _NewReservationDialog extends StatefulWidget {
 }
 
 class _NewReservationDialogState extends State<_NewReservationDialog> {
-  User? _guest;
+  User? _account;
+  String _name = '';
+  String _phone = '';
   TimeSlot? _slot;
   bool _confirming = false;
+
+  Result<ReservationGuest> get _guest => switch (_account) {
+    final account? => Success(AccountGuest(account.id)),
+    null => ContactGuest.parse(name: _name, phone: _phone),
+  };
+
+  String? get _nameError => _name.trim().isEmpty ? null : GuestName.parse(_name).errorOrNull?.message;
+
+  String? get _phoneError => _phone.trim().isEmpty ? null : PhoneNumber.parse(_phone).errorOrNull?.message;
+
+  String _guestLabel(ReservationGuest guest) => switch (guest) {
+    AccountGuest() => _name,
+    ContactGuest(:final name, :final phone) => '${name.text}, ${phone.value}',
+  };
 
   @override
   Widget build(BuildContext context) {
     final slots = context.watch<AvailableSlotsBloc>().state;
-    final guest = _guest;
+    final guest = _guest.valueOrNull;
     final slot = _slot;
     if (_confirming && guest != null && slot != null) {
       return BlocProvider(
         create: (_) => ReservationFormBloc(
           createReservation: widget.createReservation,
           user: widget.staff,
-          forGuest: guest.id,
+          guest: guest,
           slot: slot,
           partySize: slots.partySize,
         ),
-        child: _ConfirmStep(guest: guest, slot: slot, onBack: () => setState(() => _confirming = false)),
+        child: _ConfirmStep(
+          guestLabel: _guestLabel(guest),
+          slot: slot,
+          onBack: () => setState(() => _confirming = false),
+        ),
       );
     }
     return AlertDialog(
@@ -79,15 +101,41 @@ class _NewReservationDialogState extends State<_NewReservationDialog> {
           children: [
             Text(capitalize(formatLongDate(widget.day))),
             const SizedBox(height: 16),
-            DropdownMenu<User>(
-              label: const Text('Gost'),
-              expandedInsets: EdgeInsets.zero,
-              initialSelection: _guest,
-              onSelected: (guest) => setState(() => _guest = guest),
-              dropdownMenuEntries: [
-                for (final guest in widget.guests) DropdownMenuEntry(value: guest, label: guest.username),
-              ],
+            Autocomplete<User>(
+              displayStringForOption: (account) => account.username,
+              optionsBuilder: (value) {
+                final query = value.text.trim().toLowerCase();
+                if (query.isEmpty) return const [];
+                return widget.accounts.where((account) => account.username.toLowerCase().contains(query));
+              },
+              onSelected: (account) => setState(() {
+                _account = account;
+                _name = account.username;
+              }),
+              fieldViewBuilder: (context, controller, focusNode, onSubmitted) => TextField(
+                controller: controller,
+                focusNode: focusNode,
+                autofocus: true,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  labelText: 'Gost',
+                  helperText: _account == null ? null : 'Ima nalog u aplikaciji.',
+                  errorText: _nameError,
+                ),
+                onChanged: (text) => setState(() {
+                  _name = text;
+                  if (_account?.username != text) _account = null;
+                }),
+              ),
             ),
+            if (_account == null) ...[
+              const SizedBox(height: 16),
+              TextField(
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(labelText: 'Telefon', errorText: _phoneError),
+                onChanged: (text) => setState(() => _phone = text),
+              ),
+            ],
             const SizedBox(height: 16),
             Row(
               children: [
@@ -148,9 +196,9 @@ class _NewReservationDialogState extends State<_NewReservationDialog> {
 }
 
 class _ConfirmStep extends StatefulWidget {
-  const _ConfirmStep({required this.guest, required this.slot, required this.onBack});
+  const _ConfirmStep({required this.guestLabel, required this.slot, required this.onBack});
 
-  final User guest;
+  final String guestLabel;
   final TimeSlot slot;
   final VoidCallback onBack;
 
@@ -193,7 +241,7 @@ class _ConfirmStepState extends State<_ConfirmStep> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${widget.guest.username}, ${formatDateAndTime(widget.slot.start)}, '
+                  '${widget.guestLabel}, ${formatDateAndTime(widget.slot.start)}, '
                   '${peopleLabel(state.partySize.value)}.',
                 ),
                 const SizedBox(height: 16),

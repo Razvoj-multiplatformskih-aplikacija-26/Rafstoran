@@ -9,6 +9,7 @@ extension ReservationStatusLabel on ReservationStatus {
     Confirmed() => 'Potvrđena',
     Cancelled() => 'Otkazana',
     Arrived() => 'Gost stigao',
+    NoShow() => 'Gost nije došao',
   };
 }
 
@@ -24,7 +25,7 @@ class StatusBadge extends StatelessWidget {
     final (background, foreground) = switch (status) {
       Pending() => (colors.pending, colors.onPending),
       Confirmed() => (colors.confirmed, colors.onConfirmed),
-      Cancelled() => (colors.cancelled, colors.onCancelled),
+      Cancelled() || NoShow() => (colors.cancelled, colors.onCancelled),
       Arrived() => (colors.arrived, colors.onArrived),
     };
     return AnimatedContainer(

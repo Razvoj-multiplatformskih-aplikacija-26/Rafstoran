@@ -32,6 +32,12 @@ final class ScheduleArrivalRequested extends DailyScheduleEvent {
   final ReservationId id;
 }
 
+final class ScheduleNoShowRequested extends DailyScheduleEvent {
+  const ScheduleNoShowRequested(this.id);
+
+  final ReservationId id;
+}
+
 final class ScheduleCancellationRequested extends DailyScheduleEvent {
   const ScheduleCancellationRequested(this.id, {this.reason = ''});
 

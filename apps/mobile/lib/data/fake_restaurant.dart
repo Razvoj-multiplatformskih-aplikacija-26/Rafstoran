@@ -50,7 +50,7 @@ final class FakeRestaurant implements ReservationRepository, SlotRepository {
   Future<List<Reservation>> reservationsOf(UserId guestId) async {
     await _roundTrip();
     if (_answersEmpty()) return const [];
-    return _reservations.where((r) => r.guestId == guestId).toList();
+    return _reservations.where((r) => r.guest.isAccount(guestId)).toList();
   }
 
   @override
@@ -62,6 +62,9 @@ final class FakeRestaurant implements ReservationRepository, SlotRepository {
   @override
   Future<Result<Reservation>> create(ReservationRequest request) async {
     await _roundTrip();
+    if (!guestIsFree(guest: request.guest, slot: request.slot, reservations: _reservations)) {
+      return const Failure(GuestAlreadyBooked());
+    }
     final table = assignTable(
       tables: fakeTables,
       reservations: _reservations,
@@ -77,11 +80,12 @@ final class FakeRestaurant implements ReservationRepository, SlotRepository {
   Reservation _store(ReservationRequest request, DiningTable table) {
     final reservation = Reservation(
       id: ReservationId('local-${_nextId++}'),
-      guestId: request.guestId,
+      guest: request.guest,
       slot: request.slot,
       partySize: request.partySize,
       note: request.note,
       tableId: table.id,
+      status: request.status,
       createdAt: clock.now(),
       enteredBy: request.enteredBy,
     );

@@ -18,14 +18,14 @@ const waiter = User(id: UserId('u-waiter'), username: 'waiter1', role: Role.wait
 
 Reservation reservationAt(
   DateTime start, {
-  UserId guestId = const UserId('u-guest'),
+  ReservationGuest guest = const AccountGuest(UserId('u-guest')),
   ReservationStatus status = const Pending(),
   int partySize = 2,
   String id = 'r-1',
 }) {
   return Reservation(
     id: ReservationId(id),
-    guestId: guestId,
+    guest: guest,
     slot: TimeSlot.existing(start),
     partySize: PartySize.parse(partySize).valueOrNull!,
     status: status,

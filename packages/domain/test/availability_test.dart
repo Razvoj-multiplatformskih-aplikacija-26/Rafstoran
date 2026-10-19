@@ -44,4 +44,23 @@ void main() {
     expect(at18.freeTables, 2);
     expect(at20.freeTables, 1);
   });
+
+  test('one guest holds one table at a time, by account or by phone', () {
+    final ana = ContactGuest.parse(name: 'Ana', phone: '064 123 4567').valueOrNull!;
+    final anaAgain = ContactGuest.parse(name: 'Ana P.', phone: '0641234567').valueOrNull!;
+    final at20 = TimeSlot.existing(belgrade(2026, 10, 9, 20));
+    final reservations = [
+      reservationAt(belgrade(2026, 10, 9, 19), id: 'r-a'),
+      reservationAt(belgrade(2026, 10, 9, 21), id: 'r-b', guest: ana),
+      reservationAt(
+        belgrade(2026, 10, 9, 20),
+        id: 'r-c',
+        guest: const AccountGuest(UserId('u-ana')),
+        status: Cancelled(reason: 'otkazano', cancelledBy: guest.id, at: noon),
+      ),
+    ];
+    expect(guestIsFree(guest: const AccountGuest(UserId('u-guest')), slot: at20, reservations: reservations), isFalse);
+    expect(guestIsFree(guest: anaAgain, slot: at20, reservations: reservations), isFalse);
+    expect(guestIsFree(guest: const AccountGuest(UserId('u-ana')), slot: at20, reservations: reservations), isTrue);
+  });
 }

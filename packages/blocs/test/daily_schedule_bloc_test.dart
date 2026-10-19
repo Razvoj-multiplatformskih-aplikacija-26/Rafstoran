@@ -34,11 +34,11 @@ void main() {
   final noon = hours.localToUtc(2026, 10, 9, const LocalTime(12, 0));
   final tonight = hours.localToUtc(2026, 10, 9, const LocalTime(20, 0));
   final clock = FixedClock(noon);
-  const waiter = User(id: UserId('u-waiter'), username: 'Konobar', role: Role.waiter);
+  const waiter = User(id: UserId('u-waiter'), username: 'Marija Kostić', role: Role.waiter);
 
   final pending = Reservation(
     id: const ReservationId('r-1'),
-    guestId: guest.id,
+    guest: AccountGuest(guest.id),
     slot: TimeSlot.existing(tonight),
     partySize: PartySize.parse(2).valueOrNull!,
     tableId: const DiningTableId('t-2'),
@@ -54,6 +54,7 @@ void main() {
       getDailySchedule: GetDailySchedule(schedules: schedules),
       confirmReservation: ConfirmReservation(reservations: restaurant, clock: clock),
       recordArrival: RecordArrival(reservations: restaurant, clock: clock),
+      recordNoShow: RecordNoShow(reservations: restaurant, clock: clock),
       cancelReservation: CancelReservation(reservations: restaurant, clock: clock),
       clock: clock,
       staff: waiter,

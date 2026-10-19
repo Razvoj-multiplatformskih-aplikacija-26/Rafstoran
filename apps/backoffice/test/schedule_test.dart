@@ -1,6 +1,5 @@
 import 'package:backoffice/widgets/schedule_grid.dart';
 import 'package:backoffice/widgets/schedule_list.dart';
-import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -49,7 +48,7 @@ void main() {
     useWindow(tester, width: 1440, height: 900);
     await pumpBackoffice(tester);
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < 3; i++) {
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     }
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
@@ -60,7 +59,7 @@ void main() {
     expect(find.byType(ScheduleList), findsOneWidget);
     expect(find.byType(ScheduleGrid), findsNothing);
     expect(
-      tester.getSemantics(find.bySemanticsLabel(RegExp(r'^Tamara Pavlović, .*sto S2'))),
+      tester.getSemantics(find.bySemanticsLabel(RegExp(r'^Jelena Nikolić, .*sto S2'))),
       isSemantics(isSelected: true),
     );
 
@@ -74,7 +73,7 @@ void main() {
     await pumpBackoffice(tester);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < 3; i++) {
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     }
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
@@ -99,22 +98,21 @@ void main() {
 
   testWidgets('a link to a reservation opens it once the day has loaded', (tester) async {
     useWindow(tester, width: 1440, height: 900);
-    tester.binding.platformDispatcher.defaultRouteNameTestValue = '/schedule/2026-10-09?reservation=s-21';
+    tester.binding.platformDispatcher.defaultRouteNameTestValue = '/schedule/2026-10-09?reservation=s-111';
     addTearDown(tester.binding.platformDispatcher.clearDefaultRouteNameTestValue);
     await pumpBackoffice(tester);
 
     expect(find.text('Bez glutena.'), findsOneWidget);
   });
 
-  testWidgets('staff enter a reservation for a guest with the slot and form blocs of the guest app', (tester) async {
+  testWidgets('staff enter a phone reservation for a guest without an account, confirmed at once', (tester) async {
     useWindow(tester, width: 1440, height: 900);
     await pumpBackoffice(tester);
 
     await tester.tap(find.text('Nova rezervacija'));
     await settle(tester);
-    await tester.tap(find.byType(DropdownMenu<User>));
-    await settle(tester);
-    await tester.tap(find.text('Ana Petrović').last);
+    await tester.enterText(find.widgetWithText(TextField, 'Gost'), 'Petra Ilić');
+    await tester.enterText(find.widgetWithText(TextField, 'Telefon'), '064 555 0202');
     await settle(tester);
     await tester.tap(find.byType(ChoiceChip).last);
     await settle(tester);
@@ -125,7 +123,9 @@ void main() {
     await settle(tester);
 
     expect(find.text('Rezervacija je sačuvana.'), findsOneWidget);
-    expect(find.text('Rezervisano telefonom.'), findsOneWidget);
-    expect(find.text('Konobar'), findsOneWidget);
+    expect(find.text('Petra Ilić'), findsWidgets);
+    expect(find.text('0645550202'), findsOneWidget);
+    expect(find.text('Potvrđena'), findsOneWidget);
+    expect(find.text('Marija Kostić'), findsOneWidget);
   });
 }

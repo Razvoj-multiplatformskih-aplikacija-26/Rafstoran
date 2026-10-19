@@ -10,7 +10,7 @@ final class AppDependencies {
     required ReservationRepository reservations,
     required SlotRepository slots,
     this.fakeRestaurant,
-  }) : getAvailableSlots = GetAvailableSlots(slots: slots),
+  }) : getAvailableSlots = GetAvailableSlots(slots: slots, clock: clock),
        createReservation = CreateReservation(reservations: reservations, slots: slots, clock: clock),
        getMyReservations = GetMyReservations(reservations: reservations),
        cancelReservation = CancelReservation(reservations: reservations, clock: clock);

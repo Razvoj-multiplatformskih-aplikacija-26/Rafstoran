@@ -10,7 +10,7 @@ final class ReservationFormBloc extends Bloc<ReservationFormEvent, ReservationFo
   ReservationFormBloc({
     required this.createReservation,
     required this.user,
-    this.forGuest,
+    this.guest,
     required this.slot,
     required PartySize partySize,
   }) : super(ReservationFormEditing(partySize: partySize, noteText: '')) {
@@ -31,7 +31,7 @@ final class ReservationFormBloc extends Bloc<ReservationFormEvent, ReservationFo
 
   final CreateReservation createReservation;
   final User user;
-  final UserId? forGuest;
+  final ReservationGuest? guest;
   final TimeSlot slot;
 
   Future<void> _onSubmitted(ReservationFormSubmitted event, Emitter<ReservationFormState> emit) async {
@@ -46,7 +46,7 @@ final class ReservationFormBloc extends Bloc<ReservationFormEvent, ReservationFo
     try {
       final result = await createReservation(
         by: user,
-        forGuest: forGuest,
+        guest: guest,
         start: slot.start,
         partySize: current.partySize,
         note: parsedNote.isEmpty ? null : parsedNote,

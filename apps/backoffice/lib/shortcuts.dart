@@ -25,6 +25,10 @@ class RecordArrivalIntent extends Intent {
   const RecordArrivalIntent();
 }
 
+class RecordNoShowIntent extends Intent {
+  const RecordNoShowIntent();
+}
+
 class CancelSelectedIntent extends Intent {
   const CancelSelectedIntent();
 }
@@ -56,6 +60,7 @@ class CommandPaletteIntent extends Intent {
 Map<ShortcutActivator, Intent> scheduleShortcuts() => {
   const SingleActivator(LogicalKeyboardKey.keyC): const ConfirmSelectedIntent(),
   const SingleActivator(LogicalKeyboardKey.keyA): const RecordArrivalIntent(),
+  const SingleActivator(LogicalKeyboardKey.keyD): const RecordNoShowIntent(),
   const SingleActivator(LogicalKeyboardKey.keyX): const CancelSelectedIntent(),
   const SingleActivator(LogicalKeyboardKey.escape): const ClearSelectionIntent(),
   const SingleActivator(LogicalKeyboardKey.keyT): const TodayIntent(),
@@ -81,6 +86,7 @@ List<ShortcutDescription> shortcutDescriptions() => [
   const ShortcutDescription('Esc', 'Zatvori detalj'),
   const ShortcutDescription('C', 'Potvrdi izabranu rezervaciju'),
   const ShortcutDescription('A', 'Zabeleži dolazak gosta'),
+  const ShortcutDescription('D', 'Zabeleži da gost nije došao'),
   const ShortcutDescription('X', 'Otkaži izabranu rezervaciju'),
   const ShortcutDescription('P  /  N', 'Prethodni / naredni dan'),
   ShortcutDescription('$optionKeyLabel ←  /  $optionKeyLabel →', 'Prethodni / naredni dan'),
