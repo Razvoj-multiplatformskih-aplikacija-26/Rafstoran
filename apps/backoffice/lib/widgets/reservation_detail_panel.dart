@@ -189,7 +189,7 @@ class _ActionButton extends StatelessWidget {
       children: [
         Icon(icon, size: 20),
         const SizedBox(width: 8),
-        Text(label),
+        Flexible(child: Text(label, textAlign: TextAlign.center)),
         const SizedBox(width: 10),
         ExcludeSemantics(
           child: Container(
