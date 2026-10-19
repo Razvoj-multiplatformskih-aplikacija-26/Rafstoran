@@ -1,6 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:session_storage/session_storage.dart';
+import 'package:mobile/data/secure_token_store.dart';
 
 void main() {
   test('a token written before a restart is read by a new store and is gone after logout', () async {

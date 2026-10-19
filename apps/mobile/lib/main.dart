@@ -3,10 +3,10 @@ import 'package:domain/domain.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:session_storage/session_storage.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app.dart';
+import 'data/secure_token_store.dart';
 import 'dependencies.dart';
 import 'server_address.dart';
 

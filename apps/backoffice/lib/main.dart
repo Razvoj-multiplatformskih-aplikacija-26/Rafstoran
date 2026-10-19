@@ -6,10 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:session_storage/session_storage.dart';
 import 'package:ui/ui.dart';
 
 import 'app.dart';
+import 'data/secure_token_store.dart';
 import 'dependencies.dart';
 
 Future<void> main() async {

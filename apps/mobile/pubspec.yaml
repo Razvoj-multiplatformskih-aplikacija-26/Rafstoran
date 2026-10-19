@@ -19,10 +19,9 @@ dependencies:
   flutter_bloc: 9.1.1
   flutter_localizations:
     sdk: flutter
+  flutter_secure_storage: 11.2.0
   go_router: 18.0.2
   intl: 0.20.3
-  session_storage:
-    path: ../../packages/session_storage
   ui:
     path: ../../packages/ui
   use_cases:
