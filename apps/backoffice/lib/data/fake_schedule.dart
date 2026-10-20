@@ -145,7 +145,7 @@ const _day = <_Entry>[
     tableId: 't-04',
     partySize: 4,
     plan: _Plan.confirmed,
-    outcome: _Outcome.arrived,
+    outcome: _Outcome.noShow,
     note: null,
     caller: null,
   ),
@@ -219,7 +219,7 @@ DateTime _earlier(DateTime a, DateTime b) => a.isBefore(b) ? a : b;
 List<Reservation> staffSeedReservations(DateTime now) {
   final today = restaurantDay(now);
   final local = restaurantTime(now);
-  final anchor = ((local.hour * 60 + local.minute) ~/ 30 * 30).clamp(14 * 60, 20 * 60);
+  final anchor = ((local.hour * 60 + local.minute) ~/ 30 * 30).clamp(14 * 60, 19 * 60 + 30);
   final accounts = staffGuests.keys.toList();
 
   Reservation seed(int dayOffset, int index, _Entry entry, ReservationGuest guest) {
