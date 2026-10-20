@@ -63,7 +63,7 @@ Result<Reservation> recordArrival(Reservation reservation, {required User by, re
   if (!canTransition(reservation.status, next)) {
     return Failure(InvalidTransition(from: reservation.status, to: next));
   }
-  if (!isArrivalTime(reservation, now: now)) return const Failure(ArrivalOutsideSlot());
+  if (!isArrivalTime(reservation, now: now)) return const Failure(ArrivalOutsideSlot(early: earlyArrival));
   return Success(reservation.copyWith(status: next));
 }
 

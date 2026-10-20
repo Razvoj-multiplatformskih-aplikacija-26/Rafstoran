@@ -16,7 +16,7 @@ final class PhoneNumber {
     final compact = input.replaceAll(RegExp(r'[\s\-/().]'), '');
     final digits = compact.startsWith('+') ? compact.substring(1) : compact;
     final valid = RegExp(r'^\d+$').hasMatch(digits) && digits.length >= minDigits && digits.length <= maxDigits;
-    if (!valid) return const Failure(InvalidPhoneNumber());
+    if (!valid) return const Failure(InvalidPhoneNumber(min: minDigits, max: maxDigits));
     return Success(PhoneNumber._(compact));
   }
 

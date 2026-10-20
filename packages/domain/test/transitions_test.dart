@@ -43,11 +43,11 @@ void main() {
       expect(recordArrival(pending, by: waiter, now: at(-earlyArrival)).isSuccess, isTrue);
       expect(
         recordArrival(pending, by: waiter, now: at(-earlyArrival - const Duration(minutes: 1))),
-        const Failure<Reservation>(ArrivalOutsideSlot()),
+        const Failure<Reservation>(ArrivalOutsideSlot(early: earlyArrival)),
       );
       expect(
         recordArrival(pending, by: waiter, now: at(TimeSlot.duration)),
-        const Failure<Reservation>(ArrivalOutsideSlot()),
+        const Failure<Reservation>(ArrivalOutsideSlot(early: earlyArrival)),
       );
       expect(
         recordNoShow(pending, by: waiter, now: at(-const Duration(minutes: 1))),

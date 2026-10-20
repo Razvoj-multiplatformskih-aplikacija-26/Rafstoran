@@ -70,8 +70,20 @@ final class CancellationTooLate extends DomainError {
   String toString() => 'CancellationTooLate(notice: $notice)';
 }
 
+@immutable
 final class TooSoonToBook extends DomainError {
-  const TooSoonToBook();
+  const TooSoonToBook({required this.notice});
+
+  final Duration notice;
+
+  @override
+  bool operator ==(Object other) => other is TooSoonToBook && other.notice == notice;
+
+  @override
+  int get hashCode => Object.hash(TooSoonToBook, notice);
+
+  @override
+  String toString() => 'TooSoonToBook(notice: $notice)';
 }
 
 final class ReservationStarted extends DomainError {
@@ -82,8 +94,20 @@ final class ReservationNotStarted extends DomainError {
   const ReservationNotStarted();
 }
 
+@immutable
 final class ArrivalOutsideSlot extends DomainError {
-  const ArrivalOutsideSlot();
+  const ArrivalOutsideSlot({required this.early});
+
+  final Duration early;
+
+  @override
+  bool operator ==(Object other) => other is ArrivalOutsideSlot && other.early == early;
+
+  @override
+  int get hashCode => Object.hash(ArrivalOutsideSlot, early);
+
+  @override
+  String toString() => 'ArrivalOutsideSlot(early: $early)';
 }
 
 @immutable
@@ -116,22 +140,36 @@ final class GuestAlreadyBooked extends DomainError {
 
 @immutable
 final class InvalidGuestName extends DomainError {
-  const InvalidGuestName(this.length);
+  const InvalidGuestName(this.length, {required this.max});
 
   final int length;
+  final int max;
 
   @override
-  bool operator ==(Object other) => other is InvalidGuestName && other.length == length;
+  bool operator ==(Object other) => other is InvalidGuestName && other.length == length && other.max == max;
 
   @override
-  int get hashCode => Object.hash(InvalidGuestName, length);
+  int get hashCode => Object.hash(InvalidGuestName, length, max);
 
   @override
-  String toString() => 'InvalidGuestName($length)';
+  String toString() => 'InvalidGuestName($length, max: $max)';
 }
 
+@immutable
 final class InvalidPhoneNumber extends DomainError {
-  const InvalidPhoneNumber();
+  const InvalidPhoneNumber({required this.min, required this.max});
+
+  final int min;
+  final int max;
+
+  @override
+  bool operator ==(Object other) => other is InvalidPhoneNumber && other.min == min && other.max == max;
+
+  @override
+  int get hashCode => Object.hash(InvalidPhoneNumber, min, max);
+
+  @override
+  String toString() => 'InvalidPhoneNumber(min: $min, max: $max)';
 }
 
 final class NotAllowed extends DomainError {

@@ -15,7 +15,7 @@ final class GuestName {
   static Result<GuestName> parse(String input) {
     final text = input.trim().replaceAll(RegExp(r'\s+'), ' ');
     final length = text.characters.length;
-    if (length == 0 || length > maxLength) return Failure(InvalidGuestName(length));
+    if (length == 0 || length > maxLength) return Failure(InvalidGuestName(length, max: maxLength));
     return Success(GuestName._(text));
   }
 

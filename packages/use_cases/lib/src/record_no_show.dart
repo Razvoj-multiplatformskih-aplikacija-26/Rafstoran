@@ -1,5 +1,6 @@
 import 'package:domain/domain.dart';
 
+import 'change_status.dart';
 import 'clock.dart';
 import 'ports/reservation_repository.dart';
 
@@ -9,12 +10,10 @@ final class RecordNoShow {
   final ReservationRepository reservations;
   final Clock clock;
 
-  Future<Result<Reservation>> call({required ReservationId id, required User by}) async {
-    final reservation = await reservations.find(id);
-    if (reservation == null) return const Failure(NotFound());
-    return switch (recordNoShow(reservation, by: by, now: clock.now())) {
-      Failure(:final error) => Failure(error),
-      Success(:final value) => Success(await reservations.save(value)),
-    };
-  }
+  Future<Result<Reservation>> call({required ReservationId id, required User by}) => changeStatus(
+    reservations,
+    id,
+    by: by,
+    change: (reservation) => recordNoShow(reservation, by: by, now: clock.now()),
+  );
 }

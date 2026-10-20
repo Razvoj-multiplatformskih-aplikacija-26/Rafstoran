@@ -26,7 +26,9 @@ final class CreateReservation {
     final slot = TimeSlot.parse(start, now: now, openingHours: openingHours);
     return switch (slot) {
       Failure(:final error) => Failure(error),
-      Success(:final value) when !mayBook(value, by: by, now: now) => const Failure(TooSoonToBook()),
+      Success(:final value) when !mayBook(value, by: by, now: now) => Failure(
+        TooSoonToBook(notice: bookingNoticeFor(by)),
+      ),
       Success(:final value) => reservations.create(
         ReservationRequest(
           guest: forGuest,
