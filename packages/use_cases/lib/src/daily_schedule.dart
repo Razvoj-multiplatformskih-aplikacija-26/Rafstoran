@@ -32,8 +32,11 @@ final class DailySchedule {
     return starts;
   }
 
+  List<Reservation> get activeReservations =>
+      reservations.where((r) => r.isActive).toList()..sort((a, b) => a.slot.start.compareTo(b.slot.start));
+
   List<Reservation> reservationsFor(DiningTable table) =>
-      reservations.where((r) => r.tableId == table.id && r.isActive).toList();
+      activeReservations.where((r) => r.tableId == table.id).toList();
 
   Reservation? reservationAt(DiningTable table, DateTime instant) =>
       reservationsFor(table).where((r) => !instant.isBefore(r.slot.start) && instant.isBefore(r.slot.end)).firstOrNull;

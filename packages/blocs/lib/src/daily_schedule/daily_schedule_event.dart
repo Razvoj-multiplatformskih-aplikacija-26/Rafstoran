@@ -45,6 +45,23 @@ final class ScheduleCancellationRequested extends DailyScheduleEvent {
   final String reason;
 }
 
+final class ScheduleCursorMoved extends DailyScheduleEvent {
+  const ScheduleCursorMoved({this.rows = 0, this.columns = 0});
+
+  final int rows;
+  final int columns;
+}
+
+final class ScheduleCursorPlaced extends DailyScheduleEvent {
+  const ScheduleCursorPlaced(this.cursor);
+
+  final ScheduleCursor cursor;
+}
+
+final class ScheduleCursorActivated extends DailyScheduleEvent {
+  const ScheduleCursorActivated();
+}
+
 final class DailyScheduleNoticeAcknowledged extends DailyScheduleEvent {
   const DailyScheduleNoticeAcknowledged();
 }

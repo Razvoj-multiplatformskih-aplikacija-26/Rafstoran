@@ -2,6 +2,8 @@ part of 'daily_schedule_bloc.dart';
 
 enum ScheduleAction { confirm, recordArrival, recordNoShow, cancel }
 
+typedef ScheduleCursor = ({int row, int column});
+
 sealed class DailyScheduleState extends Equatable {
   const DailyScheduleState({required this.day});
 
@@ -35,6 +37,7 @@ final class DailyScheduleLoaded extends DailyScheduleState {
     required super.day,
     required this.schedule,
     this.actions = const {},
+    this.cursor = (row: 0, column: 0),
     this.selectedId,
     this.notice,
     this.inFlightId,
@@ -42,12 +45,13 @@ final class DailyScheduleLoaded extends DailyScheduleState {
 
   final DailySchedule schedule;
   final Map<ReservationId, Set<ScheduleAction>> actions;
+  final ScheduleCursor cursor;
   final ReservationId? selectedId;
   final ScheduleNotice? notice;
   final ReservationId? inFlightId;
 
   @override
-  List<Object?> get props => [...super.props, schedule, actions, selectedId, notice, inFlightId];
+  List<Object?> get props => [...super.props, schedule, actions, cursor, selectedId, notice, inFlightId];
 
   Set<ScheduleAction> actionsFor(Reservation reservation) => actions[reservation.id] ?? const {};
 
@@ -56,6 +60,7 @@ final class DailyScheduleLoaded extends DailyScheduleState {
   @override
   String toString() => [
     'DailyScheduleLoaded(${schedule.reservations.length} reservations',
+    ', cursor ${cursor.row}:${cursor.column}',
     if (selectedId case final id?) ', selected ${id.value}',
     if (inFlightId case final id?) ', in flight ${id.value}',
     if (notice case final notice?) ', ${notice.runtimeType}',
@@ -67,9 +72,21 @@ final class DailyScheduleLoaded extends DailyScheduleState {
 
   bool get isEmpty => schedule.reservations.isEmpty;
 
+  DateTime? get cursorTime => schedule.halfHours.isEmpty ? null : schedule.halfHours[cursor.column];
+
+  Reservation? get reservationAtCursor => schedule.tables.isEmpty || schedule.halfHours.isEmpty
+      ? null
+      : schedule.reservationAt(schedule.tables[cursor.row], schedule.halfHours[cursor.column]);
+
+  ScheduleCursor clamp(ScheduleCursor cursor) => (
+    row: cursor.row.clamp(0, schedule.tables.isEmpty ? 0 : schedule.tables.length - 1),
+    column: cursor.column.clamp(0, schedule.halfHours.isEmpty ? 0 : schedule.halfHours.length - 1),
+  );
+
   DailyScheduleLoaded copyWith({
     DailySchedule? schedule,
     Map<ReservationId, Set<ScheduleAction>>? actions,
+    ScheduleCursor? cursor,
     ReservationId? selectedId,
     bool clearSelection = false,
     ScheduleNotice? notice,
@@ -80,6 +97,7 @@ final class DailyScheduleLoaded extends DailyScheduleState {
       day: day,
       schedule: schedule ?? this.schedule,
       actions: actions ?? this.actions,
+      cursor: cursor ?? this.cursor,
       selectedId: clearSelection ? null : (selectedId ?? this.selectedId),
       notice: clearNotice ? null : (notice ?? this.notice),
       inFlightId: inFlightId,

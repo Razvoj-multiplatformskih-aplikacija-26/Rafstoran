@@ -19,18 +19,7 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
   }) : super(DailyScheduleLoading(day: restaurantDay(clock.now()))) {
     on<DailyScheduleRequested>((event, emit) => _load(emit, day: event.day));
     on<DailyScheduleRefreshed>((event, emit) => _load(emit, day: state.day, keepSelection: true));
-    on<ScheduleReservationSelected>((event, emit) {
-      final current = state;
-      if (current is DailyScheduleLoaded) {
-        emit(
-          current.copyWith(
-            selectedId: event.id,
-            clearSelection: event.id == null,
-            actions: _actionsFor(current.schedule),
-          ),
-        );
-      }
-    });
+    on<ScheduleReservationSelected>((event, emit) => _select(emit, event.id));
     on<ScheduleConfirmationRequested>(
       (event, emit) => _act(emit, event.id, () => confirmReservation(id: event.id, by: staff)),
     );
@@ -39,6 +28,22 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
     on<ScheduleCancellationRequested>(
       (event, emit) => _act(emit, event.id, () => cancelReservation(id: event.id, by: staff, reason: event.reason)),
     );
+    on<ScheduleCursorMoved>((event, emit) {
+      final current = state;
+      if (current is! DailyScheduleLoaded) return;
+      final cursor = current.cursor;
+      emit(
+        current.copyWith(cursor: current.clamp((row: cursor.row + event.rows, column: cursor.column + event.columns))),
+      );
+    });
+    on<ScheduleCursorPlaced>((event, emit) {
+      final current = state;
+      if (current is DailyScheduleLoaded) emit(current.copyWith(cursor: current.clamp(event.cursor)));
+    });
+    on<ScheduleCursorActivated>((event, emit) {
+      final current = state;
+      if (current is DailyScheduleLoaded) _select(emit, current.reservationAtCursor?.id);
+    });
     on<DailyScheduleNoticeAcknowledged>((event, emit) {
       final current = state;
       if (current is DailyScheduleLoaded && current.notice != null) emit(current.copyWith(clearNotice: true));
@@ -60,11 +65,19 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
     final request = ++_request;
     final previous = state;
     final selectedId = keepSelection && previous is DailyScheduleLoaded ? previous.selectedId : null;
+    final cursor = keepSelection && previous is DailyScheduleLoaded ? previous.cursor : null;
     if (!keepSelection) emit(DailyScheduleLoading(day: day));
     try {
       final schedule = await getDailySchedule(day);
       if (request != _request) return;
-      emit(DailyScheduleLoaded(day: day, schedule: schedule, actions: _actionsFor(schedule), selectedId: selectedId));
+      final loaded = DailyScheduleLoaded(
+        day: day,
+        schedule: schedule,
+        actions: _actionsFor(schedule),
+        cursor: cursor ?? (row: 0, column: _currentHalfHour(schedule)),
+        selectedId: selectedId,
+      );
+      emit(loaded.copyWith(cursor: loaded.clamp(loaded.cursor)));
     } on Exception catch (cause) {
       if (request != _request) return;
       emit(DailyScheduleFailure(day: day, cause: cause));
@@ -102,6 +115,18 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
     final latest = state;
     if (request != _request || latest is! DailyScheduleLoaded) return;
     emit(latest.copyWith(schedule: schedule, actions: _actionsFor(schedule ?? latest.schedule), notice: notice));
+  }
+
+  void _select(Emitter<DailyScheduleState> emit, ReservationId? id) {
+    final current = state;
+    if (current is! DailyScheduleLoaded) return;
+    emit(current.copyWith(selectedId: id, clearSelection: id == null, actions: _actionsFor(current.schedule)));
+  }
+
+  int _currentHalfHour(DailySchedule schedule) {
+    final now = clock.now();
+    final column = schedule.halfHours.lastIndexWhere((start) => !start.isAfter(now));
+    return restaurantDay(now) == schedule.day && column > 0 ? column : 0;
   }
 
   Map<ReservationId, Set<ScheduleAction>> _actionsFor(DailySchedule schedule) {

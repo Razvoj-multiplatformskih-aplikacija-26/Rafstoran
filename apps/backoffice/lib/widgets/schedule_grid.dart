@@ -1,3 +1,4 @@
+import 'package:blocs/blocs.dart';
 import 'package:design_tokens/design_tokens.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
@@ -8,16 +9,16 @@ import 'package:use_cases/use_cases.dart';
 
 import 'reservation_cell.dart';
 
-typedef GridCursor = ({int row, int column});
-
 class ScheduleGrid extends StatefulWidget {
   const ScheduleGrid({
     super.key,
     required this.schedule,
     required this.selectedId,
     required this.focusNode,
-    required this.initialCursor,
-    required this.onCursorChanged,
+    required this.cursor,
+    required this.onCursorMoved,
+    required this.onCursorPlaced,
+    required this.onActivate,
     required this.onSelect,
     required this.onContextMenu,
   });
@@ -25,8 +26,10 @@ class ScheduleGrid extends StatefulWidget {
   final DailySchedule schedule;
   final ReservationId? selectedId;
   final FocusNode focusNode;
-  final GridCursor initialCursor;
-  final ValueChanged<GridCursor> onCursorChanged;
+  final ScheduleCursor cursor;
+  final void Function(int rows, int columns) onCursorMoved;
+  final ValueChanged<ScheduleCursor> onCursorPlaced;
+  final VoidCallback onActivate;
   final ValueChanged<Reservation?> onSelect;
   final void Function(Reservation reservation, Offset globalPosition) onContextMenu;
 
@@ -46,8 +49,8 @@ class _ScheduleGridState extends State<ScheduleGrid> {
   List<DiningTable> get _tables => widget.schedule.tables;
   List<DateTime> get _halfHours => widget.schedule.halfHours;
   FocusNode get _focusNode => widget.focusNode;
-  late int _cursorRow = widget.initialCursor.row.clamp(0, _tables.length - 1);
-  late int _cursorColumn = widget.initialCursor.column.clamp(0, _halfHours.length - 1);
+  int get _cursorRow => widget.cursor.row;
+  int get _cursorColumn => widget.cursor.column;
 
   @override
   void initState() {
@@ -58,6 +61,9 @@ class _ScheduleGridState extends State<ScheduleGrid> {
   @override
   void didUpdateWidget(ScheduleGrid oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.cursor != oldWidget.cursor) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _revealCursor());
+    }
     if (widget.selectedId != null && widget.selectedId != oldWidget.selectedId) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _revealSelected());
     }
@@ -128,30 +134,18 @@ class _ScheduleGridState extends State<ScheduleGrid> {
     };
     if (dRow != 0 || dColumn != 0) {
       if (HardwareKeyboard.instance.isAltPressed) return KeyEventResult.ignored;
-      _moveCursor(
-        (_cursorRow + dRow).clamp(0, _tables.length - 1),
-        (_cursorColumn + dColumn).clamp(0, _halfHours.length - 1),
-      );
-      WidgetsBinding.instance.addPostFrameCallback((_) => _revealCursor());
+      widget.onCursorMoved(dRow, dColumn);
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter || key == LogicalKeyboardKey.space) {
-      widget.onSelect(widget.schedule.reservationAt(_tables[_cursorRow], _halfHours[_cursorColumn]));
+      widget.onActivate();
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
   }
 
-  void _moveCursor(int row, int column) {
-    setState(() {
-      _cursorRow = row;
-      _cursorColumn = column;
-    });
-    widget.onCursorChanged((row: row, column: column));
-  }
-
   void _moveCursorTo(int row, int column) {
-    _moveCursor(row, column);
+    widget.onCursorPlaced((row: row, column: column));
     _focusNode.requestFocus();
   }
 
@@ -303,39 +297,29 @@ class _TableHeader extends StatelessWidget {
   }
 }
 
-class _EmptyCell extends StatefulWidget {
+class _EmptyCell extends StatelessWidget {
   const _EmptyCell({required this.focused, required this.onTap});
 
   final bool focused;
   final VoidCallback onTap;
 
   @override
-  State<_EmptyCell> createState() => _EmptyCellState();
-}
-
-class _EmptyCellState extends State<_EmptyCell> {
-  bool _hovered = false;
-
-  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(8));
     return ExcludeSemantics(
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(3),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: _hovered ? scheme.onSurface.withValues(alpha: 0.05) : null,
-                borderRadius: BorderRadius.circular(8),
-                border: widget.focused ? Border.all(color: scheme.onSurface, width: 2) : null,
-              ),
-            ),
+      child: Padding(
+        padding: const EdgeInsets.all(3),
+        child: Material(
+          type: MaterialType.transparency,
+          shape: focused ? shape.copyWith(side: BorderSide(color: scheme.onSurface, width: 2)) : shape,
+          child: InkWell(
+            onTap: onTap,
+            canRequestFocus: false,
+            customBorder: shape,
+            hoverColor: scheme.onSurface.withValues(alpha: 0.05),
+            splashFactory: NoSplash.splashFactory,
+            highlightColor: Colors.transparent,
           ),
         ),
       ),

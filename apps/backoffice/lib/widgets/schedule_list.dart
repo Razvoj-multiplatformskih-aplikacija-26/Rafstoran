@@ -10,14 +10,14 @@ class ScheduleList extends StatefulWidget {
     required this.selectedId,
     required this.onSelect,
     required this.onContextMenu,
-    this.now,
+    this.openAt,
   });
 
   final DailySchedule schedule;
   final ReservationId? selectedId;
   final ValueChanged<Reservation> onSelect;
   final void Function(Reservation reservation, Offset globalPosition) onContextMenu;
-  final DateTime? now;
+  final DateTime? openAt;
 
   @override
   State<ScheduleList> createState() => _ScheduleListState();
@@ -38,16 +38,15 @@ class _ScheduleListState extends State<ScheduleList> {
   DateTime? _targetStart(List<Reservation> reservations) {
     final selected = reservations.where((r) => r.id == widget.selectedId).firstOrNull;
     if (selected != null) return selected.slot.start;
-    final now = widget.now;
-    return now == null ? null : reservations.where((r) => r.slot.end.isAfter(now)).firstOrNull?.slot.start;
+    final openAt = widget.openAt;
+    return openAt == null ? null : reservations.where((r) => r.slot.end.isAfter(openAt)).firstOrNull?.slot.start;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final schedule = widget.schedule;
-    final reservations = schedule.reservations.where((r) => r.isActive).toList()
-      ..sort((a, b) => a.slot.start.compareTo(b.slot.start));
+    final reservations = schedule.activeReservations;
     final groups = <DateTime, List<Reservation>>{};
     for (final reservation in reservations) {
       groups.putIfAbsent(reservation.slot.start, () => []).add(reservation);

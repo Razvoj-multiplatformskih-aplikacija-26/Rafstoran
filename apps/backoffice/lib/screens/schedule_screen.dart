@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ui/ui.dart';
-import 'package:use_cases/use_cases.dart';
 
 import '../data/fake_schedule.dart';
 import '../dependencies.dart';
@@ -35,7 +34,6 @@ class ScheduleScreen extends StatefulWidget {
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
   final _gridFocus = FocusNode(debugLabel: 'schedule grid');
-  GridCursor? _cursor;
 
   DailyScheduleBloc get _bloc => context.read<DailyScheduleBloc>();
 
@@ -67,18 +65,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
-  int _currentColumn(DailySchedule schedule) {
-    final now = _bloc.clock.now();
-    final column = schedule.halfHours.lastIndexWhere((start) => !start.isAfter(now));
-    return restaurantDay(now) == schedule.day && column > 0 ? column : 0;
-  }
-
   void _goTo(DateTime day, {ReservationId? selected}) => context.go(ScheduleScreen.pathFor(day, selected: selected));
 
-  void _select(Reservation? reservation) {
-    _bloc.add(ScheduleReservationSelected(reservation?.id));
-    _goTo(widget.day, selected: reservation?.id);
-  }
+  void _select(Reservation? reservation) => _bloc.add(ScheduleReservationSelected(reservation?.id));
 
   Reservation? get _selected => switch (_bloc.state) {
     DailyScheduleLoaded(:final selected) => selected,
@@ -227,7 +216,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         run: () => showShortcutsOverview(context),
       ),
       if (state is DailyScheduleLoaded)
-        for (final reservation in state.schedule.reservations.where((r) => r.isActive))
+        for (final reservation in state.schedule.activeReservations)
           PaletteCommand(
             label: '${formatTime(reservation.slot.start)} · ${state.schedule.guestNameOf(reservation) ?? 'Gost'}',
             detail: '${peopleLabel(reservation.partySize.value)} · ${reservation.status.label}',
@@ -379,9 +368,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 const SizedBox(width: 8),
               ],
             ),
-            body: BlocListener<DailyScheduleBloc, DailyScheduleState>(
-              listenWhen: (previous, current) => previous is! DailyScheduleLoaded && current is DailyScheduleLoaded,
-              listener: (context, state) => _syncWithRoute(),
+            body: MultiBlocListener(
+              listeners: [
+                BlocListener<DailyScheduleBloc, DailyScheduleState>(
+                  listenWhen: (previous, current) => previous is! DailyScheduleLoaded && current is DailyScheduleLoaded,
+                  listener: (context, state) => _syncWithRoute(),
+                ),
+                BlocListener<DailyScheduleBloc, DailyScheduleState>(
+                  listenWhen: (previous, current) =>
+                      previous is DailyScheduleLoaded &&
+                      current is DailyScheduleLoaded &&
+                      previous.selectedId != current.selectedId,
+                  listener: (context, state) {
+                    final selectedId = (state as DailyScheduleLoaded).selectedId;
+                    if (selectedId != widget.selectedId) _goTo(widget.day, selected: selectedId);
+                  },
+                ),
+              ],
               child: BlocConsumer<DailyScheduleBloc, DailyScheduleState>(
                 listenWhen: (previous, current) => current is DailyScheduleLoaded && current.notice != null,
                 listener: (context, state) => _showNotice(context, (state as DailyScheduleLoaded).notice!),
@@ -393,15 +396,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   DailyScheduleLoaded() => _LoadedBody(
                     state: state,
                     gridFocus: _gridFocus,
-                    cursor: _cursor ?? (row: 0, column: _currentColumn(state.schedule)),
-                    onCursorChanged: (cursor) => _cursor = cursor,
+                    onCursorMoved: (rows, columns) => bloc.add(ScheduleCursorMoved(rows: rows, columns: columns)),
+                    onCursorPlaced: (cursor) => bloc.add(ScheduleCursorPlaced(cursor)),
+                    onActivate: () => bloc.add(const ScheduleCursorActivated()),
                     onSelect: _select,
                     onContextMenu: _showContextMenu,
                     onConfirm: _confirm,
                     onArrival: _recordArrival,
                     onNoShow: _recordNoShow,
                     onCancel: _cancel,
-                    now: _bloc.clock.now(),
                   ),
                 },
               ),
@@ -417,12 +420,12 @@ class _LoadedBody extends StatelessWidget {
   const _LoadedBody({
     required this.state,
     required this.gridFocus,
-    required this.cursor,
-    required this.onCursorChanged,
+    required this.onCursorMoved,
+    required this.onCursorPlaced,
+    required this.onActivate,
     required this.onSelect,
     required this.onContextMenu,
     required this.onConfirm,
-    required this.now,
     required this.onArrival,
     required this.onNoShow,
     required this.onCancel,
@@ -430,12 +433,12 @@ class _LoadedBody extends StatelessWidget {
 
   final DailyScheduleLoaded state;
   final FocusNode gridFocus;
-  final GridCursor cursor;
-  final ValueChanged<GridCursor> onCursorChanged;
+  final void Function(int rows, int columns) onCursorMoved;
+  final ValueChanged<ScheduleCursor> onCursorPlaced;
+  final VoidCallback onActivate;
   final ValueChanged<Reservation?> onSelect;
   final void Function(Reservation reservation, Offset position) onContextMenu;
   final void Function([Reservation? reservation]) onConfirm;
-  final DateTime now;
   final void Function([Reservation? reservation]) onArrival;
   final void Function([Reservation? reservation]) onNoShow;
   final Future<void> Function([Reservation? reservation]) onCancel;
@@ -486,7 +489,7 @@ class _LoadedBody extends StatelessWidget {
           return ScheduleList(
             schedule: schedule,
             selectedId: state.selectedId,
-            now: now,
+            openAt: state.cursorTime,
             onSelect: (reservation) {
               onSelect(reservation);
               _showDetailSheet(context, reservation);
@@ -515,8 +518,10 @@ class _LoadedBody extends StatelessWidget {
                       schedule: schedule,
                       selectedId: state.selectedId,
                       focusNode: gridFocus,
-                      initialCursor: cursor,
-                      onCursorChanged: onCursorChanged,
+                      cursor: state.cursor,
+                      onCursorMoved: onCursorMoved,
+                      onCursorPlaced: onCursorPlaced,
+                      onActivate: onActivate,
                       onSelect: onSelect,
                       onContextMenu: onContextMenu,
                     ),

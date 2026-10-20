@@ -1,5 +1,7 @@
+import 'package:blocs/blocs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 final class PaletteCommand {
   const PaletteCommand({required this.label, required this.run, this.detail, this.icon = Icons.bolt_outlined});
@@ -19,108 +21,85 @@ Future<void> showCommandPalette(BuildContext context, List<PaletteCommand> comma
       insetPadding: const EdgeInsets.all(24),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 560, maxHeight: 440),
-        child: _CommandPalette(commands: commands),
+        child: BlocProvider(
+          create: (_) => CommandPaletteBloc(
+            entries: [for (final command in commands) '${command.label}\n${command.detail ?? ''}'],
+          ),
+          child: _CommandPalette(commands: commands),
+        ),
       ),
     ),
   );
 }
 
-class _CommandPalette extends StatefulWidget {
+class _CommandPalette extends StatelessWidget {
   const _CommandPalette({required this.commands});
 
   final List<PaletteCommand> commands;
 
-  @override
-  State<_CommandPalette> createState() => _CommandPaletteState();
-}
-
-class _CommandPaletteState extends State<_CommandPalette> {
-  final _controller = TextEditingController();
-  final _scrollController = ScrollController();
-  int _highlighted = 0;
-
-  List<PaletteCommand> get _matches {
-    final query = _controller.text.trim().toLowerCase();
-    if (query.isEmpty) return widget.commands;
-    return widget.commands
-        .where((c) => c.label.toLowerCase().contains(query) || (c.detail?.toLowerCase().contains(query) ?? false))
-        .toList();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _run(PaletteCommand command) {
+  void _run(BuildContext context, PaletteCommand command) {
     Navigator.pop(context);
     command.run();
   }
 
-  KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+  KeyEventResult _onKey(BuildContext context, KeyEvent event) {
     if (event is KeyUpEvent) return KeyEventResult.ignored;
-    final matches = _matches;
-    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-      setState(() => _highlighted = (_highlighted + 1).clamp(0, matches.isEmpty ? 0 : matches.length - 1));
-      return KeyEventResult.handled;
+    final bloc = context.read<CommandPaletteBloc>();
+    switch (event.logicalKey) {
+      case LogicalKeyboardKey.arrowDown:
+        bloc.add(const CommandPaletteHighlightMoved(1));
+        return KeyEventResult.handled;
+      case LogicalKeyboardKey.arrowUp:
+        bloc.add(const CommandPaletteHighlightMoved(-1));
+        return KeyEventResult.handled;
+      case LogicalKeyboardKey.enter || LogicalKeyboardKey.numpadEnter:
+        if (bloc.state.highlightedEntry case final entry?) _run(context, commands[entry]);
+        return KeyEventResult.handled;
+      default:
+        return KeyEventResult.ignored;
     }
-    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-      setState(() => _highlighted = (_highlighted - 1).clamp(0, matches.isEmpty ? 0 : matches.length - 1));
-      return KeyEventResult.handled;
-    }
-    if (event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.numpadEnter) {
-      if (matches.isNotEmpty) _run(matches[_highlighted.clamp(0, matches.length - 1)]);
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final matches = _matches;
-    final highlighted = matches.isEmpty ? -1 : _highlighted.clamp(0, matches.length - 1);
+    final state = context.watch<CommandPaletteBloc>().state;
     return Focus(
-      onKeyEvent: _onKey,
+      onKeyEvent: (node, event) => _onKey(context, event),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: TextField(
-              controller: _controller,
               autofocus: true,
               decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.search),
                 hintText: 'Komanda ili rezervacija',
                 counterText: '',
               ),
-              onChanged: (_) => setState(() => _highlighted = 0),
+              onChanged: (text) => context.read<CommandPaletteBloc>().add(CommandPaletteQueryChanged(text)),
             ),
           ),
           Flexible(
-            child: matches.isEmpty
+            child: state.matches.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text('Nema rezultata.', style: theme.textTheme.bodyMedium),
                   )
                 : ListView.builder(
-                    controller: _scrollController,
                     shrinkWrap: true,
                     padding: const EdgeInsets.only(bottom: 8),
-                    itemCount: matches.length,
+                    itemCount: state.matches.length,
                     itemBuilder: (context, index) {
-                      final command = matches[index];
-                      final isHighlighted = index == highlighted;
+                      final command = commands[state.matches[index]];
                       return ListTile(
-                        selected: isHighlighted,
+                        selected: index == state.highlighted,
                         selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
                         leading: Icon(command.icon),
                         title: Text(command.label),
                         subtitle: command.detail == null ? null : Text(command.detail!),
-                        onTap: () => _run(command),
+                        onTap: () => _run(context, command),
                       );
                     },
                   ),
