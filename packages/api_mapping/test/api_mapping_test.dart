@@ -12,19 +12,22 @@ void main() {
     final start = DateTime.utc(2026, 10, 30, 18);
     final reservation = Reservation(
       id: const ReservationId('r-1'),
-      guestId: const UserId('u-ana'),
+      guest: ContactGuest.parse(name: 'Ana Petrović', phone: '064 123 4567').valueOrNull!,
       slot: TimeSlot.existing(start),
       partySize: PartySize.parse(4).valueOrNull!,
       createdAt: DateTime.utc(2026, 10, 28, 9, 15),
       note: ReservationNote.parse('Sto pored prozora 🪟').valueOrNull,
       tableId: const DiningTableId('t-03'),
-      status: Cancelled(reason: 'Promena plana.', cancelledBy: const UserId('u-ana'), at: DateTime.utc(2026, 10, 29)),
       enteredBy: const UserId('u-waiter'),
     );
 
-    final received = ReservationDto.fromJson(overTheWire(reservation.toDto().toJson())).toDomain();
-
-    expect(received, reservation);
+    for (final status in [
+      Cancelled(reason: 'Promena plana.', cancelledBy: const UserId('u-waiter'), at: DateTime.utc(2026, 10, 29)),
+      NoShow(recordedBy: const UserId('u-waiter'), at: start.add(const Duration(minutes: 30))),
+    ]) {
+      final sent = reservation.copyWith(status: status);
+      expect(ReservationDto.fromJson(overTheWire(sent.toDto().toJson())).toDomain(), sent);
+    }
   });
 
   test('every domain error has a code and comes back as the same error', () {
@@ -39,7 +42,14 @@ void main() {
         from: Arrived(arrivedAt: DateTime.utc(2026, 10, 1)),
         to: const Pending(),
       ),
+      const TooSoonToBook(notice: Duration(hours: 2)),
+      const ReservationStarted(),
+      const ReservationNotStarted(),
+      const ArrivalOutsideSlot(early: Duration(hours: 1)),
       const NoTableAvailable(),
+      const GuestAlreadyBooked(),
+      const InvalidGuestName(61, max: 60),
+      const InvalidPhoneNumber(min: 6, max: 15),
       const NotAllowed(),
       const NotFound(),
     ];

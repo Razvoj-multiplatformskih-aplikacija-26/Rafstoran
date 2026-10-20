@@ -5,7 +5,7 @@ void main() {
   test('an older client reads a reservation that carries a field it does not know yet', () {
     final fromNewerServer = {
       'id': 'r-1',
-      'guestId': 'u-ana',
+      'guest': {'kind': 'account', 'id': 'u-ana'},
       'start': '2026-10-30T18:00:00.000Z',
       'partySize': 4,
       'status': {'kind': 'pending'},

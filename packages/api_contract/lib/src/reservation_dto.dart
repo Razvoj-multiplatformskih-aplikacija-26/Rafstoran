@@ -7,6 +7,7 @@ final class ReservationStatusDto {
   static const confirmed = 'confirmed';
   static const cancelled = 'cancelled';
   static const arrived = 'arrived';
+  static const noShow = 'no-show';
 
   final String kind;
   final String? by;
@@ -28,10 +29,31 @@ final class ReservationStatusDto {
   );
 }
 
+final class GuestDto {
+  const GuestDto({required this.kind, this.id, this.name, this.phone});
+
+  static const account = 'account';
+  static const contact = 'contact';
+
+  final String kind;
+  final String? id;
+  final String? name;
+  final String? phone;
+
+  Map<String, Object?> toJson() => {'kind': kind, 'id': ?id, 'name': ?name, 'phone': ?phone};
+
+  factory GuestDto.fromJson(Map<String, Object?> json) => GuestDto(
+    kind: jsonString(json, 'kind'),
+    id: jsonOptionalString(json, 'id'),
+    name: jsonOptionalString(json, 'name'),
+    phone: jsonOptionalString(json, 'phone'),
+  );
+}
+
 final class ReservationDto {
   const ReservationDto({
     required this.id,
-    required this.guestId,
+    required this.guest,
     required this.start,
     required this.partySize,
     required this.status,
@@ -42,7 +64,7 @@ final class ReservationDto {
   });
 
   final String id;
-  final String guestId;
+  final GuestDto guest;
   final DateTime start;
   final int partySize;
   final ReservationStatusDto status;
@@ -53,7 +75,7 @@ final class ReservationDto {
 
   Map<String, Object?> toJson() => {
     'id': id,
-    'guestId': guestId,
+    'guest': guest.toJson(),
     'start': instantToJson(start),
     'partySize': partySize,
     'status': status.toJson(),
@@ -65,7 +87,7 @@ final class ReservationDto {
 
   factory ReservationDto.fromJson(Map<String, Object?> json) => ReservationDto(
     id: jsonString(json, 'id'),
-    guestId: jsonString(json, 'guestId'),
+    guest: GuestDto.fromJson(jsonObject(json['guest'])),
     start: jsonInstant(json, 'start'),
     partySize: jsonInt(json, 'partySize'),
     status: ReservationStatusDto.fromJson(jsonObject(json['status'])),
@@ -77,22 +99,22 @@ final class ReservationDto {
 }
 
 final class NewReservationDto {
-  const NewReservationDto({required this.guestId, required this.start, required this.partySize, this.note});
+  const NewReservationDto({required this.start, required this.partySize, this.guest, this.note});
 
-  final String guestId;
+  final GuestDto? guest;
   final DateTime start;
   final int partySize;
   final String? note;
 
   Map<String, Object?> toJson() => {
-    'guestId': guestId,
+    if (guest case final guest?) 'guest': guest.toJson(),
     'start': instantToJson(start),
     'partySize': partySize,
     'note': ?note,
   };
 
   factory NewReservationDto.fromJson(Map<String, Object?> json) => NewReservationDto(
-    guestId: jsonString(json, 'guestId'),
+    guest: json['guest'] == null ? null : GuestDto.fromJson(jsonObject(json['guest'])),
     start: jsonInstant(json, 'start'),
     partySize: jsonInt(json, 'partySize'),
     note: jsonOptionalString(json, 'note'),

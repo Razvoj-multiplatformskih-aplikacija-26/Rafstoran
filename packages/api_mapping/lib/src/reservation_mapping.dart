@@ -16,6 +16,11 @@ extension ReservationStatusMapping on ReservationStatus {
       reason: reason,
     ),
     Arrived(:final arrivedAt) => ReservationStatusDto(kind: ReservationStatusDto.arrived, at: arrivedAt),
+    NoShow(:final recordedBy, :final at) => ReservationStatusDto(
+      kind: ReservationStatusDto.noShow,
+      by: recordedBy.value,
+      at: at,
+    ),
   };
 }
 
@@ -32,14 +37,36 @@ extension ReservationStatusDtoMapping on ReservationStatusDto {
       at: at,
     ),
     ReservationStatusDto(kind: ReservationStatusDto.arrived, :final at?) => Arrived(arrivedAt: at),
+    ReservationStatusDto(kind: ReservationStatusDto.noShow, :final by?, :final at?) => NoShow(
+      recordedBy: UserId(by),
+      at: at,
+    ),
     _ => throw FormatException('Unknown reservation status', kind),
+  };
+}
+
+extension ReservationGuestMapping on ReservationGuest {
+  GuestDto toDto() => switch (this) {
+    AccountGuest(:final userId) => GuestDto(kind: GuestDto.account, id: userId.value),
+    ContactGuest(:final name, :final phone) => GuestDto(kind: GuestDto.contact, name: name.text, phone: phone.value),
+  };
+}
+
+extension GuestDtoMapping on GuestDto {
+  Result<ReservationGuest> toDomain() => switch (this) {
+    GuestDto(kind: GuestDto.account, :final id?) => Success(AccountGuest(UserId(id))),
+    GuestDto(kind: GuestDto.contact, :final name, :final phone) => ContactGuest.parse(
+      name: name ?? '',
+      phone: phone ?? '',
+    ),
+    _ => throw FormatException('Unknown guest', kind),
   };
 }
 
 extension ReservationMapping on Reservation {
   ReservationDto toDto() => ReservationDto(
     id: id.value,
-    guestId: guestId.value,
+    guest: guest.toDto(),
     start: slot.start,
     partySize: partySize.value,
     status: status.toDto(),
@@ -53,7 +80,7 @@ extension ReservationMapping on Reservation {
 extension ReservationDtoMapping on ReservationDto {
   Reservation toDomain() => Reservation(
     id: ReservationId(id),
-    guestId: UserId(guestId),
+    guest: _accepted(guest.toDomain()),
     slot: TimeSlot.existing(start),
     partySize: _accepted(PartySize.parse(partySize)),
     status: status.toDomain(),

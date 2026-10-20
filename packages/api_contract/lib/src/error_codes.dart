@@ -5,8 +5,15 @@ abstract final class ErrorCodes {
   static const slotNotOnHalfHour = 'slot-not-on-half-hour';
   static const outsideOpeningHours = 'outside-opening-hours';
   static const cancellationTooLate = 'cancellation-too-late';
+  static const tooSoonToBook = 'too-soon-to-book';
+  static const reservationStarted = 'reservation-started';
+  static const reservationNotStarted = 'reservation-not-started';
+  static const arrivalOutsideSlot = 'arrival-outside-slot';
   static const invalidTransition = 'invalid-transition';
   static const noTableAvailable = 'no-table-available';
+  static const guestAlreadyBooked = 'guest-already-booked';
+  static const invalidGuestName = 'invalid-guest-name';
+  static const invalidPhoneNumber = 'invalid-phone-number';
   static const notAllowed = 'not-allowed';
   static const notFound = 'not-found';
   static const badRequest = 'bad-request';
