@@ -38,9 +38,13 @@ final class PostgresRestaurant implements ReservationRepository, SlotRepository,
   Future<Result<Reservation>> create(ReservationRequest request) async {
     final tables = await _store.tables();
     for (var attempt = 0; attempt <= tables.length; attempt++) {
+      final overlapping = await _store.reservationsOverlapping(request.slot);
+      if (!guestIsFree(guest: request.guest, slot: request.slot, reservations: overlapping)) {
+        return const Failure(GuestAlreadyBooked());
+      }
       final table = assignTable(
         tables: tables,
-        reservations: await _store.reservationsOverlapping(request.slot),
+        reservations: overlapping,
         slot: request.slot,
         partySize: request.partySize,
       );
@@ -49,17 +53,19 @@ final class PostgresRestaurant implements ReservationRepository, SlotRepository,
       try {
         return Success(
           await _store.insert(
-            guestId: request.guestId,
+            guest: request.guest,
             slot: request.slot,
             partySize: request.partySize,
             note: request.note,
             tableId: table.valueOrNull!.id,
             createdAt: clock.now(),
+            status: request.status,
             enteredBy: request.enteredBy,
           ),
         );
       } on ServerException catch (error) {
         if (error.code != exclusionViolation) rethrow;
+        if (error.constraintName != tableConstraint) return const Failure(GuestAlreadyBooked());
       }
     }
     return const Failure(NoTableAvailable());
@@ -76,7 +82,10 @@ final class PostgresRestaurant implements ReservationRepository, SlotRepository,
   Future<DailySchedule> scheduleFor(DateTime localDay) async {
     final openingHours = await _store.openingHours();
     final reservations = await _reservationsOn(localDay, openingHours);
-    final guests = await _store.users({for (final reservation in reservations) reservation.guestId});
+    final guests = await _store.users({
+      for (final reservation in reservations)
+        if (reservation.guest case AccountGuest(:final userId)) userId,
+    });
     return DailySchedule(
       day: localDay,
       openingHours: openingHours,

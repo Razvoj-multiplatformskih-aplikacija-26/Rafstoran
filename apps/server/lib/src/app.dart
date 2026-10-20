@@ -17,6 +17,7 @@ Handler buildHandler(RestaurantHandlers handlers, {required List<String> corsOri
     ..post(ApiPaths.confirmation(':id'), handlers.confirm)
     ..post(ApiPaths.cancellation(':id'), handlers.cancel)
     ..post(ApiPaths.arrival(':id'), handlers.arrival)
+    ..post(ApiPaths.noShow(':id'), handlers.noShow)
     ..fallback = respondWith((request) => problemResponse(notFoundRoute));
   return const Pipeline()
       .addMiddleware(logRequests())

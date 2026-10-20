@@ -2,6 +2,8 @@ import 'package:domain/domain.dart';
 import 'package:postgres/postgres.dart';
 
 const exclusionViolation = '23P01';
+const tableConstraint = 'reservations_no_double_booking';
+const _active = "status IN ('pending', 'confirmed', 'arrived')";
 
 final class RestaurantStore {
   const RestaurantStore(this._database);
@@ -63,7 +65,7 @@ final class RestaurantStore {
       _reservations('starts_at >= @from AND starts_at < @to', {'from': from.toUtc(), 'to': to.toUtc()});
 
   Future<List<Reservation>> reservationsOverlapping(TimeSlot slot) => _reservations(
-    "status <> 'cancelled' AND tstzrange(starts_at, ends_at) && tstzrange(@from, @to)",
+    '$_active AND tstzrange(starts_at, ends_at) && tstzrange(@from, @to)',
     {'from': slot.start, 'to': slot.end},
   );
 
@@ -77,7 +79,7 @@ final class RestaurantStore {
   }
 
   Future<Reservation> insert({
-    required UserId guestId,
+    required ReservationGuest guest,
     required TimeSlot slot,
     required PartySize partySize,
     required DiningTableId tableId,
@@ -90,14 +92,25 @@ final class RestaurantStore {
     final rows = await _database.execute(
       Sql.named('''
         INSERT INTO reservations
-          (guest_id, table_id, starts_at, ends_at, party_size, note, status, status_by, status_at, cancel_reason,
+          (guest_id, guest_name, guest_phone, table_id, starts_at, ends_at, party_size, note, status, status_by, status_at, cancel_reason,
            created_at, entered_by)
         VALUES
-          (@guest, @table, @starts, @ends, @size, @note, @status, @statusBy, @statusAt, @reason, @created, @enteredBy)
+          (@guest, @guestName, @guestPhone, @table, @starts, @ends, @size, @note, @status, @statusBy, @statusAt, @reason, @created, @enteredBy)
         RETURNING id::text
       '''),
       parameters: {
-        'guest': guestId.value,
+        'guest': switch (guest) {
+          AccountGuest(:final userId) => userId.value,
+          ContactGuest() => null,
+        },
+        'guestName': switch (guest) {
+          ContactGuest(:final name) => name.text,
+          AccountGuest() => null,
+        },
+        'guestPhone': switch (guest) {
+          ContactGuest(:final phone) => phone.value,
+          AccountGuest() => null,
+        },
         'table': tableId.value,
         'starts': slot.start,
         'ends': slot.end,
@@ -113,7 +126,7 @@ final class RestaurantStore {
     );
     return Reservation(
       id: ReservationId(rows.single[0]! as String),
-      guestId: guestId,
+      guest: guest,
       slot: slot,
       partySize: partySize,
       createdAt: createdAt.toUtc(),
@@ -147,7 +160,7 @@ final class RestaurantStore {
   Future<List<Reservation>> _reservations(String where, Map<String, Object?> parameters) async {
     final rows = await _database.execute(
       Sql.named('''
-        SELECT id::text, guest_id, table_id, starts_at, party_size, note, status, status_by, status_at,
+        SELECT id::text, guest_id, guest_name, guest_phone, table_id, starts_at, party_size, note, status, status_by, status_at,
                cancel_reason, created_at, entered_by
         FROM reservations
         WHERE $where
@@ -166,7 +179,10 @@ User _user(ResultRow row) =>
 
 Reservation _reservation(Map<String, dynamic> row) => Reservation(
   id: ReservationId(row['id'] as String),
-  guestId: UserId(row['guest_id'] as String),
+  guest: switch (row['guest_id']) {
+    final String id => AccountGuest(UserId(id)),
+    _ => ContactGuest.parse(name: row['guest_name'] as String, phone: row['guest_phone'] as String).valueOrNull!,
+  },
   tableId: DiningTableId(row['table_id'] as String),
   slot: TimeSlot.existing(row['starts_at'] as DateTime),
   partySize: PartySize.parse(row['party_size'] as int).valueOrNull!,
@@ -189,6 +205,7 @@ ReservationStatus _status(Map<String, dynamic> row) {
     'confirmed' => Confirmed(confirmedBy: UserId(by!), at: at!),
     'cancelled' => Cancelled(reason: row['cancel_reason'] as String? ?? '', cancelledBy: UserId(by!), at: at!),
     'arrived' => Arrived(arrivedAt: at!),
+    'no_show' => NoShow(recordedBy: UserId(by!), at: at!),
     _ => const Pending(),
   };
 }
@@ -203,6 +220,7 @@ ReservationStatus _status(Map<String, dynamic> row) {
     reason: reason,
   ),
   Arrived(:final arrivedAt) => (kind: 'arrived', by: null, at: arrivedAt, reason: null),
+  NoShow(:final recordedBy, :final at) => (kind: 'no_show', by: recordedBy.value, at: at, reason: null),
 };
 
 LocalTime _localTime(String value) {

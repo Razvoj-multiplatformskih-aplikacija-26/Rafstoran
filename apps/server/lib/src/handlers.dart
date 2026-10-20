@@ -10,12 +10,13 @@ import 'restaurant_store.dart';
 
 final class RestaurantHandlers {
   RestaurantHandlers({required this.restaurant, required this.users, required Clock clock})
-    : _getAvailableSlots = GetAvailableSlots(slots: restaurant),
+    : _getAvailableSlots = GetAvailableSlots(slots: restaurant, clock: clock),
       _getDailySchedule = GetDailySchedule(schedules: restaurant),
       _createReservation = CreateReservation(reservations: restaurant, slots: restaurant, clock: clock),
       _confirmReservation = ConfirmReservation(reservations: restaurant, clock: clock),
       _cancelReservation = CancelReservation(reservations: restaurant, clock: clock),
-      _recordArrival = RecordArrival(reservations: restaurant, clock: clock);
+      _recordArrival = RecordArrival(reservations: restaurant, clock: clock),
+      _recordNoShow = RecordNoShow(reservations: restaurant, clock: clock);
 
   final PostgresRestaurant restaurant;
   final RestaurantStore users;
@@ -25,14 +26,17 @@ final class RestaurantHandlers {
   final ConfirmReservation _confirmReservation;
   final CancelReservation _cancelReservation;
   final RecordArrival _recordArrival;
+  final RecordNoShow _recordNoShow;
 
   Future<Response> openingHours(Request request) async => json(200, (await restaurant.openingHours()).toDto().toJson());
 
   Future<Response> slots(Request request) async {
+    final actor = await _actor(request);
+    if (actor == null) return badRequest('Unknown user');
     final day = dayFromJson(_query(request, ApiQuery.day));
     final partySize = PartySize.parse(int.parse(_query(request, ApiQuery.partySize)));
     if (partySize case Failure(:final error)) return problem(error);
-    final slots = await _getAvailableSlots(localDay: day, partySize: partySize.valueOrNull!);
+    final slots = await _getAvailableSlots(by: actor, localDay: day, partySize: partySize.valueOrNull!);
     return json(200, [for (final slot in slots) slot.toDto().toJson()]);
   }
 
@@ -53,15 +57,22 @@ final class RestaurantHandlers {
     final actor = await _actor(request);
     if (actor == null) return badRequest('Unknown user');
     final body = NewReservationDto.fromJson(await readObject(request));
-    final guest = await users.user(UserId(body.guestId));
-    if (guest == null || !AccessPolicy.canHoldReservation(guest)) return problem(const NotAllowed());
+    final guest = switch (body.guest) {
+      null => Success<ReservationGuest>(AccountGuest(actor.id)),
+      final dto => dto.toDomain(),
+    };
+    if (guest case Failure(:final error)) return problem(error);
+    if (guest.valueOrNull case AccountGuest(:final userId)) {
+      final account = await users.user(userId);
+      if (account == null || !AccessPolicy.canHoldReservation(account)) return problem(const NotAllowed());
+    }
     final partySize = PartySize.parse(body.partySize);
     if (partySize case Failure(:final error)) return problem(error);
     final note = ReservationNote.parse(body.note ?? '');
     if (note case Failure(:final error)) return problem(error);
     final created = await _createReservation(
       by: actor,
-      forGuest: UserId(body.guestId),
+      guest: guest.valueOrNull,
       start: body.start,
       partySize: partySize.valueOrNull!,
       note: note.valueOrNull!.isEmpty ? null : note.valueOrNull,
@@ -77,6 +88,8 @@ final class RestaurantHandlers {
   });
 
   Future<Response> arrival(Request request) => _change(request, (id, actor) => _recordArrival(id: id, by: actor));
+
+  Future<Response> noShow(Request request) => _change(request, (id, actor) => _recordNoShow(id: id, by: actor));
 
   Future<Response> _change(
     Request request,

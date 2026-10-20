@@ -13,6 +13,8 @@ abstract final class ApiPaths {
 
   static String arrival(String id) => '${reservation(id)}/arrival';
 
+  static String noShow(String id) => '${reservation(id)}/no-show';
+
   static String reservationsOfGuest(String guestId) => '/api/v1/guests/$guestId/reservations';
 }
 
