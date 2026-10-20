@@ -14,9 +14,9 @@ DateTime cancellationDeadline(Reservation reservation) => reservation.slot.start
 bool guestMayStillCancel(Reservation reservation, {required DateTime now}) =>
     !now.toUtc().isAfter(cancellationDeadline(reservation));
 
-Duration bookingNoticeFor(User user) => user.role.isStaff ? Duration.zero : cancellationNotice;
+Duration bookingNoticeFor(User? user) => user != null && user.role.isStaff ? Duration.zero : cancellationNotice;
 
-bool mayBook(TimeSlot slot, {required User by, required DateTime now}) =>
+bool mayBook(TimeSlot slot, {required User? by, required DateTime now}) =>
     !slot.start.isBefore(now.toUtc().add(bookingNoticeFor(by)));
 
 ReservationStatus initialStatus({required User by, required DateTime now}) =>

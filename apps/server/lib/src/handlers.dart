@@ -32,7 +32,6 @@ final class RestaurantHandlers {
 
   Future<Response> slots(Request request) async {
     final actor = await _actor(request);
-    if (actor == null) return badRequest('Unknown user');
     final day = dayFromJson(_query(request, ApiQuery.day));
     final partySize = PartySize.parse(int.parse(_query(request, ApiQuery.partySize)));
     if (partySize case Failure(:final error)) return problem(error);

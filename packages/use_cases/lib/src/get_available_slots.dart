@@ -9,11 +9,7 @@ final class GetAvailableSlots {
   final SlotRepository slots;
   final Clock clock;
 
-  Future<List<SlotAvailability>> call({
-    required User by,
-    required DateTime localDay,
-    required PartySize partySize,
-  }) async {
+  Future<List<SlotAvailability>> call({User? by, required DateTime localDay, required PartySize partySize}) async {
     final all = await slots.availableSlots(localDay: localDay, partySize: partySize);
     final now = clock.now();
     return [

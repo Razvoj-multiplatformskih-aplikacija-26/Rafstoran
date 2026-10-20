@@ -63,6 +63,7 @@ void main() {
       expect(mayBook(slot, by: guest, now: start.subtract(cancellationNotice)), isTrue);
       expect(mayBook(slot, by: guest, now: start.subtract(const Duration(hours: 1, minutes: 59))), isFalse);
       expect(mayBook(slot, by: waiter, now: start.subtract(const Duration(minutes: 1))), isTrue);
+      expect(mayBook(slot, by: null, now: start.subtract(const Duration(hours: 1, minutes: 59))), isFalse);
       expect(initialStatus(by: waiter, now: start), isA<Confirmed>());
       expect(initialStatus(by: guest, now: start), const Pending());
     });
