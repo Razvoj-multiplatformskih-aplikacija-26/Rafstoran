@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:domain/domain.dart';
+import 'package:domain/domain.dart' as domain;
 import 'package:equatable/equatable.dart';
 import 'package:use_cases/use_cases.dart';
 
@@ -21,7 +22,13 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
     on<ScheduleReservationSelected>((event, emit) {
       final current = state;
       if (current is DailyScheduleLoaded) {
-        emit(current.copyWith(selectedId: event.id, clearSelection: event.id == null));
+        emit(
+          current.copyWith(
+            selectedId: event.id,
+            clearSelection: event.id == null,
+            actions: _actionsFor(current.schedule),
+          ),
+        );
       }
     });
     on<ScheduleConfirmationRequested>(
@@ -57,7 +64,7 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
     try {
       final schedule = await getDailySchedule(day);
       if (request != _request) return;
-      emit(DailyScheduleLoaded(day: day, schedule: schedule, selectedId: selectedId));
+      emit(DailyScheduleLoaded(day: day, schedule: schedule, actions: _actionsFor(schedule), selectedId: selectedId));
     } on Exception catch (cause) {
       if (request != _request) return;
       emit(DailyScheduleFailure(day: day, cause: cause));
@@ -94,6 +101,19 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
   }) {
     final latest = state;
     if (request != _request || latest is! DailyScheduleLoaded) return;
-    emit(latest.copyWith(schedule: schedule, notice: notice));
+    emit(latest.copyWith(schedule: schedule, actions: _actionsFor(schedule ?? latest.schedule), notice: notice));
+  }
+
+  Map<ReservationId, Set<ScheduleAction>> _actionsFor(DailySchedule schedule) {
+    final now = clock.now();
+    return {
+      for (final reservation in schedule.reservations)
+        reservation.id: {
+          if (domain.confirmReservation(reservation, by: staff, now: now).isSuccess) ScheduleAction.confirm,
+          if (domain.recordArrival(reservation, by: staff, now: now).isSuccess) ScheduleAction.recordArrival,
+          if (domain.recordNoShow(reservation, by: staff, now: now).isSuccess) ScheduleAction.recordNoShow,
+          if (domain.cancelReservation(reservation, by: staff, now: now).isSuccess) ScheduleAction.cancel,
+        },
+    };
   }
 }

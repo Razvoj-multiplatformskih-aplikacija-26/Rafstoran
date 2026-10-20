@@ -73,7 +73,11 @@ void main() {
     },
     skip: 3,
     expect: () => [
-      isA<DailyScheduleLoaded>().having((s) => s.inFlightId, 'in flight', pending.id),
+      isA<DailyScheduleLoaded>().having((s) => s.inFlightId, 'in flight', pending.id).having(
+        (s) => s.actionsFor(pending),
+        'actions at noon',
+        {ScheduleAction.confirm, ScheduleAction.cancel},
+      ),
       isA<DailyScheduleLoaded>()
           .having((s) => s.isBusy, 'busy', isFalse)
           .having((s) => s.selectedId, 'selected', pending.id)

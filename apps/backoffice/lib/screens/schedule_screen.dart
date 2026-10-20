@@ -18,8 +18,6 @@ import '../widgets/schedule_grid.dart';
 import '../widgets/schedule_list.dart';
 import '../widgets/shortcuts_overview.dart';
 
-typedef StaffAction = Result<Reservation> Function(Reservation reservation, {required User by, required DateTime now});
-
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key, required this.day, this.selectedId});
 
@@ -92,21 +90,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     _ => false,
   };
 
-  bool _allows(StaffAction action, Reservation reservation) =>
-      action(reservation, by: _bloc.staff, now: _bloc.clock.now()).isSuccess;
+  bool _allows(ScheduleAction action, Reservation reservation) => switch (_bloc.state) {
+    final DailyScheduleLoaded state => state.actionsFor(reservation).contains(action),
+    _ => false,
+  };
 
-  bool _selectedAllows(StaffAction action) {
+  bool _selectedAllows(ScheduleAction action) {
     final selected = _selected;
     return _idle && selected != null && _allows(action, selected);
   }
 
-  bool get _canConfirm => _selectedAllows(confirmReservation);
+  bool get _canConfirm => _selectedAllows(ScheduleAction.confirm);
 
-  bool get _canRecordArrival => _selectedAllows(recordArrival);
+  bool get _canRecordArrival => _selectedAllows(ScheduleAction.recordArrival);
 
-  bool get _canRecordNoShow => _selectedAllows(recordNoShow);
+  bool get _canRecordNoShow => _selectedAllows(ScheduleAction.recordNoShow);
 
-  bool get _canCancel => _selectedAllows(cancelReservation);
+  bool get _canCancel => _selectedAllows(ScheduleAction.cancel);
 
   void _confirm([Reservation? reservation]) {
     final target = reservation ?? _selected;
@@ -140,10 +140,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       context: context,
       position: RelativeRect.fromRect(position & const Size(1, 1), Offset.zero & overlay.size),
       items: [
-        if (_allows(confirmReservation, reservation)) const PopupMenuItem(value: 'confirm', child: Text('Potvrdi')),
-        if (_allows(recordArrival, reservation)) const PopupMenuItem(value: 'arrival', child: Text('Gost stigao')),
-        if (_allows(recordNoShow, reservation)) const PopupMenuItem(value: 'noShow', child: Text('Gost nije došao')),
-        if (_allows(cancelReservation, reservation)) const PopupMenuItem(value: 'cancel', child: Text('Otkaži')),
+        if (_allows(ScheduleAction.confirm, reservation)) const PopupMenuItem(value: 'confirm', child: Text('Potvrdi')),
+        if (_allows(ScheduleAction.recordArrival, reservation))
+          const PopupMenuItem(value: 'arrival', child: Text('Gost stigao')),
+        if (_allows(ScheduleAction.recordNoShow, reservation))
+          const PopupMenuItem(value: 'noShow', child: Text('Gost nije došao')),
+        if (_allows(ScheduleAction.cancel, reservation)) const PopupMenuItem(value: 'cancel', child: Text('Otkaži')),
         const PopupMenuItem(value: 'details', child: Text('Detalji')),
       ],
     );
@@ -395,7 +397,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     onCursorChanged: (cursor) => _cursor = cursor,
                     onSelect: _select,
                     onContextMenu: _showContextMenu,
-                    allows: _allows,
                     onConfirm: _confirm,
                     onArrival: _recordArrival,
                     onNoShow: _recordNoShow,
@@ -421,7 +422,6 @@ class _LoadedBody extends StatelessWidget {
     required this.onSelect,
     required this.onContextMenu,
     required this.onConfirm,
-    required this.allows,
     required this.now,
     required this.onArrival,
     required this.onNoShow,
@@ -435,7 +435,6 @@ class _LoadedBody extends StatelessWidget {
   final ValueChanged<Reservation?> onSelect;
   final void Function(Reservation reservation, Offset position) onContextMenu;
   final void Function([Reservation? reservation]) onConfirm;
-  final bool Function(StaffAction action, Reservation reservation) allows;
   final DateTime now;
   final void Function([Reservation? reservation]) onArrival;
   final void Function([Reservation? reservation]) onNoShow;
@@ -443,6 +442,7 @@ class _LoadedBody extends StatelessWidget {
 
   Future<void> _showDetailSheet(BuildContext context, Reservation selected) {
     final schedule = state.schedule;
+    final actions = state.actionsFor(selected);
     late final BuildContext sheet;
     void close(void Function([Reservation? reservation]) action) {
       Navigator.pop(sheet);
@@ -462,10 +462,10 @@ class _LoadedBody extends StatelessWidget {
             guestName: schedule.guestNameOf(selected),
             enteredBy: schedule.enteredByOf(selected),
             table: schedule.tables.where((t) => t.id == selected.tableId).firstOrNull,
-            onConfirm: allows(confirmReservation, selected) ? () => close(onConfirm) : null,
-            onArrival: allows(recordArrival, selected) ? () => close(onArrival) : null,
-            onNoShow: allows(recordNoShow, selected) ? () => close(onNoShow) : null,
-            onCancel: allows(cancelReservation, selected) ? () => close(onCancel) : null,
+            onConfirm: actions.contains(ScheduleAction.confirm) ? () => close(onConfirm) : null,
+            onArrival: actions.contains(ScheduleAction.recordArrival) ? () => close(onArrival) : null,
+            onNoShow: actions.contains(ScheduleAction.recordNoShow) ? () => close(onNoShow) : null,
+            onCancel: actions.contains(ScheduleAction.cancel) ? () => close(onCancel) : null,
             onClose: () => Navigator.pop(sheetContext),
           ),
         );
@@ -477,6 +477,7 @@ class _LoadedBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final selected = state.selected;
+    final actions = selected == null ? const <ScheduleAction>{} : state.actionsFor(selected);
     final schedule = state.schedule;
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -530,10 +531,10 @@ class _LoadedBody extends StatelessWidget {
                         enteredBy: schedule.enteredByOf(selected),
                         table: schedule.tables.where((t) => t.id == selected.tableId).firstOrNull,
                         busy: state.isBusy,
-                        onConfirm: allows(confirmReservation, selected) ? () => onConfirm(selected) : null,
-                        onArrival: allows(recordArrival, selected) ? () => onArrival(selected) : null,
-                        onNoShow: allows(recordNoShow, selected) ? () => onNoShow(selected) : null,
-                        onCancel: allows(cancelReservation, selected) ? () => onCancel(selected) : null,
+                        onConfirm: actions.contains(ScheduleAction.confirm) ? () => onConfirm(selected) : null,
+                        onArrival: actions.contains(ScheduleAction.recordArrival) ? () => onArrival(selected) : null,
+                        onNoShow: actions.contains(ScheduleAction.recordNoShow) ? () => onNoShow(selected) : null,
+                        onCancel: actions.contains(ScheduleAction.cancel) ? () => onCancel(selected) : null,
                         onClose: () => onSelect(null),
                       ),
                     ),

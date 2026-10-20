@@ -1,5 +1,7 @@
 part of 'daily_schedule_bloc.dart';
 
+enum ScheduleAction { confirm, recordArrival, recordNoShow, cancel }
+
 sealed class DailyScheduleState extends Equatable {
   const DailyScheduleState({required this.day});
 
@@ -32,18 +34,22 @@ final class DailyScheduleLoaded extends DailyScheduleState {
   const DailyScheduleLoaded({
     required super.day,
     required this.schedule,
+    this.actions = const {},
     this.selectedId,
     this.notice,
     this.inFlightId,
   });
 
   final DailySchedule schedule;
+  final Map<ReservationId, Set<ScheduleAction>> actions;
   final ReservationId? selectedId;
   final ScheduleNotice? notice;
   final ReservationId? inFlightId;
 
   @override
-  List<Object?> get props => [...super.props, schedule, selectedId, notice, inFlightId];
+  List<Object?> get props => [...super.props, schedule, actions, selectedId, notice, inFlightId];
+
+  Set<ScheduleAction> actionsFor(Reservation reservation) => actions[reservation.id] ?? const {};
 
   bool get isBusy => inFlightId != null;
 
@@ -63,6 +69,7 @@ final class DailyScheduleLoaded extends DailyScheduleState {
 
   DailyScheduleLoaded copyWith({
     DailySchedule? schedule,
+    Map<ReservationId, Set<ScheduleAction>>? actions,
     ReservationId? selectedId,
     bool clearSelection = false,
     ScheduleNotice? notice,
@@ -72,6 +79,7 @@ final class DailyScheduleLoaded extends DailyScheduleState {
     return DailyScheduleLoaded(
       day: day,
       schedule: schedule ?? this.schedule,
+      actions: actions ?? this.actions,
       selectedId: clearSelection ? null : (selectedId ?? this.selectedId),
       notice: clearNotice ? null : (notice ?? this.notice),
       inFlightId: inFlightId,
