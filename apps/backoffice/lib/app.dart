@@ -24,6 +24,7 @@ class _BackofficeAppState extends State<BackofficeApp> {
   late final SessionBloc _session = SessionBloc(
     restoreSession: widget.dependencies.restoreSession,
     logOut: widget.dependencies.logOut,
+    admits: AccessPolicy.canViewSchedule,
     expirations: widget.dependencies.sessionExpirations,
   )..add(const SessionRestoreRequested());
 
@@ -31,18 +32,6 @@ class _BackofficeAppState extends State<BackofficeApp> {
   void dispose() {
     _session.close();
     super.dispose();
-  }
-
-  String? _notice;
-
-  Future<void> _signedIn(User user) async {
-    if (!AccessPolicy.canViewSchedule(user)) {
-      await widget.dependencies.logOut();
-      setState(() => _notice = 'Backoffice je za osoblje restorana.');
-      return;
-    }
-    _notice = null;
-    _session.add(SessionStarted(user));
   }
 
   @override
@@ -61,13 +50,13 @@ class _BackofficeAppState extends State<BackofficeApp> {
               ),
             ),
             SignedOut(:final reason) => _material(
-              key: ValueKey('signed-out ${reason?.name} $_notice'),
+              key: ValueKey('signed-out ${reason?.name}'),
               home: LoginScreen(
                 title: 'Rafstoran Backoffice',
                 logIn: dependencies.logIn,
                 reason: reason,
-                notice: _notice,
-                onSignedIn: _signedIn,
+                roleNotAllowedMessage: 'Backoffice je za osoblje restorana.',
+                onSignedIn: (user) => _session.add(SessionStarted(user)),
               ),
             ),
             SignedIn(:final user) => _SignedInApp(key: ValueKey(user.id), staff: user, dependencies: dependencies),

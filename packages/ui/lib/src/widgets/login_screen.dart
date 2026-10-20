@@ -14,15 +14,15 @@ class LoginScreen extends StatelessWidget {
     required this.title,
     required this.logIn,
     required this.onSignedIn,
+    required this.roleNotAllowedMessage,
     this.reason,
-    this.notice,
   });
 
   final String title;
   final LogIn logIn;
   final void Function(User user) onSignedIn;
+  final String roleNotAllowedMessage;
   final SignOutReason? reason;
-  final String? notice;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +33,7 @@ class LoginScreen extends StatelessWidget {
           if (state case LoginSucceeded(:final user)) onSignedIn(user);
         },
         child: Scaffold(
-          body: _LoginForm(title: title, reason: reason, notice: notice),
+          body: _LoginForm(title: title, reason: reason, roleNotAllowedMessage: roleNotAllowedMessage),
         ),
       ),
     );
@@ -41,11 +41,11 @@ class LoginScreen extends StatelessWidget {
 }
 
 class _LoginForm extends StatefulWidget {
-  const _LoginForm({required this.title, this.reason, this.notice});
+  const _LoginForm({required this.title, required this.roleNotAllowedMessage, this.reason});
 
   final String title;
+  final String roleNotAllowedMessage;
   final SignOutReason? reason;
-  final String? notice;
 
   @override
   State<_LoginForm> createState() => _LoginFormState();
@@ -73,8 +73,8 @@ class _LoginFormState extends State<_LoginForm> {
     final message = switch (state) {
       LoginRejected() => 'Pogrešno korisničko ime ili lozinka.',
       LoginFailed(:final cause) => failureMessage(cause),
-      _ when widget.notice != null => widget.notice,
       _ => switch (widget.reason) {
+        SignOutReason.roleNotAllowed => widget.roleNotAllowedMessage,
         SignOutReason.expired => sessionExpiredMessage,
         SignOutReason.unreachable => serverUnreachableMessage,
         SignOutReason.loggedOut || null => null,

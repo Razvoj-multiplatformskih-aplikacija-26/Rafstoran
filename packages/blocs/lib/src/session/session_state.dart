@@ -1,6 +1,6 @@
 part of 'session_bloc.dart';
 
-enum SignOutReason { loggedOut, expired, unreachable }
+enum SignOutReason { loggedOut, expired, unreachable, roleNotAllowed }
 
 sealed class SessionState extends Equatable {
   const SessionState();

@@ -36,6 +36,7 @@ void main() {
     build: () => SessionBloc(
       restoreSession: RestoreSession(sessions: sessions),
       logOut: LogOut(sessions: sessions),
+      admits: AccessPolicy.canHoldReservation,
       expirations: sessions.expirations,
     ),
     act: (bloc) async {

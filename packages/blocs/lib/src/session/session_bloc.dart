@@ -10,10 +10,14 @@ part 'session_event.dart';
 part 'session_state.dart';
 
 final class SessionBloc extends Bloc<SessionEvent, SessionState> {
-  SessionBloc({required this.restoreSession, required this.logOut, required Stream<void> expirations})
-    : super(const SessionUnknown()) {
+  SessionBloc({
+    required this.restoreSession,
+    required this.logOut,
+    required this.admits,
+    required Stream<void> expirations,
+  }) : super(const SessionUnknown()) {
     on<SessionRestoreRequested>(_onRestoreRequested);
-    on<SessionStarted>((event, emit) => emit(SignedIn(event.user)));
+    on<SessionStarted>(_onStarted);
     on<SessionLogOutRequested>(_onLogOutRequested);
     on<SessionExpired>((event, emit) {
       if (state is SignedIn) emit(const SignedOut(reason: SignOutReason.expired));
@@ -23,24 +27,39 @@ final class SessionBloc extends Bloc<SessionEvent, SessionState> {
 
   final RestoreSession restoreSession;
   final LogOut logOut;
+  final bool Function(User user) admits;
   late final StreamSubscription<void> _expirations;
 
   Future<void> _onRestoreRequested(SessionRestoreRequested event, Emitter<SessionState> emit) async {
     try {
       final user = await restoreSession();
-      emit(user == null ? const SignedOut() : SignedIn(user));
+      if (user == null) return emit(const SignedOut());
+      add(SessionStarted(user));
     } on RepositoryException {
       emit(const SignedOut(reason: SignOutReason.unreachable));
     }
   }
 
+  Future<void> _onStarted(SessionStarted event, Emitter<SessionState> emit) async {
+    if (admits(event.user)) {
+      emit(SignedIn(event.user));
+      return;
+    }
+    await _logOutQuietly();
+    emit(const SignedOut(reason: SignOutReason.roleNotAllowed));
+  }
+
   Future<void> _onLogOutRequested(SessionLogOutRequested event, Emitter<SessionState> emit) async {
+    await _logOutQuietly();
+    emit(const SignedOut(reason: SignOutReason.loggedOut));
+  }
+
+  Future<void> _logOutQuietly() async {
     try {
       await logOut();
     } on RepositoryException catch (cause, stackTrace) {
       addError(cause, stackTrace);
     }
-    emit(const SignedOut(reason: SignOutReason.loggedOut));
   }
 
   @override

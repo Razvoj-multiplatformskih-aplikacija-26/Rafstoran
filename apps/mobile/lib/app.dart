@@ -24,6 +24,7 @@ class _RafstoranAppState extends State<RafstoranApp> {
   late final SessionBloc _session = SessionBloc(
     restoreSession: widget.dependencies.restoreSession,
     logOut: widget.dependencies.logOut,
+    admits: AccessPolicy.canHoldReservation,
     expirations: widget.dependencies.sessionExpirations,
   )..add(const SessionRestoreRequested());
 
@@ -31,18 +32,6 @@ class _RafstoranAppState extends State<RafstoranApp> {
   void dispose() {
     _session.close();
     super.dispose();
-  }
-
-  String? _notice;
-
-  Future<void> _signedIn(User user) async {
-    if (!AccessPolicy.canHoldReservation(user)) {
-      await widget.dependencies.logOut();
-      setState(() => _notice = 'Aplikacija je za goste. Osoblje koristi backoffice.');
-      return;
-    }
-    _notice = null;
-    _session.add(SessionStarted(user));
   }
 
   @override
@@ -61,13 +50,13 @@ class _RafstoranAppState extends State<RafstoranApp> {
               ),
             ),
             SignedOut(:final reason) => _material(
-              key: ValueKey('signed-out ${reason?.name} $_notice'),
+              key: ValueKey('signed-out ${reason?.name}'),
               home: LoginScreen(
                 title: 'Rafstoran',
                 logIn: dependencies.logIn,
                 reason: reason,
-                notice: _notice,
-                onSignedIn: _signedIn,
+                roleNotAllowedMessage: 'Aplikacija je za goste. Osoblje koristi backoffice.',
+                onSignedIn: (user) => _session.add(SessionStarted(user)),
               ),
             ),
             SignedIn(:final user) => _SignedInApp(key: ValueKey(user.id), user: user, dependencies: dependencies),
