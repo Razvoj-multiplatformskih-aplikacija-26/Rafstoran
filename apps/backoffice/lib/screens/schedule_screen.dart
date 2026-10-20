@@ -400,6 +400,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     onArrival: _recordArrival,
                     onNoShow: _recordNoShow,
                     onCancel: _cancel,
+                    now: _bloc.clock.now(),
                   ),
                 },
               ),
@@ -421,6 +422,7 @@ class _LoadedBody extends StatelessWidget {
     required this.onContextMenu,
     required this.onConfirm,
     required this.allows,
+    required this.now,
     required this.onArrival,
     required this.onNoShow,
     required this.onCancel,
@@ -434,6 +436,7 @@ class _LoadedBody extends StatelessWidget {
   final void Function(Reservation reservation, Offset position) onContextMenu;
   final void Function([Reservation? reservation]) onConfirm;
   final bool Function(StaffAction action, Reservation reservation) allows;
+  final DateTime now;
   final void Function([Reservation? reservation]) onArrival;
   final void Function([Reservation? reservation]) onNoShow;
   final Future<void> Function([Reservation? reservation]) onCancel;
@@ -482,6 +485,7 @@ class _LoadedBody extends StatelessWidget {
           return ScheduleList(
             schedule: schedule,
             selectedId: state.selectedId,
+            now: now,
             onSelect: (reservation) {
               onSelect(reservation);
               _showDetailSheet(context, reservation);

@@ -3,23 +3,49 @@ import 'package:flutter/material.dart';
 import 'package:ui/ui.dart';
 import 'package:use_cases/use_cases.dart';
 
-class ScheduleList extends StatelessWidget {
+class ScheduleList extends StatefulWidget {
   const ScheduleList({
     super.key,
     required this.schedule,
     required this.selectedId,
     required this.onSelect,
     required this.onContextMenu,
+    this.now,
   });
 
   final DailySchedule schedule;
   final ReservationId? selectedId;
   final ValueChanged<Reservation> onSelect;
   final void Function(Reservation reservation, Offset globalPosition) onContextMenu;
+  final DateTime? now;
+
+  @override
+  State<ScheduleList> createState() => _ScheduleListState();
+}
+
+class _ScheduleListState extends State<ScheduleList> {
+  final _target = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _target.currentContext;
+      if (target != null && target.mounted) Scrollable.ensureVisible(target);
+    });
+  }
+
+  DateTime? _targetStart(List<Reservation> reservations) {
+    final selected = reservations.where((r) => r.id == widget.selectedId).firstOrNull;
+    if (selected != null) return selected.slot.start;
+    final now = widget.now;
+    return now == null ? null : reservations.where((r) => r.slot.end.isAfter(now)).firstOrNull?.slot.start;
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final schedule = widget.schedule;
     final reservations = schedule.reservations.where((r) => r.isActive).toList()
       ..sort((a, b) => a.slot.start.compareTo(b.slot.start));
     final groups = <DateTime, List<Reservation>>{};
@@ -29,27 +55,32 @@ class ScheduleList extends StatelessWidget {
     if (reservations.isEmpty) {
       return const Center(child: EmptyView(title: 'Nema rezervacija za ovaj dan.'));
     }
-    return ListView(
+    final target = _targetStart(reservations);
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      children: [
-        for (final entry in groups.entries) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
-            child: Semantics(header: true, child: Text(formatTime(entry.key), style: theme.textTheme.titleLarge)),
-          ),
-          for (final reservation in entry.value) ...[
-            _ReservationTile(
-              reservation: reservation,
-              guestName: schedule.guestNameOf(reservation),
-              table: schedule.tables.where((t) => t.id == reservation.tableId).firstOrNull,
-              selected: reservation.id == selectedId,
-              onTap: () => onSelect(reservation),
-              onContextMenu: (position) => onContextMenu(reservation, position),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final entry in groups.entries) ...[
+            Padding(
+              key: entry.key == target ? _target : null,
+              padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+              child: Semantics(header: true, child: Text(formatTime(entry.key), style: theme.textTheme.titleLarge)),
             ),
-            const SizedBox(height: 8),
+            for (final reservation in entry.value) ...[
+              _ReservationTile(
+                reservation: reservation,
+                guestName: schedule.guestNameOf(reservation),
+                table: schedule.tables.where((t) => t.id == reservation.tableId).firstOrNull,
+                selected: reservation.id == widget.selectedId,
+                onTap: () => widget.onSelect(reservation),
+                onContextMenu: (position) => widget.onContextMenu(reservation, position),
+              ),
+              const SizedBox(height: 8),
+            ],
           ],
         ],
-      ],
+      ),
     );
   }
 }
