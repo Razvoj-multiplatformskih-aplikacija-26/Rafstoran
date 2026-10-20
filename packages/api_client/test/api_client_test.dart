@@ -9,7 +9,8 @@ import 'package:test/test.dart';
 import 'package:use_cases/use_cases.dart';
 
 ReservationRequest lastTableFor(String guest) => ReservationRequest(
-  guestId: UserId(guest),
+  guest: AccountGuest(UserId(guest)),
+  status: const Pending(),
   slot: TimeSlot.existing(DateTime.utc(2026, 10, 30, 18)),
   partySize: PartySize.parse(10).valueOrNull!,
 );

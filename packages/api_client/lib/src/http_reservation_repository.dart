@@ -26,7 +26,7 @@ final class HttpReservationRepository implements ReservationRepository {
   @override
   Future<Result<Reservation>> create(ReservationRequest request) async {
     final body = NewReservationDto(
-      guestId: request.guestId.value,
+      guest: request.guest.toDto(),
       start: request.slot.start,
       partySize: request.partySize.value,
       note: request.note?.text,
@@ -41,6 +41,7 @@ final class HttpReservationRepository implements ReservationRepository {
       Confirmed() => _api.post(ApiPaths.confirmation(id)),
       Cancelled(:final reason) => _api.post(ApiPaths.cancellation(id), body: CancellationDto(reason: reason).toJson()),
       Arrived() => _api.post(ApiPaths.arrival(id)),
+      NoShow() => _api.post(ApiPaths.noShow(id)),
       Pending() => throw ArgumentError.value(reservation, 'reservation', 'A pending reservation is created, not saved'),
     };
     return resultOf(answer, _reservation);

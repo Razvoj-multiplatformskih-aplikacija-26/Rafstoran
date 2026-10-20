@@ -136,7 +136,7 @@ void main() {
     );
   });
 
-  testWidgets('a waiter sees the cancel action disabled and why', (tester) async {
+  testWidgets('within two hours of the start a waiter sees the cancel action disabled and why', (tester) async {
     useWindow(tester, width: 600, height: 900);
     final asWaiter = BackofficeDependencies.fake(clock: FixedClock(fridayAfternoon), staff: staffWaiter);
     await pumpBackoffice(tester, dependencies: asWaiter);
@@ -144,6 +144,6 @@ void main() {
     await tester.tap(visible(tester, find.text('Na čekanju')));
     await settle(tester);
 
-    expect(find.text('Rezervaciju otkazuje menadžer.'), findsOneWidget);
+    expect(find.text('Manje od 2 sata pre termina rezervaciju otkazuje menadžer.'), findsOneWidget);
   });
 }

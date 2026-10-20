@@ -108,7 +108,7 @@ class _SignedInAppState extends State<_SignedInApp> {
             create: (_) => AvailableSlotsBloc(
               getAvailableSlots: dependencies.getAvailableSlots,
               clock: dependencies.clock,
-              user: dependencies.user,
+              user: widget.user,
             )..add(const AvailableSlotsRequested()),
           ),
           BlocProvider(

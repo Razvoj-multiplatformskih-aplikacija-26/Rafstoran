@@ -72,7 +72,7 @@ final class MyReservationsBloc extends Bloc<MyReservationsEvent, MyReservationsS
       final past = reservations.where((r) => !r.slot.end.isAfter(now)).toList().reversed.toList();
       final cancellable = {
         for (final r in upcoming)
-          if (!r.status.isFinal && AccessPolicy.canCancel(guest, r) && guestMayStillCancel(r, now: now)) r.id,
+          if (!r.status.isFinal && AccessPolicy.canCancel(guest, r, now: now) && guestMayStillCancel(r, now: now)) r.id,
       };
       emit(MyReservationsLoaded(upcoming: upcoming, past: past, cancellable: cancellable, notice: notice));
     } on Exception catch (cause) {
