@@ -67,7 +67,7 @@ docker compose up -d
 | `migrate` | dbmate primeni migracije iz `apps/server/migrations`, pa izlazi | — |
 | `server` | server u Dartu na Relic-u, slika iz `apps/server/Dockerfile` | http://localhost:8080 |
 
-Lozinka baze i portovi su u `.env`, koji nije u git-u. Ako je port zauzet, promenite `POSTGRES_PORT`, `SERVER_PORT` ili `ADMINER_PORT` u `.env`. Kada je baza prazna, server upisuje početne podatke.
+Lozinka baze, `DEMO_PASSWORD`, `JWT_SECRET` i portovi su u `.env`, koji nije u git-u. Ako je port zauzet, promenite `POSTGRES_PORT`, `SERVER_PORT` ili `ADMINER_PORT` u `.env`. Kada je baza prazna, server upisuje početne podatke.
 
 Provera: `docker compose ps -a` (servis `migrate` je `Exited (0)`) i `curl localhost:8080/health` (odgovor `ok`; u PowerShell-u `curl.exe`).
 
@@ -92,7 +92,9 @@ Testovi servera traže pokrenutu bazu i rade nad posebnom bazom `rafstoran_test`
 
 ### Aplikacije
 
-U ovoj verziji mobilna aplikacija i backoffice rade nad lažnim podacima, a server zove konzola. Svaka aplikacija u svom terminalu, iz korena repozitorijuma:
+Aplikacije rade nad serverom. Android emulator ga nalazi na `10.0.2.2:8080`, a telefon na mreži uz `flutter run --dart-define=SERVER_URL=http://<IP računara>:8080`. Pregledač sme da zove server samo sa adrese iz `CORS_ORIGINS` u `.env`; `.env.example` dozvoljava backoffice (`http://localhost:8081`) i konzolu (`http://localhost:8083`).
+
+Svaka aplikacija u svom terminalu, iz korena repozitorijuma:
 
 ```sh
 cd apps/mobile
@@ -109,4 +111,14 @@ cd apps/console
 flutter run -d macos    # ili -d windows, ili -d chrome --web-port 8083
 ```
 
-Konzola prikazuje zahtev, odgovor servera i poruku koju bi prikazala aplikacija. Na desktopu ima i dugmad za Adminer, bazu od nule i novu sliku servera.
+Konzola prikazuje zahtev, odgovor servera i poruku koju bi prikazala aplikacija. Pozivi koji traže nalog idu posle koraka Prijava. Na desktopu konzola ima i dugmad za Adminer, bazu od nule i novu sliku servera.
+
+### Demo nalozi
+
+Lozinka za sve naloge je vrednost `DEMO_PASSWORD` iz `.env`. Konzola se prijavljuje bilo kojim od njih.
+
+| Nalog | Uloga | Aplikacija |
+| --- | --- | --- |
+| `guest1`, `guest2` | gost | mobilna |
+| `waiter1` | konobar | backoffice |
+| `manager1` | menadžer | backoffice |
