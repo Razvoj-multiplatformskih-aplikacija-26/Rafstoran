@@ -10,4 +10,19 @@ Map<String, String> readEnvFile(File file) {
   };
 }
 
-Map<String, String> serverEnvironment() => {...readEnvFile(File('../../.env')), ...Platform.environment};
+Map<String, String> serverEnvironment() => {
+  ...readEnvFile(_envFile(Directory.current.absolute)),
+  ...Platform.environment,
+};
+
+File _envFile(Directory directory) {
+  final file = File('${directory.path}${Platform.pathSeparator}.env');
+  final parent = directory.parent;
+  if (file.existsSync() || _isWorkspaceRoot(directory) || parent.path == directory.path) return file;
+  return _envFile(parent);
+}
+
+bool _isWorkspaceRoot(Directory directory) {
+  final pubspec = File('${directory.path}${Platform.pathSeparator}pubspec.yaml');
+  return pubspec.existsSync() && pubspec.readAsLinesSync().any((line) => line.startsWith('workspace:'));
+}
