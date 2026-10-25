@@ -6,11 +6,10 @@ import 'package:use_cases/use_cases.dart';
 import 'restaurant_store.dart';
 
 final class PostgresRestaurant implements ReservationRepository, SlotRepository, ScheduleRepository {
-  PostgresRestaurant(this._store, {required this.clock, this.raceDelay = Duration.zero});
+  PostgresRestaurant(this._store, {required this.clock});
 
   final RestaurantStore _store;
   final Clock clock;
-  final Duration raceDelay;
 
   @override
   Future<OpeningHours> openingHours() => _store.openingHours();
@@ -49,7 +48,6 @@ final class PostgresRestaurant implements ReservationRepository, SlotRepository,
         partySize: request.partySize,
       );
       if (table case Failure(:final error)) return Failure(error);
-      await Future<void>.delayed(raceDelay);
       try {
         return Success(
           await _store.insert(

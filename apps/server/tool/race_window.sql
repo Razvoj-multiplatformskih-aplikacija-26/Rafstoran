@@ -1,0 +1,9 @@
+CREATE OR REPLACE FUNCTION race_window() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  PERFORM pg_sleep(1.5);
+  RETURN NEW;
+END
+$$;
+
+CREATE OR REPLACE TRIGGER race_window BEFORE INSERT ON reservations
+  FOR EACH ROW EXECUTE FUNCTION race_window();

@@ -1,11 +1,5 @@
 final class ServerConfig {
-  const ServerConfig({
-    required this.host,
-    required this.port,
-    required this.databaseUrl,
-    required this.corsOrigins,
-    this.raceDelay = Duration.zero,
-  });
+  const ServerConfig({required this.host, required this.port, required this.databaseUrl, required this.corsOrigins});
 
   factory ServerConfig.fromEnvironment(Map<String, String> environment) => ServerConfig(
     host: environment['HOST'] ?? '127.0.0.1',
@@ -17,12 +11,10 @@ final class ServerConfig {
       for (final origin in (environment['CORS_ORIGINS'] ?? 'http://localhost:8081').split(','))
         if (origin.trim().isNotEmpty) origin.trim(),
     ],
-    raceDelay: Duration(milliseconds: int.parse(environment['RACE_DELAY_MS'] ?? '0')),
   );
 
   final String host;
   final int port;
   final String databaseUrl;
   final List<String> corsOrigins;
-  final Duration raceDelay;
 }

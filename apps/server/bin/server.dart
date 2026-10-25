@@ -14,7 +14,7 @@ Future<void> main() async {
   await seedIfEmpty(database, now: DateTime.now());
   final store = RestaurantStore(database);
   const clock = SystemClock();
-  final restaurant = PostgresRestaurant(store, clock: clock, raceDelay: config.raceDelay);
+  final restaurant = PostgresRestaurant(store, clock: clock);
   final handlers = RestaurantHandlers(restaurant: restaurant, users: store, clock: clock);
   final server = RelicServer(() => IOAdapter.bind(InternetAddress(config.host), port: config.port));
   await server.mountAndStart(buildHandler(handlers, corsOrigins: config.corsOrigins));

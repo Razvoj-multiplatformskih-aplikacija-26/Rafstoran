@@ -37,7 +37,6 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-rafstoran}:${POSTGRES_PASSWORD:?Copy .env.example to .env first}@db:5432/${POSTGRES_DB:-rafstoran}?sslmode=disable
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8081}
-      RACE_DELAY_MS: ${RACE_DELAY_MS:-0}
     ports:
       - "${SERVER_PORT:-8080}:8080"
     depends_on:

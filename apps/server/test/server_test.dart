@@ -70,9 +70,19 @@ void main() {
         parameters: {'id': guest},
       );
     }
+    await database.execute(r'''
+      CREATE FUNCTION race_window() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN
+        PERFORM pg_sleep(0.3);
+        RETURN NEW;
+      END
+      $$''');
+    await database.execute(
+      'CREATE TRIGGER race_window BEFORE INSERT ON reservations FOR EACH ROW EXECUTE FUNCTION race_window()',
+    );
     final store = RestaurantStore(database);
     const clock = SystemClock();
-    final restaurant = PostgresRestaurant(store, clock: clock, raceDelay: const Duration(milliseconds: 300));
+    final restaurant = PostgresRestaurant(store, clock: clock);
     final handlers = RestaurantHandlers(restaurant: restaurant, users: store, clock: clock);
     server = RelicServer(() => IOAdapter.bind(InternetAddress.loopbackIPv4, port: 0));
     await server.mountAndStart(buildHandler(handlers, corsOrigins: const []));
