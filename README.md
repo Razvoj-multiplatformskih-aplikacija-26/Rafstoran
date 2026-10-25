@@ -45,3 +45,28 @@ flowchart LR
 ## Stanje projekta
 
 Opis sistema. Detaljan opis domena i kod dodaju se tokom semestra.
+
+## Pokretanje
+
+Potrebni su Docker (Docker Desktop na Windows-u i macOS-u) i Flutter 3.47.6.
+
+Baza i server, iz korena repozitorijuma:
+
+```sh
+cp .env.example .env    # Windows: copy .env.example .env
+docker compose up -d    # baza, migracije i server na http://localhost:8080
+```
+
+Provera: `docker compose ps -a` (servis `migrate` je `Exited (0)`) i `curl localhost:8080/health` (odgovor `ok`). Baza od nule: `docker compose down -v`, pa `docker compose up -d`.
+
+Aplikacije, svaka u svom terminalu, iz korena repozitorijuma:
+
+```sh
+cd apps/mobile
+flutter run
+```
+
+```sh
+cd apps/backoffice
+flutter run -d macos    # ili -d windows, ili -d chrome --web-port 8081
+```
