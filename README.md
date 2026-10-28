@@ -50,16 +50,49 @@ Opis sistema. Detaljan opis domena i kod dodaju se tokom semestra.
 
 Potrebni su Docker (Docker Desktop na Windows-u i macOS-u) i Flutter 3.47.6.
 
-Baza i server, iz korena repozitorijuma:
+### Baza i server
+
+Iz korena repozitorijuma:
 
 ```sh
 cp .env.example .env    # Windows: copy .env.example .env
-docker compose up -d    # baza, migracije i server na http://localhost:8080
+docker compose up -d
 ```
 
-Provera: `docker compose ps -a` (servis `migrate` je `Exited (0)`) i `curl localhost:8080/health` (odgovor `ok`). Baza od nule: `docker compose down -v`, pa `docker compose up -d`.
+`compose.yaml` podiže tri servisa:
 
-Aplikacije, svaka u svom terminalu, iz korena repozitorijuma:
+| Servis | Šta radi | Adresa |
+| --- | --- | --- |
+| `db` | PostgreSQL 17 | `localhost:5435` |
+| `migrate` | dbmate primeni migracije iz `apps/server/migrations`, pa izlazi | — |
+| `server` | server u Dartu na Relic-u, slika iz `apps/server/Dockerfile` | http://localhost:8080 |
+
+Lozinka baze i portovi su u `.env`, koji nije u git-u. Ako je port zauzet, promenite `POSTGRES_PORT`, `SERVER_PORT` ili `ADMINER_PORT` u `.env`. Kada je baza prazna, server upisuje početne podatke.
+
+Provera: `docker compose ps -a` (servis `migrate` je `Exited (0)`) i `curl localhost:8080/health` (odgovor `ok`; u PowerShell-u `curl.exe`).
+
+| Komanda | Šta radi |
+| --- | --- |
+| `docker compose logs server` | ispis servera; `logs migrate` za migracije |
+| `docker compose up -d --build server` | nova slika servera posle izmene u `apps/server` ili u paketima |
+| `docker compose down` | gasi sistem, podaci ostaju |
+| `docker compose down -v` | gasi sistem i briše bazu; sledeći `up -d` kreće od nule |
+
+Baza u pregledaču: `docker compose --profile tools up -d adminer`, pa http://127.0.0.1:8082 (prijava ide sama, podacima iz `.env`). SQL iz terminala: `docker compose exec db psql -U rafstoran -d rafstoran`.
+
+Server bez kontejnera, za debugger i brži restart:
+
+```sh
+docker compose stop server
+cd apps/server
+dart run bin/server.dart    # Ctrl+C zaustavlja
+```
+
+Testovi servera traže pokrenutu bazu i rade nad posebnom bazom `rafstoran_test`: u `apps/server` pokrenuti `dart test`.
+
+### Aplikacije
+
+U ovoj verziji mobilna aplikacija i backoffice rade nad lažnim podacima, a server zove konzola. Svaka aplikacija u svom terminalu, iz korena repozitorijuma:
 
 ```sh
 cd apps/mobile
@@ -71,11 +104,9 @@ cd apps/backoffice
 flutter run -d macos    # ili -d windows, ili -d chrome --web-port 8081
 ```
 
-Konzola za pozive serveru, sa dugmićima za Adminer i bazu od nule (na vebu bez njih):
-
 ```sh
 cd apps/console
 flutter run -d macos    # ili -d windows, ili -d chrome --web-port 8083
 ```
 
-Adminer bez konzole: `docker compose --profile tools up -d adminer`, pa http://127.0.0.1:8082.
+Konzola prikazuje zahtev, odgovor servera i poruku koju bi prikazala aplikacija. Na desktopu ima i dugmad za Adminer, bazu od nule i novu sliku servera.
