@@ -19,6 +19,14 @@ List<DemoStep> demoSteps({required int noteLength}) => [
     explanation: 'Server odgovara „ok“ čim je pokrenut. Tako se vidi i da je konzola pronašla server.',
   ),
   const DemoStep(
+    scenario: LogIn(),
+    title: 'Prijava',
+    detail: 'POST /api/v1/sessions',
+    explanation:
+        'Server proverava lozinku izabranog naloga i vraća token. Konzola ga šalje u zaglavlju Authorization '
+        'uz sledeće pozive tog naloga. Lozinka je vrednost DEMO_PASSWORD iz .env.',
+  ),
+  const DemoStep(
     scenario: TomorrowSlots(),
     title: 'Termini za sutra',
     detail: 'GET /api/v1/slots',
@@ -32,7 +40,7 @@ List<DemoStep> demoSteps({required int noteLength}) => [
     detail: 'POST /api/v1/reservations',
     explanation:
         'Rukovalac poziva isti use case CreateReservation kao aplikacija, a PostgresRestaurant upisuje red u bazu. '
-        'U Adminer-u se posle osvežavanja vidi novi red u tabeli reservations.',
+        'U Adminer-u se posle osvežavanja vidi novi red u tabeli reservations. Bez prijave server vraća 401.',
   ),
   DemoStep(
     scenario: LongNote(noteLength),

@@ -55,7 +55,7 @@ class HistoryRow extends StatelessWidget {
       selectedTileColor: theme.colorScheme.secondaryContainer,
       onTap: onTap,
       leading: Text(clockLabel(call.at), style: theme.textTheme.labelLarge),
-      title: Text('${stepOf(call.scenario).title} · ${whoLabel(call.scenario, call.caller)}'),
+      title: Text('${stepOf(call.scenario).title} · ${whoLabel(call.scenario, call.account)}'),
       trailing: Wrap(
         spacing: Spacing.sm,
         crossAxisAlignment: WrapCrossAlignment.center,

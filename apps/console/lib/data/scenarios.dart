@@ -1,6 +1,7 @@
+import 'dart:convert';
+
 import 'package:api_contract/api_contract.dart';
 import 'package:api_mapping/api_mapping.dart';
-import 'package:domain/domain.dart';
 import 'package:equatable/equatable.dart';
 
 import 'exchange.dart';
@@ -16,6 +17,10 @@ sealed class Scenario extends Equatable {
 
 final class HealthCheck extends Scenario {
   const HealthCheck();
+}
+
+final class LogIn extends Scenario {
+  const LogIn();
 }
 
 final class TomorrowSlots extends Scenario {
@@ -73,19 +78,27 @@ final class ScenarioRunner {
   final LocalSystem local;
   final DateTime Function() now;
 
-  Future<Run> run(Scenario scenario, {required UserId caller}) async => switch (scenario) {
-    HealthCheck() => Sent(await calls.get(ApiPaths.health)),
-    TomorrowSlots() => Sent(
-      await calls.get(
-        ApiPaths.slots,
-        query: {ApiQuery.day: dayToJson(_tomorrow()), ApiQuery.partySize: '2'},
-        caller: caller,
-      ),
-    ),
-    NewReservation() => Sent(await _reserve(caller, hour: 15, note: 'Sto pored prozora')),
-    LongNote(:final length) => Sent(await _reserve(caller, hour: 17, note: 'a' * length)),
-    LocalStep(:final task) => Ran(await _local(task)),
-  };
+  Future<Run> run(Scenario scenario, {required String account, required String password, String? token}) async =>
+      switch (scenario) {
+        HealthCheck() => Sent(await calls.get(ApiPaths.health)),
+        LogIn() => Sent(
+          await calls.post(
+            ApiPaths.sessions,
+            LoginDto(username: account, password: password).toJson(),
+            hidden: {'password'},
+          ),
+        ),
+        TomorrowSlots() => Sent(
+          await calls.get(
+            ApiPaths.slots,
+            query: {ApiQuery.day: dayToJson(_tomorrow()), ApiQuery.partySize: '2'},
+            token: token,
+          ),
+        ),
+        NewReservation() => Sent(await _reserve(token, hour: 15, note: 'Sto pored prozora')),
+        LongNote(:final length) => Sent(await _reserve(token, hour: 17, note: 'a' * length)),
+        LocalStep(:final task) => Ran(await _local(task)),
+      };
 
   Future<List<CommandResult>> _local(LocalTask task) async {
     final results = [...await local.run(task)];
@@ -109,13 +122,27 @@ final class ScenarioRunner {
     return DateTime(today.year, today.month, today.day + 1);
   }
 
-  Future<Exchange> _reserve(UserId caller, {required int hour, required String note}) {
+  Future<Exchange> _reserve(String? token, {required int hour, required String note}) {
     final day = _tomorrow();
     final start = DateTime(day.year, day.month, day.day, hour).toUtc();
     return calls.post(
       ApiPaths.reservations,
       NewReservationDto(start: start, partySize: 2, note: note).toJson(),
-      caller: caller,
+      token: token,
     );
   }
+}
+
+String? sessionTokenOf(Exchange exchange) {
+  if (exchange.answer case Answered(status: 201, :final body)) {
+    try {
+      return switch (jsonDecode(body)) {
+        final Map<String, Object?> json => SessionDto.fromJson(json).token,
+        _ => null,
+      };
+    } on FormatException {
+      return null;
+    }
+  }
+  return null;
 }

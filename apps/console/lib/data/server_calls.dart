@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:api_contract/api_contract.dart';
 import 'package:api_mapping/api_mapping.dart';
-import 'package:domain/domain.dart';
 import 'package:http/http.dart' as http;
 import 'package:ui/ui.dart';
 
@@ -14,23 +13,29 @@ final class ServerCalls {
   final http.Client client;
   final Uri server;
 
-  Future<Exchange> get(String path, {Map<String, String>? query, UserId? caller}) => _send(
-    'GET',
-    server.replace(path: path, queryParameters: query),
-    {if (caller != null) ApiHeaders.userId: caller.value},
-    null,
-  );
+  Future<Exchange> get(String path, {Map<String, String>? query, String? token}) =>
+      _send('GET', server.replace(path: path, queryParameters: query), _authorization(token), null);
 
-  Future<Exchange> post(String path, Map<String, Object?> body, {required UserId caller}) => _send(
-    'POST',
-    server.replace(path: path),
-    {'Content-Type': 'application/json', ApiHeaders.userId: caller.value},
-    jsonEncode(body),
-  );
+  Future<Exchange> post(String path, Map<String, Object?> body, {String? token, Set<String> hidden = const {}}) {
+    final shown = {...body, for (final key in hidden) key: '••••••••'};
+    return _send(
+      'POST',
+      server.replace(path: path),
+      {'Content-Type': 'application/json', ..._authorization(token)},
+      jsonEncode(body),
+      shownBody: jsonEncode(shown),
+    );
+  }
 
-  Future<Exchange> _send(String method, Uri url, Map<String, String> headers, String? body) async {
+  Map<String, String> _authorization(String? token) => {if (token != null) 'Authorization': 'Bearer $token'};
+
+  Future<Exchange> _send(String method, Uri url, Map<String, String> headers, String? body, {String? shownBody}) async {
     final request = http.Request(method, url)..headers.addAll(headers);
     if (body != null) request.body = body;
+    final shown = switch (shownBody ?? body) {
+      final text? => _pretty(text),
+      null => null,
+    };
     final stopwatch = Stopwatch()..start();
     try {
       final response = await http.Response.fromStream(await client.send(request));
@@ -39,7 +44,7 @@ final class ServerCalls {
         method: method,
         url: url,
         headers: request.headers,
-        body: body == null ? null : _pretty(body),
+        body: shown,
         answer: Answered(
           status: response.statusCode,
           elapsed: stopwatch.elapsed,
@@ -49,7 +54,7 @@ final class ServerCalls {
         ),
       );
     } on Exception {
-      return Exchange(method: method, url: url, headers: request.headers, body: body, answer: const Unreachable());
+      return Exchange(method: method, url: url, headers: request.headers, body: shown, answer: const Unreachable());
     }
   }
 

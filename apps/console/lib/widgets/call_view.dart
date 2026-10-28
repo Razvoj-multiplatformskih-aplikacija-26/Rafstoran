@@ -29,7 +29,7 @@ class CallView extends StatelessWidget {
               Text(step.title, style: theme.textTheme.headlineSmall),
               const SizedBox(height: Spacing.xs),
               Text(
-                '${clockLabel(call.at)} · ${whoLabel(call.scenario, call.caller)}',
+                '${clockLabel(call.at)} · ${whoLabel(call.scenario, call.account)}',
                 style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: Spacing.md),

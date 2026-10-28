@@ -1,5 +1,4 @@
 import 'package:design_tokens/design_tokens.dart';
-import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -47,14 +46,27 @@ class ScenarioPanel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: Spacing.xxl),
-            DropdownMenu<UserId>(
-              label: const Text('Poziva'),
-              initialSelection: state.caller,
+            DropdownMenu<String>(
+              label: const Text('Nalog'),
+              initialSelection: state.account,
               expandedInsets: EdgeInsets.zero,
               dropdownMenuEntries: [
-                for (final entry in callers.entries) DropdownMenuEntry(value: entry.key, label: entry.value),
+                for (final MapEntry(key: account, value: label) in accounts.entries)
+                  DropdownMenuEntry(value: account, label: '$label ($account)'),
               ],
-              onSelected: (caller) => caller == null ? null : bloc.add(CallerChanged(caller)),
+              onSelected: (account) => account == null ? null : bloc.add(AccountChanged(account)),
+            ),
+            const SizedBox(height: Spacing.md),
+            TextFormField(
+              initialValue: state.password,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Lozinka'),
+              onChanged: (password) => bloc.add(PasswordChanged(password)),
+            ),
+            const SizedBox(height: Spacing.sm),
+            Text(
+              state.signedIn ? 'Prijavljen' : 'Nije prijavljen',
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: Spacing.lg),
             for (final (index, step) in steps.indexed)

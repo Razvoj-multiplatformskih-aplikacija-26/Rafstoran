@@ -1,3 +1,4 @@
+import 'package:api_contract/api_contract.dart';
 import 'package:console/console/console_bloc.dart';
 import 'package:console/data/exchange.dart';
 import 'package:console/data/local_system.dart';
@@ -58,6 +59,30 @@ void main() {
     final commands = (state.current!.run as Ran).commands;
     expect(local.tasks, [LocalTask.reset]);
     expect([for (final command in commands) command.command], ['LocalTask.reset', 'GET /health']);
+    await bloc.close();
+  });
+
+  test('a login keeps the token for the account and hides the password', () async {
+    final requests = <http.BaseRequest>[];
+    final client = MockClient((request) async {
+      requests.add(request);
+      if (request.url.path != ApiPaths.sessions) return http.Response('[]', 200);
+      return http.Response(
+        '{"user":{"id":"u-ana","username":"Ana Petrović","role":"guest"},'
+        '"expiresAt":"2026-10-29T22:00:00.000Z","token":"token-of-ana"}',
+        201,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final bloc = consoleOver(client, FakeLocalSystem())
+      ..add(const PasswordChanged('test-password'))
+      ..add(const ScenarioRequested(LogIn()));
+    final signedIn = await bloc.stream.firstWhere((state) => state.calls.isNotEmpty);
+    expect(signedIn.tokens, {'guest2': 'token-of-ana'});
+    expect((signedIn.current!.run as Sent).exchange.body, isNot(contains('test-password')));
+    bloc.add(const ScenarioRequested(TomorrowSlots()));
+    await bloc.stream.firstWhere((state) => state.calls.length == 2);
+    expect(requests.last.headers['Authorization'], 'Bearer token-of-ana');
     await bloc.close();
   });
 }

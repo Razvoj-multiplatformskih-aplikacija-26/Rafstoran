@@ -10,10 +10,16 @@ final class ScenarioRequested extends ConsoleEvent {
   final Scenario scenario;
 }
 
-final class CallerChanged extends ConsoleEvent {
-  const CallerChanged(this.caller);
+final class AccountChanged extends ConsoleEvent {
+  const AccountChanged(this.account);
 
-  final UserId caller;
+  final String account;
+}
+
+final class PasswordChanged extends ConsoleEvent {
+  const PasswordChanged(this.password);
+
+  final String password;
 }
 
 final class NoteLengthChanged extends ConsoleEvent {
