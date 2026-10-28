@@ -46,6 +46,12 @@ services:
   adminer:
     image: adminer:5
     profiles: [tools]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rafstoran}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env first}
+      POSTGRES_DB: ${POSTGRES_DB:-rafstoran}
+    volumes:
+      - ./apps/server/tool/adminer_login.php:/var/www/html/plugins-enabled/login.php:ro
     ports:
       - "127.0.0.1:${ADMINER_PORT:-8082}:8080"
     depends_on:
