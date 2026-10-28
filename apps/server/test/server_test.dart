@@ -70,16 +70,6 @@ void main() {
         parameters: {'id': guest},
       );
     }
-    await database.execute(r'''
-      CREATE FUNCTION race_window() RETURNS trigger LANGUAGE plpgsql AS $$
-      BEGIN
-        PERFORM pg_sleep(0.3);
-        RETURN NEW;
-      END
-      $$''');
-    await database.execute(
-      'CREATE TRIGGER race_window BEFORE INSERT ON reservations FOR EACH ROW EXECUTE FUNCTION race_window()',
-    );
     final store = RestaurantStore(database);
     const clock = SystemClock();
     final restaurant = PostgresRestaurant(store, clock: clock);
