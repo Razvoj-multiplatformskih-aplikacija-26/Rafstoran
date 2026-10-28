@@ -70,3 +70,12 @@ flutter run
 cd apps/backoffice
 flutter run -d macos    # ili -d windows, ili -d chrome --web-port 8081
 ```
+
+Konzola za pozive serveru, sa dugmićima za Adminer i bazu od nule (na vebu bez njih):
+
+```sh
+cd apps/console
+flutter run -d macos    # ili -d windows, ili -d chrome --web-port 8083
+```
+
+Adminer bez konzole: `docker compose --profile tools up -d adminer`, pa http://127.0.0.1:8082.
