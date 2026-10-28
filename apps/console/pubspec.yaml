@@ -1,0 +1,35 @@
+name: console
+description: Rafstoran console that sends requests to the server and shows the answers.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.0
+resolution: workspace
+
+dependencies:
+  api_contract:
+    path: ../../packages/api_contract
+  api_mapping:
+    path: ../../packages/api_mapping
+  design_tokens:
+    path: ../../packages/design_tokens
+  domain:
+    path: ../../packages/domain
+  equatable: 3.0.0
+  flutter:
+    sdk: flutter
+  flutter_bloc: 9.1.1
+  flutter_localizations:
+    sdk: flutter
+  http: 1.6.0
+  ui:
+    path: ../../packages/ui
+
+dev_dependencies:
+  flutter_lints: 6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
