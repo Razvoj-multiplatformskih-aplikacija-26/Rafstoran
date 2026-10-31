@@ -56,7 +56,7 @@ final class MyReservationsBloc extends Bloc<MyReservationsEvent, MyReservationsS
       case Success(:final value):
         await _reload(emit, notice: ReservationCancelled(value));
       case Failure(:final error):
-        emit(current.withNotice(CancellationRejected(error)));
+        await _reload(emit, notice: CancellationRejected(error));
     }
   }
 

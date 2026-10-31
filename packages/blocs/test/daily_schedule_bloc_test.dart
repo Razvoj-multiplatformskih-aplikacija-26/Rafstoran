@@ -84,4 +84,23 @@ void main() {
           .having((s) => s.notice, 'notice', isA<ScheduleActionFailed>()),
     ],
   );
+
+  blocTest<DailyScheduleBloc, DailyScheduleState>(
+    'DailyScheduleBloc shows why the server refused an action and reloads the schedule',
+    build: build,
+    act: (bloc) async {
+      bloc.add(DailyScheduleRequested(DateTime(2026, 10, 9)));
+      await bloc.stream.firstWhere((s) => s is DailyScheduleLoaded);
+      schedules.restaurant.reservations[0] = pending.copyWith(
+        status: Cancelled(reason: 'Promena plana.', cancelledBy: guest.id, at: noon),
+      );
+      bloc.add(ScheduleConfirmationRequested(pending.id));
+    },
+    skip: 3,
+    expect: () => [
+      isA<DailyScheduleLoaded>()
+          .having((s) => s.notice, 'notice', isA<ScheduleActionRejected>())
+          .having((s) => s.schedule.reservations.single.status, 'status', isA<Cancelled>()),
+    ],
+  );
 }

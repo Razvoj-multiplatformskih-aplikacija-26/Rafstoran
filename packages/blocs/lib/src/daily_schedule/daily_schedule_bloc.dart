@@ -94,13 +94,11 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
     final request = ++_request;
     emit(current.copyWith(inFlightId: id, clearNotice: true));
     try {
-      switch (await action()) {
-        case Failure(:final error):
-          _finish(emit, request, notice: ScheduleActionRejected(error));
-        case Success(:final value):
-          final schedule = await getDailySchedule(current.day);
-          _finish(emit, request, schedule: schedule, notice: ScheduleActionSucceeded(value));
-      }
+      final notice = switch (await action()) {
+        Failure(:final error) => ScheduleActionRejected(error),
+        Success(:final value) => ScheduleActionSucceeded(value),
+      };
+      _finish(emit, request, schedule: await getDailySchedule(current.day), notice: notice);
     } on Exception catch (cause) {
       _finish(emit, request, notice: ScheduleActionFailed(cause));
     }
