@@ -33,6 +33,11 @@ final class ConsoleState extends Equatable {
 
   bool get signedIn => tokens.containsKey(account);
 
+  String? get latestReservation => [
+    for (final call in calls)
+      if ((call.scenario, call.run) case (NewReservation(), Sent(:final exchange))) ?reservationIdOf(exchange),
+  ].lastOrNull;
+
   Call? get current => switch (selected) {
     final index? => calls[index],
     null => null,

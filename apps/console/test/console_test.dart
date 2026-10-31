@@ -85,4 +85,37 @@ void main() {
     expect(requests.last.headers['Authorization'], 'Bearer token-of-ana');
     await bloc.close();
   });
+
+  test('a call on the latest reservation goes to its id and shows why the server refused it', () async {
+    const id = '094398f9-8d2d-49bc-9ca8-846847222d6f';
+    final requests = <http.BaseRequest>[];
+    final client = MockClient((request) async {
+      requests.add(request);
+      if (request.url.path == ApiPaths.reservations) {
+        return http.Response(
+          '{"id":"$id","guest":{"kind":"account","id":"u-guest"},"start":"2026-10-30T14:00:00.000Z",'
+          '"partySize":2,"status":{"kind":"pending"},"createdAt":"2026-10-29T09:00:00.000Z",'
+          '"note":"Sto pored prozora","tableId":"t-01"}',
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response(
+        '{"type":"tag:raf.rs,2026:rafstoran/problem/not-allowed","title":"Not allowed","status":403,'
+        '"code":"not-allowed"}',
+        403,
+        headers: {'content-type': 'application/problem+json'},
+      );
+    });
+    final bloc = consoleOver(client, FakeLocalSystem())..add(const ScenarioRequested(NewReservation()));
+    final created = await bloc.stream.firstWhere((state) => state.calls.isNotEmpty);
+    expect(created.latestReservation, id);
+    bloc.add(const ScenarioRequested(ReservationCall(ReservationAction.confirm, id)));
+    final refused = await bloc.stream.firstWhere((state) => state.calls.length == 2);
+    final answer = (refused.current!.run as Sent).exchange.answer as Answered;
+    expect(requests.last.url.path, ApiPaths.confirmation(id));
+    expect(answer.status, 403);
+    expect(answer.message, 'Nemate pravo na ovu radnju.');
+    await bloc.close();
+  });
 }

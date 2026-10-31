@@ -11,7 +11,7 @@ final class DemoStep {
   final String explanation;
 }
 
-List<DemoStep> demoSteps({required int noteLength}) => [
+List<DemoStep> demoSteps({required int noteLength, required String? reservationId}) => [
   const DemoStep(
     scenario: HealthCheck(),
     title: 'Server radi?',
@@ -51,6 +51,33 @@ List<DemoStep> demoSteps({required int noteLength}) => [
         'kodom note-too-long. Konzola od koda pravi poruku preko api_mapping i ui, kao aplikacija; u bazi nema '
         'novog reda.',
   ),
+  if (reservationId != null) ...[
+    DemoStep(
+      scenario: ReservationCall(ReservationAction.confirm, reservationId),
+      title: 'Potvrda rezervacije',
+      detail: 'POST /api/v1/reservations/…/confirmation',
+      explanation:
+          'Akcija koju sme samo osoblje, nad poslednjom rezervacijom iz konzole. Gost dobija 403 i poruku '
+          '„Nemate pravo na ovu radnju.“; konobar i menadžer je potvrđuju. Pravo proverava AccessPolicy.canConfirm '
+          'iz domena, isti kao u backoffice-u.',
+    ),
+    DemoStep(
+      scenario: ReservationCall(ReservationAction.recordArrival, reservationId),
+      title: 'Dolazak gosta',
+      detail: 'POST /api/v1/reservations/…/arrival',
+      explanation:
+          'Akcija koju sme samo osoblje. Gost dobija 403. Osoblje beleži dolazak najranije sat vremena pre '
+          'termina, pa za sutrašnju rezervaciju dobija poruku o tom pravilu.',
+    ),
+    DemoStep(
+      scenario: ReservationCall(ReservationAction.cancel, reservationId),
+      title: 'Otkazivanje',
+      detail: 'POST /api/v1/reservations/…/cancellation',
+      explanation:
+          'Gost otkazuje samo svoju rezervaciju. Drugi gost dobija 404, kao da rezervacija ne postoji: server ne '
+          'otkriva tuđe zapise.',
+    ),
+  ],
   const DemoStep(
     scenario: LocalStep(LocalTask.rebuildServer),
     title: 'Izgradi server ponovo',
@@ -82,5 +109,12 @@ DemoStep stepOf(Scenario scenario) {
     LongNote(:final length) => length,
     _ => 0,
   };
-  return [...demoSteps(noteLength: noteLength), ...toolSteps].firstWhere((step) => step.scenario == scenario);
+  final reservationId = switch (scenario) {
+    ReservationCall(:final reservationId) => reservationId,
+    _ => null,
+  };
+  return [
+    ...demoSteps(noteLength: noteLength, reservationId: reservationId),
+    ...toolSteps,
+  ].firstWhere((step) => step.scenario == scenario);
 }

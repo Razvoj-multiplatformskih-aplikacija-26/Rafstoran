@@ -23,7 +23,7 @@ class ScenarioPanel extends StatelessWidget {
         final bloc = context.read<ConsoleBloc>();
         VoidCallback? run(Scenario scenario) => state.running ? null : () => bloc.add(ScenarioRequested(scenario));
         final steps = [
-          for (final step in demoSteps(noteLength: state.noteLength))
+          for (final step in demoSteps(noteLength: state.noteLength, reservationId: state.latestReservation))
             if (localCommands || step.scenario is! LocalStep) step,
         ];
         return ListView(

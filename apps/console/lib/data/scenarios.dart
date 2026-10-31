@@ -40,6 +40,18 @@ final class LongNote extends Scenario {
   List<Object?> get props => [length];
 }
 
+enum ReservationAction { confirm, recordArrival, cancel }
+
+final class ReservationCall extends Scenario {
+  const ReservationCall(this.action, this.reservationId);
+
+  final ReservationAction action;
+  final String reservationId;
+
+  @override
+  List<Object?> get props => [action, reservationId];
+}
+
 final class LocalStep extends Scenario {
   const LocalStep(this.task);
 
@@ -97,8 +109,19 @@ final class ScenarioRunner {
         ),
         NewReservation() => Sent(await _reserve(token, hour: 15, note: 'Sto pored prozora')),
         LongNote(:final length) => Sent(await _reserve(token, hour: 17, note: 'a' * length)),
+        ReservationCall(:final action, :final reservationId) => Sent(await _change(action, reservationId, token)),
         LocalStep(:final task) => Ran(await _local(task)),
       };
+
+  Future<Exchange> _change(ReservationAction action, String id, String? token) => switch (action) {
+    ReservationAction.confirm => calls.post(ApiPaths.confirmation(id), const {}, token: token),
+    ReservationAction.recordArrival => calls.post(ApiPaths.arrival(id), const {}, token: token),
+    ReservationAction.cancel => calls.post(
+      ApiPaths.cancellation(id),
+      const CancellationDto(reason: 'Promena plana.').toJson(),
+      token: token,
+    ),
+  };
 
   Future<List<CommandResult>> _local(LocalTask task) async {
     final results = [...await local.run(task)];
@@ -133,11 +156,15 @@ final class ScenarioRunner {
   }
 }
 
-String? sessionTokenOf(Exchange exchange) {
+String? sessionTokenOf(Exchange exchange) => _createdJson(exchange, (json) => SessionDto.fromJson(json).token);
+
+String? reservationIdOf(Exchange exchange) => _createdJson(exchange, (json) => ReservationDto.fromJson(json).id);
+
+String? _createdJson(Exchange exchange, String? Function(Map<String, Object?> json) read) {
   if (exchange.answer case Answered(status: 201, :final body)) {
     try {
       return switch (jsonDecode(body)) {
-        final Map<String, Object?> json => SessionDto.fromJson(json).token,
+        final Map<String, Object?> json => read(json),
         _ => null,
       };
     } on FormatException {
