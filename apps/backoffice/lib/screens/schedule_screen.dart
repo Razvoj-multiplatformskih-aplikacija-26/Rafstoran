@@ -173,6 +173,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rezervacija je sačuvana.')));
   }
 
+  void _refresh() => _bloc.add(const DailyScheduleRefreshed());
+
   void _simulateOutage(FakeSchedule fake) {
     fake.failingRequests = 1;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sledeći zahtev neće uspeti.')));
@@ -206,6 +208,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         PaletteCommand(label: 'Otkaži izabranu rezervaciju', detail: 'X', icon: Icons.close, run: _cancel),
       PaletteCommand(label: 'Nova rezervacija', icon: Icons.add, run: _newReservation),
       PaletteCommand(label: 'Danas', detail: 'T', icon: Icons.today_outlined, run: () => _goTo(_bloc.today)),
+      PaletteCommand(label: 'Osveži raspored', detail: 'R', icon: Icons.refresh, run: _refresh),
       PaletteCommand(
         label: 'Naredni dan',
         detail: 'N',
@@ -287,6 +290,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           PreviousDayIntent: CallbackAction<PreviousDayIntent>(onInvoke: (_) => _goTo(addDays(widget.day, -1))),
           NextDayIntent: CallbackAction<NextDayIntent>(onInvoke: (_) => _goTo(addDays(widget.day, 1))),
           TodayIntent: CallbackAction<TodayIntent>(onInvoke: (_) => _goTo(bloc.today)),
+          RefreshIntent: CallbackAction<RefreshIntent>(onInvoke: (_) => _refresh()),
           ShowShortcutsIntent: CallbackAction<ShowShortcutsIntent>(onInvoke: (_) => showShortcutsOverview(context)),
           CommandPaletteIntent: CallbackAction<CommandPaletteIntent>(
             onInvoke: (_) => showCommandPalette(context, _paletteCommands()),
@@ -329,6 +333,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   onPressed: () => _goTo(addDays(widget.day, 1)),
                   icon: const Icon(Icons.chevron_right),
                 ),
+                IconButton(tooltip: 'Osveži (R)', onPressed: _refresh, icon: const Icon(Icons.refresh)),
                 if (!compact) ...[
                   TextButton(onPressed: () => _goTo(bloc.today), child: const Text('Danas')),
                   const SizedBox(width: 8),

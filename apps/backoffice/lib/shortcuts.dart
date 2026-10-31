@@ -49,6 +49,10 @@ class TodayIntent extends Intent {
   const TodayIntent();
 }
 
+class RefreshIntent extends Intent {
+  const RefreshIntent();
+}
+
 class ShowShortcutsIntent extends Intent {
   const ShowShortcutsIntent();
 }
@@ -64,6 +68,7 @@ Map<ShortcutActivator, Intent> scheduleShortcuts() => {
   const SingleActivator(LogicalKeyboardKey.keyX): const CancelSelectedIntent(),
   const SingleActivator(LogicalKeyboardKey.escape): const ClearSelectionIntent(),
   const SingleActivator(LogicalKeyboardKey.keyT): const TodayIntent(),
+  const SingleActivator(LogicalKeyboardKey.keyR): const RefreshIntent(),
   const SingleActivator(LogicalKeyboardKey.keyP): const PreviousDayIntent(),
   const SingleActivator(LogicalKeyboardKey.keyN): const NextDayIntent(),
   const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true): const PreviousDayIntent(),
@@ -91,6 +96,7 @@ List<ShortcutDescription> shortcutDescriptions() => [
   const ShortcutDescription('P  /  N', 'Prethodni / naredni dan'),
   ShortcutDescription('$optionKeyLabel ←  /  $optionKeyLabel →', 'Prethodni / naredni dan'),
   const ShortcutDescription('T', 'Današnji dan'),
+  const ShortcutDescription('R', 'Osveži raspored'),
   ShortcutDescription('$commandKeyLabel K', 'Paleta komandi'),
   const ShortcutDescription('?', 'Pregled prečica'),
 ];
