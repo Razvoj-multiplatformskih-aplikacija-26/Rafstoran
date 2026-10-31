@@ -4,6 +4,12 @@ sealed class MyReservationsEvent {
   const MyReservationsEvent();
 }
 
+final class MyReservationsGuestChanged extends MyReservationsEvent {
+  const MyReservationsGuestChanged(this.guest);
+
+  final User? guest;
+}
+
 final class MyReservationsRequested extends MyReservationsEvent {
   const MyReservationsRequested();
 }

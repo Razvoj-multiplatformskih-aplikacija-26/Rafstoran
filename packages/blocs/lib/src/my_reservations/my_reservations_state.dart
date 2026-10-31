@@ -10,6 +10,10 @@ sealed class MyReservationsState extends Equatable {
   String toString() => '$runtimeType';
 }
 
+final class MyReservationsSignedOut extends MyReservationsState {
+  const MyReservationsSignedOut();
+}
+
 final class MyReservationsLoading extends MyReservationsState {
   const MyReservationsLoading();
 }

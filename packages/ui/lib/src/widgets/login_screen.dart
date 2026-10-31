@@ -16,6 +16,7 @@ class LoginScreen extends StatelessWidget {
     required this.onSignedIn,
     required this.roleNotAllowedMessage,
     this.reason,
+    this.appBar,
   });
 
   final String title;
@@ -23,6 +24,7 @@ class LoginScreen extends StatelessWidget {
   final void Function(User user) onSignedIn;
   final String roleNotAllowedMessage;
   final SignOutReason? reason;
+  final PreferredSizeWidget? appBar;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +35,7 @@ class LoginScreen extends StatelessWidget {
           if (state case LoginSucceeded(:final user)) onSignedIn(user);
         },
         child: Scaffold(
+          appBar: appBar,
           body: _LoginForm(title: title, reason: reason, roleNotAllowedMessage: roleNotAllowedMessage),
         ),
       ),

@@ -31,11 +31,10 @@ void main() {
         getMyReservations: GetMyReservations(reservations: restaurant),
         cancelReservation: CancelReservation(reservations: restaurant, clock: clock),
         clock: clock,
-        guest: guest,
       );
     },
     act: (bloc) => bloc
-      ..add(const MyReservationsRequested())
+      ..add(const MyReservationsGuestChanged(guest))
       ..add(const ReservationCancellationRequested(ReservationId('r-1'), reason: 'Promena plana.')),
     skip: 2,
     expect: () => [

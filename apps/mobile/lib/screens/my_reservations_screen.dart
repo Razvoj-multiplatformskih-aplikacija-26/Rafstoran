@@ -32,11 +32,12 @@ class MyReservationsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Moje rezervacije'),
         actions: [
-          IconButton(
-            tooltip: 'Odjavi se',
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.read<SessionBloc>().add(const SessionLogOutRequested()),
-          ),
+          if (context.watch<SessionBloc>().state is SignedIn)
+            IconButton(
+              tooltip: 'Odjavi se',
+              icon: const Icon(Icons.logout),
+              onPressed: () => context.read<SessionBloc>().add(const SessionLogOutRequested()),
+            ),
         ],
       ),
       body: BlocConsumer<MyReservationsBloc, MyReservationsState>(
@@ -49,6 +50,15 @@ class MyReservationsScreen extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 720),
                 child: switch (state) {
+                  MyReservationsSignedOut() => ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      EmptyView(
+                        title: 'Prijavite se da vidite svoje rezervacije.',
+                        action: FilledButton(onPressed: () => context.push('/login'), child: const Text('Prijavi se')),
+                      ),
+                    ],
+                  ),
                   MyReservationsLoading() => ListView(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     children: const [ReservationListSkeleton()],

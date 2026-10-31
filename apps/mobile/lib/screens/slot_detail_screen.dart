@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/slot_selection.dart';
+import 'sign_in_screen.dart';
 
 import 'package:ui/ui.dart';
 
@@ -78,7 +79,11 @@ class SlotDetailScreen extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 720),
             child: FilledButton.icon(
-              onPressed: () => context.push('/slots/${slot.start.toIso8601String()}/reserve', extra: selection),
+              onPressed: () async {
+                if (await ensureSignedIn(context) && context.mounted) {
+                  await context.push('/slots/${slot.start.toIso8601String()}/reserve', extra: selection);
+                }
+              },
               icon: const Icon(Icons.restaurant_outlined),
               label: const Text('Rezerviši'),
             ),

@@ -10,6 +10,7 @@ import 'screens/home_shell.dart';
 import 'screens/my_reservations_screen.dart';
 import 'screens/reservation_detail_screen.dart';
 import 'screens/reservation_form_screen.dart';
+import 'screens/sign_in_screen.dart';
 import 'screens/slot_detail_screen.dart';
 import 'screens/slots_screen.dart';
 
@@ -19,6 +20,7 @@ GoRouter createRouter() {
     navigatorKey: rootNavigatorKey,
     initialLocation: '/',
     routes: [
+      GoRoute(path: '/login', builder: (context, state) => const SignInScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => HomeShell(shell: shell),
         branches: [
@@ -37,14 +39,16 @@ GoRouter createRouter() {
                       GoRoute(
                         path: 'reserve',
                         parentNavigatorKey: rootNavigatorKey,
-                        redirect: (context, state) => state.extra is SlotSelection ? null : '/',
+                        redirect: (context, state) =>
+                            state.extra is SlotSelection && context.read<SessionBloc>().state is SignedIn ? null : '/',
                         builder: (context, state) {
                           final selection = state.extra! as SlotSelection;
                           final dependencies = context.read<AppDependencies>();
+                          final guest = (context.read<SessionBloc>().state as SignedIn).user;
                           return BlocProvider(
                             create: (_) => ReservationFormBloc(
                               createReservation: dependencies.createReservation,
-                              user: context.read<User>(),
+                              user: guest,
                               slot: selection.availability.slot,
                               partySize: selection.partySize,
                             ),

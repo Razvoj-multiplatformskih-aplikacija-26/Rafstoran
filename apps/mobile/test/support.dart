@@ -15,8 +15,8 @@ Future<void> initializeTestEnvironment() {
   return initializeDateFormatting('sr_Latn');
 }
 
-AppDependencies fakeDependencies({DateTime? now, Duration latency = Duration.zero}) =>
-    AppDependencies.fake(clock: FixedClock(now ?? fridayNoon), latency: latency);
+AppDependencies fakeDependencies({DateTime? now, Duration latency = Duration.zero, bool signedIn = true}) =>
+    AppDependencies.fake(clock: FixedClock(now ?? fridayNoon), latency: latency, signedIn: signedIn);
 
 Widget appWith(AppDependencies dependencies) => RafstoranApp(dependencies: dependencies);
 

@@ -26,7 +26,7 @@ final class AvailableSlotsBloc extends Bloc<AvailableSlotsEvent, AvailableSlotsS
 
   final GetAvailableSlots getAvailableSlots;
   final Clock clock;
-  final User user;
+  final User? user;
   int _request = 0;
 
   DateTime get today => restaurantDay(clock.now());

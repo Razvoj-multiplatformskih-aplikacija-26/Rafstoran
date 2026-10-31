@@ -9,12 +9,14 @@ part 'my_reservations_event.dart';
 part 'my_reservations_state.dart';
 
 final class MyReservationsBloc extends Bloc<MyReservationsEvent, MyReservationsState> {
-  MyReservationsBloc({
-    required this.getMyReservations,
-    required this.cancelReservation,
-    required this.clock,
-    required this.guest,
-  }) : super(const MyReservationsLoading()) {
+  MyReservationsBloc({required this.getMyReservations, required this.cancelReservation, required this.clock})
+    : super(const MyReservationsLoading()) {
+    on<MyReservationsGuestChanged>((event, emit) async {
+      _guest = event.guest;
+      if (event.guest == null) return emit(const MyReservationsSignedOut());
+      emit(const MyReservationsLoading());
+      await _reload(emit);
+    });
     on<MyReservationsRequested>((event, emit) async {
       emit(const MyReservationsLoading());
       await _reload(emit);
@@ -36,14 +38,15 @@ final class MyReservationsBloc extends Bloc<MyReservationsEvent, MyReservationsS
   final GetMyReservations getMyReservations;
   final CancelReservation cancelReservation;
   final Clock clock;
-  final User guest;
+  User? _guest;
 
   Future<void> _onCancellationRequested(
     ReservationCancellationRequested event,
     Emitter<MyReservationsState> emit,
   ) async {
     final current = state;
-    if (current is! MyReservationsLoaded) return;
+    final guest = _guest;
+    if (current is! MyReservationsLoaded || guest == null) return;
     emit(current.withCancelling(event.id));
     final Result<Reservation> result;
     try {
@@ -61,8 +64,11 @@ final class MyReservationsBloc extends Bloc<MyReservationsEvent, MyReservationsS
   }
 
   Future<void> _reload(Emitter<MyReservationsState> emit, {MyReservationsNotice? notice}) async {
+    final guest = _guest;
+    if (guest == null) return emit(const MyReservationsSignedOut());
     try {
       final reservations = await getMyReservations(guest);
+      if (guest != _guest) return;
       if (reservations.isEmpty) {
         emit(const MyReservationsEmpty());
         return;
@@ -76,7 +82,7 @@ final class MyReservationsBloc extends Bloc<MyReservationsEvent, MyReservationsS
       };
       emit(MyReservationsLoaded(upcoming: upcoming, past: past, cancellable: cancellable, notice: notice));
     } on Exception catch (cause) {
-      emit(MyReservationsFailure(cause));
+      if (guest == _guest) emit(MyReservationsFailure(cause));
     }
   }
 }

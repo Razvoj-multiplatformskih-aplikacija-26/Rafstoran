@@ -35,13 +35,13 @@ final class AppDependencies {
     );
   }
 
-  factory AppDependencies.fake({Clock clock = const SystemClock(), Duration? latency}) {
+  factory AppDependencies.fake({Clock clock = const SystemClock(), Duration? latency, bool signedIn = true}) {
     final restaurant = latency == null ? FakeRestaurant(clock: clock) : FakeRestaurant(clock: clock, latency: latency);
     return AppDependencies(
       clock: clock,
       reservations: restaurant,
       slots: restaurant,
-      sessions: FakeSessions(guest),
+      sessions: FakeSessions(guest, signedIn: signedIn),
       fakeRestaurant: restaurant,
     );
   }
