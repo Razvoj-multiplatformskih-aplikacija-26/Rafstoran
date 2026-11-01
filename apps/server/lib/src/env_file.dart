@@ -6,9 +6,13 @@ Map<String, String> readEnvFile(File file) {
   return {
     for (final line in file.readAsLinesSync())
       if (line.indexOf('=') case final split when split > 0 && !line.trimLeft().startsWith('#'))
-        line.substring(0, split).trim(): line.substring(split + 1).trim(),
+        line.substring(0, split).trim(): _unquoted(line.substring(split + 1).trim()),
   };
 }
+
+String _unquoted(String value) => value.length > 1 && (value[0] == '"' || value[0] == "'") && value.endsWith(value[0])
+    ? value.substring(1, value.length - 1)
+    : value;
 
 Map<String, String> serverEnvironment() => {
   ...readEnvFile(_envFile(Directory.current.absolute)),
