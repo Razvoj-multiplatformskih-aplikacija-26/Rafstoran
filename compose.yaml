@@ -1,4 +1,4 @@
-# Ready for copy; adapt the service names, the database and the paths.
+# Ready for copy; adapt the project name, the service names, the database and the paths.
 name: rafstoran
 
 services:

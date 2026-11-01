@@ -1,9 +1,10 @@
-// Ready for copy as is.
+// Ready for copy; adapt the storage key.
 import 'package:api_client/api_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 final class SecureTokenStore implements TokenStore {
   const SecureTokenStore([
+    // The data protection keychain needs a provisioning profile; the login keychain also works in unsigned builds.
     this._storage = const FlutterSecureStorage(mOptions: MacOsOptions(usesDataProtectionKeychain: false)),
   ]);
 

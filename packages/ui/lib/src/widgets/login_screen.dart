@@ -1,4 +1,4 @@
-// Ready for copy; adapt the texts.
+// Ready for copy; adapt the texts and the logo.
 import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/material.dart';
