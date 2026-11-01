@@ -67,7 +67,7 @@ docker compose up -d
 | `migrate` | dbmate primeni migracije iz `apps/server/migrations`, pa izlazi | — |
 | `server` | server u Dartu na Relic-u, slika iz `apps/server/Dockerfile` | http://localhost:8080 |
 
-Lozinka baze, `DEMO_PASSWORD`, `JWT_SECRET` i portovi su u `.env`, koji nije u git-u. Ako je port zauzet, promenite `POSTGRES_PORT`, `SERVER_PORT` ili `ADMINER_PORT` u `.env`. Kada je baza prazna, server upisuje početne podatke.
+Lozinka baze, `DEMO_PASSWORD`, `JWT_SECRET` i portovi su u `.env`, koji nije u git-u. Ako je port zauzet, promenite ga u `.env`: `POSTGRES_PORT` (i isti port u `DATABASE_URL`), `SERVER_PORT` (aplikacije tada pokrenite sa `--dart-define=SERVER_URL=http://localhost:<port>`) ili `ADMINER_PORT`. Kada je baza prazna, server upisuje početne podatke.
 
 Provera: `docker compose ps -a` (servis `migrate` je `Exited (0)`) i `curl localhost:8080/health` (odgovor `ok`; u PowerShell-u `curl.exe`).
 
