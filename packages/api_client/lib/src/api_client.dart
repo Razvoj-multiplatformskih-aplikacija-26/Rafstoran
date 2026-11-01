@@ -71,7 +71,7 @@ final class ApiClient {
     }
     final http.Response response;
     try {
-      response = await http.Response.fromStream(await _http.send(request).timeout(timeout));
+      response = await _http.send(request).then(http.Response.fromStream).timeout(timeout);
     } on http.ClientException catch (cause) {
       throw RepositoryException('Server unreachable', failure: RepositoryFailure.unreachable, cause: cause);
     } on TimeoutException catch (cause) {
