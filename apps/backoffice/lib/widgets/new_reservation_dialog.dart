@@ -197,7 +197,7 @@ class _ConfirmStepState extends State<_ConfirmStep> {
   Widget build(BuildContext context) {
     return BlocConsumer<ReservationFormBloc, ReservationFormState>(
       listenWhen: (previous, current) => switch (current) {
-        ReservationFormSucceeded() || ReservationFormRejected(error: NoTableAvailable()) => true,
+        ReservationFormSucceeded() || ReservationFormRejected() => true,
         _ => false,
       },
       listener: (context, state) {

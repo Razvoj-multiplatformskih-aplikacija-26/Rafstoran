@@ -40,12 +40,10 @@ class _ReservationFormScreenState extends State<ReservationFormScreen> {
         context.read<AvailableSlotsBloc>().add(const AvailableSlotsRefreshed());
         _showMessage(context, 'Rezervacija je poslata. Čeka potvrdu osoblja.');
         context.go('/reservations');
-      case ReservationFormRejected(error: final NoTableAvailable error):
-        _showMessage(context, error.message);
-        context.read<AvailableSlotsBloc>().add(const AvailableSlotsRefreshed());
-        context.go('/');
       case ReservationFormRejected(:final error):
         _showMessage(context, error.message);
+        context.read<AvailableSlotsBloc>().add(const AvailableSlotsRefreshed());
+        if (error is NoTableAvailable) context.go('/');
       case ReservationFormFailed(:final cause):
         _showMessage(
           context,
