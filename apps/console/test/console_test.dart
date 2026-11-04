@@ -68,7 +68,7 @@ void main() {
       requests.add(request);
       if (request.url.path != ApiPaths.sessions) return http.Response('[]', 200);
       return http.Response(
-        '{"user":{"id":"u-ana","username":"Ana Petrović","role":"guest"},'
+        '{"user":{"id":"u-ana","name":"Ana Petrović","role":"guest"},'
         '"expiresAt":"2026-10-29T22:00:00.000Z","token":"token-of-ana"}',
         201,
         headers: {'content-type': 'application/json'},

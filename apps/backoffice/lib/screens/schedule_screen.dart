@@ -165,7 +165,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   Future<void> _newReservation() async {
     final state = _bloc.state;
     if (state is! DailyScheduleLoaded) return;
-    final accounts = state.schedule.guests.values.toList()..sort((a, b) => a.username.compareTo(b.username));
+    final accounts = state.schedule.guests.values.toList()..sort((a, b) => a.name.compareTo(b.name));
     final created = await showNewReservationDialog(context, day: widget.day, accounts: accounts);
     if (!mounted || created == null) return;
     _select(created);
@@ -354,7 +354,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     icon: const Icon(Icons.keyboard_outlined),
                   ),
                   const SizedBox(width: 8),
-                  Text(_staff.username, style: theme.textTheme.labelLarge),
+                  Text(_staff.name, style: theme.textTheme.labelLarge),
                   IconButton(
                     tooltip: 'Odjavi se',
                     onPressed: () => context.read<SessionBloc>().add(const SessionLogOutRequested()),
@@ -385,7 +385,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       const PopupMenuItem(value: 'shortcuts', child: Text('Prečice')),
                       if (kDebugMode && fake != null)
                         const PopupMenuItem(value: 'outage', child: Text('Simuliraj grešku')),
-                      PopupMenuItem(value: 'logout', child: Text('Odjavi se (${_staff.username})')),
+                      PopupMenuItem(value: 'logout', child: Text('Odjavi se (${_staff.name})')),
                     ],
                   ),
                 const SizedBox(width: 8),

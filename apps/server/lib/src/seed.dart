@@ -4,21 +4,21 @@ import 'package:postgres/postgres.dart';
 import 'passwords.dart';
 import 'restaurant_store.dart';
 
-const _guest = User(id: UserId('u-guest'), username: 'Gost', role: Role.guest);
-const _waiter = User(id: UserId('u-waiter'), username: 'Marija Kostić', role: Role.waiter);
-const _manager = User(id: UserId('u-manager'), username: 'Nenad Popović', role: Role.manager);
+const _guest = User(id: UserId('u-guest'), name: 'Gost', role: Role.guest);
+const _waiter = User(id: UserId('u-waiter'), name: 'Marija Kostić', role: Role.waiter);
+const _manager = User(id: UserId('u-manager'), name: 'Nenad Popović', role: Role.manager);
 
 const _logins = {'u-guest': 'guest1', 'u-ana': 'guest2', 'u-waiter': 'waiter1', 'u-manager': 'manager1'};
 
 const _otherGuests = [
-  User(id: UserId('u-ana'), username: 'Ana Petrović', role: Role.guest),
-  User(id: UserId('u-marko'), username: 'Marko Jovanović', role: Role.guest),
-  User(id: UserId('u-jelena'), username: 'Jelena Nikolić', role: Role.guest),
-  User(id: UserId('u-nikola'), username: 'Nikola Đorđević', role: Role.guest),
-  User(id: UserId('u-milica'), username: 'Milica Stojanović', role: Role.guest),
-  User(id: UserId('u-stefan'), username: 'Stefan Ilić', role: Role.guest),
-  User(id: UserId('u-tamara'), username: 'Tamara Pavlović', role: Role.guest),
-  User(id: UserId('u-luka'), username: 'Luka Marković', role: Role.guest),
+  User(id: UserId('u-ana'), name: 'Ana Petrović', role: Role.guest),
+  User(id: UserId('u-marko'), name: 'Marko Jovanović', role: Role.guest),
+  User(id: UserId('u-jelena'), name: 'Jelena Nikolić', role: Role.guest),
+  User(id: UserId('u-nikola'), name: 'Nikola Đorđević', role: Role.guest),
+  User(id: UserId('u-milica'), name: 'Milica Stojanović', role: Role.guest),
+  User(id: UserId('u-stefan'), name: 'Stefan Ilić', role: Role.guest),
+  User(id: UserId('u-tamara'), name: 'Tamara Pavlović', role: Role.guest),
+  User(id: UserId('u-luka'), name: 'Luka Marković', role: Role.guest),
 ];
 
 final _caller = ContactGuest.parse(name: 'Ivana Ristić', phone: '063 777 2020').valueOrNull!;
@@ -106,7 +106,7 @@ Future<void> _addAccounts(Session database, List<User> users, {required String d
       ),
       parameters: {
         'id': user.id.value,
-        'name': user.username,
+        'name': user.name,
         'role': user.role.name,
         'login': _logins[user.id.value],
         'hash': await hashPassword(demoPassword),
@@ -127,7 +127,7 @@ Future<void> _seed(
       Sql.named('INSERT INTO users (id, name, role, login, password_hash) VALUES (@id, @name, @role, @login, @hash)'),
       parameters: {
         'id': user.id.value,
-        'name': user.username,
+        'name': user.name,
         'role': user.role.name,
         'login': login,
         'hash': login == null ? null : await hashPassword(demoPassword),

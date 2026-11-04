@@ -21,7 +21,7 @@ final class AccountStore {
     if (rows.isEmpty) return null;
     final [id, name, role, hash] = rows.single;
     return Account(
-      user: User(id: UserId(id! as String), username: name! as String, role: Role.values.byName(role! as String)),
+      user: User(id: UserId(id! as String), name: name! as String, role: Role.values.byName(role! as String)),
       passwordHash: hash! as String,
     );
   }

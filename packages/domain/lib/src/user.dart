@@ -12,18 +12,18 @@ enum Role {
 
 @immutable
 final class User {
-  const User({required this.id, required this.username, required this.role});
+  const User({required this.id, required this.name, required this.role});
 
   final UserId id;
-  final String username;
+  final String name;
   final Role role;
 
   @override
-  bool operator ==(Object other) => other is User && other.id == id && other.username == username && other.role == role;
+  bool operator ==(Object other) => other is User && other.id == id && other.name == name && other.role == role;
 
   @override
-  int get hashCode => Object.hash(id, username, role);
+  int get hashCode => Object.hash(id, name, role);
 
   @override
-  String toString() => 'User($username, ${role.name})';
+  String toString() => 'User($name, ${role.name})';
 }

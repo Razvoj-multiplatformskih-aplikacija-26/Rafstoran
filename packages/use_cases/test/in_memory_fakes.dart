@@ -11,7 +11,7 @@ const tables = [
   DiningTable(id: DiningTableId('t-4'), label: 'S2', capacity: 4, area: TableArea.hall),
 ];
 
-const guest = User(id: UserId('u-guest'), username: 'guest1', role: Role.guest);
+const guest = User(id: UserId('u-guest'), name: 'guest1', role: Role.guest);
 
 final class InMemoryRestaurant implements ReservationRepository, SlotRepository {
   InMemoryRestaurant({required this.clock, List<Reservation> reservations = const []})

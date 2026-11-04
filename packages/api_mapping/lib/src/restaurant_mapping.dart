@@ -36,11 +36,11 @@ extension SlotDtoMapping on SlotDto {
 }
 
 extension UserMapping on User {
-  UserDto toDto() => UserDto(id: id.value, username: username, role: role.name);
+  UserDto toDto() => UserDto(id: id.value, name: name, role: role.name);
 }
 
 extension UserDtoMapping on UserDto {
-  User toDomain() => User(id: UserId(id), username: username, role: Role.values.byName(role));
+  User toDomain() => User(id: UserId(id), name: name, role: Role.values.byName(role));
 }
 
 String dayToJson(DateTime localDay) =>

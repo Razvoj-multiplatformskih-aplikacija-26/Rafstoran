@@ -62,16 +62,16 @@ final class SlotDto {
 }
 
 final class UserDto {
-  const UserDto({required this.id, required this.username, required this.role});
+  const UserDto({required this.id, required this.name, required this.role});
 
   final String id;
-  final String username;
+  final String name;
   final String role;
 
-  Map<String, Object?> toJson() => {'id': id, 'username': username, 'role': role};
+  Map<String, Object?> toJson() => {'id': id, 'name': name, 'role': role};
 
   factory UserDto.fromJson(Map<String, Object?> json) =>
-      UserDto(id: jsonString(json, 'id'), username: jsonString(json, 'username'), role: jsonString(json, 'role'));
+      UserDto(id: jsonString(json, 'id'), name: jsonString(json, 'name'), role: jsonString(json, 'role'));
 }
 
 final class ScheduleDto {

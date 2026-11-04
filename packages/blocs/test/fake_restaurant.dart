@@ -7,7 +7,7 @@ OpeningHours everyDayNoonToEleven() => OpeningHours({
     day: const DayHours(open: LocalTime(12, 0), close: LocalTime(23, 0)),
 });
 
-const guest = User(id: UserId('u-guest'), username: 'guest1', role: Role.guest);
+const guest = User(id: UserId('u-guest'), name: 'guest1', role: Role.guest);
 const tables = [
   DiningTable(id: DiningTableId('t-2'), label: 'S1', capacity: 2, area: TableArea.hall),
   DiningTable(id: DiningTableId('t-4'), label: 'S2', capacity: 4, area: TableArea.hall),

@@ -31,7 +31,7 @@ sealed class NewReservationState extends Equatable {
     if (needle.isEmpty) return const [];
     return [
       for (final account in accounts)
-        if (account.username.toLowerCase().contains(needle)) account,
+        if (account.name.toLowerCase().contains(needle)) account,
     ];
   }
 

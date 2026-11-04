@@ -175,7 +175,7 @@ final class RestaurantStore {
 final _uuid = RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$');
 
 User _user(ResultRow row) =>
-    User(id: UserId(row[0]! as String), username: row[1]! as String, role: Role.values.byName(row[2]! as String));
+    User(id: UserId(row[0]! as String), name: row[1]! as String, role: Role.values.byName(row[2]! as String));
 
 Reservation _reservation(Map<String, dynamic> row) => Reservation(
   id: ReservationId(row['id'] as String),

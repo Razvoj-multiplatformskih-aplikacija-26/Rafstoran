@@ -7,7 +7,7 @@ void main() {
   test('a waiter cancels until two hours before the start, the manager until the start, a guest only their own', () {
     final start = DateTime.utc(2026, 10, 30, 18);
     final reservation = reservationAt(start);
-    const otherGuest = User(id: UserId('u-ana'), username: 'guest2', role: Role.guest);
+    const otherGuest = User(id: UserId('u-ana'), name: 'guest2', role: Role.guest);
     final threeHoursBefore = start.subtract(const Duration(hours: 3));
     final oneHourBefore = start.subtract(const Duration(hours: 1));
 

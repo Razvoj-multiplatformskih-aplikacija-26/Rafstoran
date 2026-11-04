@@ -94,7 +94,7 @@ class ReservationDetailPanel extends StatelessWidget {
                       value: '${formatTime(reservation.slot.start)}–${formatTime(reservation.slot.end)}',
                     ),
                     if (reservation.note case final note?) _Field(label: 'Napomena', value: note.text),
-                    if (reservation.enteredBy != null) _Field(label: 'Uneo', value: enteredBy?.username ?? 'Osoblje'),
+                    if (reservation.enteredBy != null) _Field(label: 'Uneo', value: enteredBy?.name ?? 'Osoblje'),
                   ],
                 ),
               ),

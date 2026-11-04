@@ -34,7 +34,7 @@ void main() {
   final noon = hours.localToUtc(2026, 10, 9, const LocalTime(12, 0));
   final tonight = hours.localToUtc(2026, 10, 9, const LocalTime(20, 0));
   final clock = FixedClock(noon);
-  const waiter = User(id: UserId('u-waiter'), username: 'Marija Kostić', role: Role.waiter);
+  const waiter = User(id: UserId('u-waiter'), name: 'Marija Kostić', role: Role.waiter);
 
   final pending = Reservation(
     id: const ReservationId('r-1'),

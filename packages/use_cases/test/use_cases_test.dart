@@ -46,7 +46,7 @@ void main() {
 
   test('another guest is told that a reservation they may not view does not exist', () async {
     final created = (await create(by: guest, start: tonight, partySize: two)).valueOrNull!;
-    const otherGuest = User(id: UserId('u-ana'), username: 'guest2', role: Role.guest);
+    const otherGuest = User(id: UserId('u-ana'), name: 'guest2', role: Role.guest);
 
     final cancel = CancelReservation(reservations: restaurant, clock: FixedClock(noon));
 
@@ -66,7 +66,7 @@ void main() {
   });
 
   test('staff enter a phone reservation that is confirmed and records who entered it', () async {
-    const waiter = User(id: UserId('u-waiter'), username: 'Marija Kostić', role: Role.waiter);
+    const waiter = User(id: UserId('u-waiter'), name: 'Marija Kostić', role: Role.waiter);
     final caller = ContactGuest.parse(name: 'Ana Petrović', phone: '064 123 4567').valueOrNull!;
     final reservation = (await create(by: waiter, guest: caller, start: tonight, partySize: two)).valueOrNull!;
     expect(reservation.guest, caller);

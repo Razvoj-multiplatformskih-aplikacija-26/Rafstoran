@@ -28,19 +28,19 @@ const staffTables = [
 ];
 
 const staffGuests = {
-  UserId('u-ana'): User(id: UserId('u-ana'), username: 'Ana Petrović', role: Role.guest),
-  UserId('u-marko'): User(id: UserId('u-marko'), username: 'Marko Jovanović', role: Role.guest),
-  UserId('u-jelena'): User(id: UserId('u-jelena'), username: 'Jelena Nikolić', role: Role.guest),
-  UserId('u-nikola'): User(id: UserId('u-nikola'), username: 'Nikola Đorđević', role: Role.guest),
-  UserId('u-milica'): User(id: UserId('u-milica'), username: 'Milica Stojanović', role: Role.guest),
-  UserId('u-stefan'): User(id: UserId('u-stefan'), username: 'Stefan Ilić', role: Role.guest),
-  UserId('u-tamara'): User(id: UserId('u-tamara'), username: 'Tamara Pavlović', role: Role.guest),
-  UserId('u-luka'): User(id: UserId('u-luka'), username: 'Luka Marković', role: Role.guest),
+  UserId('u-ana'): User(id: UserId('u-ana'), name: 'Ana Petrović', role: Role.guest),
+  UserId('u-marko'): User(id: UserId('u-marko'), name: 'Marko Jovanović', role: Role.guest),
+  UserId('u-jelena'): User(id: UserId('u-jelena'), name: 'Jelena Nikolić', role: Role.guest),
+  UserId('u-nikola'): User(id: UserId('u-nikola'), name: 'Nikola Đorđević', role: Role.guest),
+  UserId('u-milica'): User(id: UserId('u-milica'), name: 'Milica Stojanović', role: Role.guest),
+  UserId('u-stefan'): User(id: UserId('u-stefan'), name: 'Stefan Ilić', role: Role.guest),
+  UserId('u-tamara'): User(id: UserId('u-tamara'), name: 'Tamara Pavlović', role: Role.guest),
+  UserId('u-luka'): User(id: UserId('u-luka'), name: 'Luka Marković', role: Role.guest),
 };
 
-const staffWaiter = User(id: UserId('u-waiter'), username: 'Marija Kostić', role: Role.waiter);
+const staffWaiter = User(id: UserId('u-waiter'), name: 'Marija Kostić', role: Role.waiter);
 
-const staffManager = User(id: UserId('u-manager'), username: 'Nenad Popović', role: Role.manager);
+const staffManager = User(id: UserId('u-manager'), name: 'Nenad Popović', role: Role.manager);
 
 const staffMembers = {UserId('u-waiter'): staffWaiter, UserId('u-manager'): staffManager};
 

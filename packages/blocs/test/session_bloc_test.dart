@@ -27,7 +27,7 @@ final class RememberedSession implements SessionRepository {
 }
 
 void main() {
-  const guest = User(id: UserId('u-guest'), username: 'guest1', role: Role.guest);
+  const guest = User(id: UserId('u-guest'), name: 'guest1', role: Role.guest);
   late RememberedSession sessions;
 
   blocTest<SessionBloc, SessionState>(

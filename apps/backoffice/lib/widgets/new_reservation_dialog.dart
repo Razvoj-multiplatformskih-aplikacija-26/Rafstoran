@@ -89,7 +89,7 @@ class _GuestStep extends StatelessWidget {
             const SizedBox(height: 16),
             Autocomplete<User>(
               initialValue: TextEditingValue(text: entry.name),
-              displayStringForOption: (account) => account.username,
+              displayStringForOption: (account) => account.name,
               optionsBuilder: (value) => bloc.state.suggestionsFor(value.text),
               onSelected: (account) => bloc.add(NewReservationAccountChosen(account)),
               fieldViewBuilder: (context, controller, focusNode, onSubmitted) => TextField(

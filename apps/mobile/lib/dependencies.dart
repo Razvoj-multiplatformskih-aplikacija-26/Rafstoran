@@ -46,7 +46,7 @@ final class AppDependencies {
     );
   }
 
-  static const guest = User(id: UserId('u-guest'), username: 'Gost', role: Role.guest);
+  static const guest = User(id: UserId('u-guest'), name: 'Gost', role: Role.guest);
 
   final Clock clock;
   final GetAvailableSlots getAvailableSlots;

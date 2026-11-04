@@ -59,7 +59,7 @@ final class SessionHandlers {
     if (account == null || !matches) return _unauthorized(_invalidCredentials);
     final user = account.user;
     final token = JWT({
-      'name': user.username,
+      'name': user.name,
       'role': user.role.name,
     }, subject: user.id.value).sign(_key, algorithm: _algorithm, expiresIn: ttl);
     final expiresAt = _verify(token)!.expiresAt;
@@ -101,7 +101,7 @@ final class SessionHandlers {
       if (JWT.decode(token).header?['alg'] != _algorithm.name) return null;
       return switch (JWT.verify(token, _key).payload) {
         {'sub': final String id, 'name': final String name, 'role': final String role, 'exp': final int exp} => Session(
-          user: User(id: UserId(id), username: name, role: Role.values.byName(role)),
+          user: User(id: UserId(id), name: name, role: Role.values.byName(role)),
           expiresAt: DateTime.fromMillisecondsSinceEpoch(exp * 1000, isUtc: true),
         ),
         _ => null,

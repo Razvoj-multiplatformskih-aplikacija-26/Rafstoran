@@ -8,10 +8,10 @@ part 'new_reservation_state.dart';
 final class NewReservationBloc extends Bloc<NewReservationEvent, NewReservationState> {
   NewReservationBloc({required List<User> accounts}) : super(NewReservationEntering(accounts: accounts)) {
     on<NewReservationAccountChosen>((event, emit) {
-      emit(state.entering(account: event.account, name: event.account.username));
+      emit(state.entering(account: event.account, name: event.account.name));
     });
     on<NewReservationNameChanged>((event, emit) {
-      emit(state.entering(name: event.text, clearAccount: state.account?.username != event.text));
+      emit(state.entering(name: event.text, clearAccount: state.account?.name != event.text));
     });
     on<NewReservationPhoneChanged>((event, emit) => emit(state.entering(phone: event.text)));
     on<NewReservationSlotChosen>(
