@@ -43,12 +43,10 @@ GoRouter createRouter() {
                             state.extra is SlotSelection && context.read<SessionBloc>().state is SignedIn ? null : '/',
                         builder: (context, state) {
                           final selection = state.extra! as SlotSelection;
-                          final dependencies = context.read<AppDependencies>();
-                          final guest = (context.read<SessionBloc>().state as SignedIn).user;
                           return BlocProvider(
-                            create: (_) => ReservationFormBloc(
-                              createReservation: dependencies.createReservation,
-                              user: guest,
+                            create: (context) => ReservationFormBloc(
+                              createReservation: context.read<AppDependencies>().createReservation,
+                              user: (context.read<SessionBloc>().state as SignedIn).user,
                               slot: selection.availability.slot,
                               partySize: selection.partySize,
                             ),
