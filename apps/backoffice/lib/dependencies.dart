@@ -30,7 +30,7 @@ final class BackofficeDependencies {
     required TokenStore tokens,
     Clock clock = const SystemClock(),
   }) {
-    final api = ApiClient(baseUri: baseUri, tokens: tokens);
+    final api = ApiClient(baseUri: baseUri, appVersion: appVersion, tokens: tokens);
     return BackofficeDependencies(
       clock: clock,
       schedules: HttpScheduleRepository(api),
@@ -55,6 +55,8 @@ final class BackofficeDependencies {
       fakeSchedule: schedule,
     );
   }
+
+  static const appVersion = 'backoffice/0.1.0+1';
 
   final Clock clock;
   final GetDailySchedule getDailySchedule;

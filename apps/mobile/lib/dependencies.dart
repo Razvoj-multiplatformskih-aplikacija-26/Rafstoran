@@ -26,7 +26,7 @@ final class AppDependencies {
     required TokenStore tokens,
     Clock clock = const SystemClock(),
   }) {
-    final api = ApiClient(baseUri: baseUri, tokens: tokens);
+    final api = ApiClient(baseUri: baseUri, appVersion: appVersion, tokens: tokens);
     return AppDependencies(
       clock: clock,
       reservations: HttpReservationRepository(api),
@@ -45,6 +45,8 @@ final class AppDependencies {
       fakeRestaurant: restaurant,
     );
   }
+
+  static const appVersion = 'mobile/0.1.0+1';
 
   static const guest = User(id: UserId('u-guest'), name: 'Gost', role: Role.guest);
 

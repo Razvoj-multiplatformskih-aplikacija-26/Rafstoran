@@ -42,6 +42,7 @@ class ReservationDetailPanel extends StatelessWidget {
       Cancelled(:final reason, :final at) => 'Otkazana ${formatDateAndTime(at)}.${reason.isEmpty ? '' : ' $reason'}',
       Arrived(:final arrivedAt) => 'Gost je stigao u ${formatTime(arrivedAt)}.',
       NoShow(:final at) => 'Zabeleženo ${formatDateAndTime(at)}.',
+      UnknownStatus() => 'Ova verzija aplikacije ne poznaje status rezervacije.',
     };
     final confirm = onConfirm;
     final arrival = onArrival;

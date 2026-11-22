@@ -221,6 +221,7 @@ ReservationStatus _status(Map<String, dynamic> row) {
   ),
   Arrived(:final arrivedAt) => (kind: 'arrived', by: null, at: arrivedAt, reason: null),
   NoShow(:final recordedBy, :final at) => (kind: 'no_show', by: recordedBy.value, at: at, reason: null),
+  UnknownStatus(:final kind) => throw ArgumentError.value(kind, 'status', 'The server stores only statuses it defines'),
 };
 
 LocalTime _localTime(String value) {

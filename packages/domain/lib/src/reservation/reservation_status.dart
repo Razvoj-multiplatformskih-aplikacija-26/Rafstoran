@@ -6,12 +6,12 @@ sealed class ReservationStatus {
   const ReservationStatus();
 
   bool get isActive => switch (this) {
-    Pending() || Confirmed() || Arrived() => true,
+    Pending() || Confirmed() || Arrived() || UnknownStatus() => true,
     Cancelled() || NoShow() => false,
   };
 
   bool get isFinal => switch (this) {
-    Cancelled() || Arrived() || NoShow() => true,
+    Cancelled() || Arrived() || NoShow() || UnknownStatus() => true,
     Pending() || Confirmed() => false,
   };
 }
@@ -90,6 +90,22 @@ final class NoShow extends ReservationStatus {
 
   @override
   String toString() => 'NoShow(by $recordedBy at $at)';
+}
+
+@immutable
+final class UnknownStatus extends ReservationStatus {
+  const UnknownStatus(this.kind);
+
+  final String kind;
+
+  @override
+  bool operator ==(Object other) => other is UnknownStatus && other.kind == kind;
+
+  @override
+  int get hashCode => kind.hashCode;
+
+  @override
+  String toString() => 'UnknownStatus($kind)';
 }
 
 bool canTransition(ReservationStatus from, ReservationStatus to) => switch ((from, to)) {

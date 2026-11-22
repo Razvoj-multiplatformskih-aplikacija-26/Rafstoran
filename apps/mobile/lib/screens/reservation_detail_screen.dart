@@ -45,7 +45,7 @@ class _DetailBody extends StatelessWidget {
   final bool busy;
 
   List<Widget> _statusRows(ReservationStatus status) => switch (status) {
-    Pending() || NoShow() => const [],
+    Pending() || NoShow() || UnknownStatus() => const [],
     Confirmed(:final at) => [
       const Divider(indent: 16, endIndent: 16),
       _DetailRow(icon: Icons.check_circle_outline, label: 'Potvrđena', value: capitalize(formatDateAndTime(at))),

@@ -25,7 +25,7 @@ Middleware allowOrigins(List<String> origins) =>
 void _allow(MutableHeaders headers, String origin) {
   headers['Access-Control-Allow-Origin'] = [origin];
   headers['Access-Control-Allow-Methods'] = ['GET, POST, DELETE, OPTIONS'];
-  headers['Access-Control-Allow-Headers'] = ['Content-Type, Authorization'];
+  headers['Access-Control-Allow-Headers'] = ['Content-Type, Authorization, X-App-Version'];
   headers['Access-Control-Allow-Credentials'] = ['true'];
   _vary(headers);
 }

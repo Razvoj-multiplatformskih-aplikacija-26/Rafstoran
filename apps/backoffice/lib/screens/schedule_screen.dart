@@ -245,7 +245,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         Arrived() => 'Dolazak je zabeležen.',
         Cancelled() => 'Rezervacija je otkazana.',
         NoShow() => 'Zabeleženo je da gost nije došao.',
-        Pending() => 'Rezervacija je ažurirana.',
+        Pending() || UnknownStatus() => 'Rezervacija je ažurirana.',
       },
       ScheduleActionRejected(:final error) => error.message,
       ScheduleActionFailed(:final cause) => 'Izmena nije sačuvana. ${failureMessage(cause)}',

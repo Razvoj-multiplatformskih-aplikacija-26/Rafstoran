@@ -36,6 +36,7 @@ final class ApiRefused extends ApiAnswer {
 final class ApiClient {
   ApiClient({
     required this.baseUri,
+    required this.appVersion,
     TokenStore? tokens,
     http.Client? httpClient,
     this.keepsSessionInCookie = platformKeepsSessionInCookie,
@@ -44,6 +45,7 @@ final class ApiClient {
        _http = httpClient ?? platformHttpClient();
 
   final Uri baseUri;
+  final String appVersion;
   final TokenStore tokens;
   final bool keepsSessionInCookie;
   final Duration timeout;
@@ -60,7 +62,8 @@ final class ApiClient {
 
   Future<ApiAnswer> _send(String method, String path, {Map<String, String>? query, Map<String, Object?>? body}) async {
     final request = http.Request(method, baseUri.replace(path: path, queryParameters: query))
-      ..headers['Accept'] = 'application/json';
+      ..headers['Accept'] = 'application/json'
+      ..headers[ApiHeaders.appVersion] = appVersion;
     if (!keepsSessionInCookie) {
       if (await tokens.read() case final token?) request.headers['Authorization'] = 'Bearer $token';
     }

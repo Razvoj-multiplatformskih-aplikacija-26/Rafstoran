@@ -29,6 +29,7 @@ class ReservationCell extends StatelessWidget {
       Confirmed() => (colors.confirmed, colors.onConfirmed),
       Cancelled() || NoShow() => (colors.cancelled, colors.onCancelled),
       Arrived() => (colors.arrived, colors.onArrived),
+      UnknownStatus() => (theme.colorScheme.surfaceContainerHighest, theme.colorScheme.onSurfaceVariant),
     };
     final guestName = this.guestName ?? 'Gost';
     final outline = selected

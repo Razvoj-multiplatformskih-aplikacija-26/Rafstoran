@@ -43,6 +43,11 @@ final class HttpReservationRepository implements ReservationRepository {
       Arrived() => _api.post(ApiPaths.arrival(id)),
       NoShow() => _api.post(ApiPaths.noShow(id)),
       Pending() => throw ArgumentError.value(reservation, 'reservation', 'A pending reservation is created, not saved'),
+      UnknownStatus() => throw ArgumentError.value(
+        reservation,
+        'reservation',
+        'A client cannot set a status it does not know',
+      ),
     };
     return resultOf(answer, _reservation);
   }

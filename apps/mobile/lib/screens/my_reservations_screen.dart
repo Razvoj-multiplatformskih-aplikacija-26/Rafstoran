@@ -143,7 +143,7 @@ class _ReservationCard extends StatelessWidget {
   final bool busy;
 
   String? _statusDetail(ReservationStatus status) => switch (status) {
-    Pending() || Confirmed() || NoShow() => null,
+    Pending() || Confirmed() || NoShow() || UnknownStatus() => null,
     Cancelled(:final reason) => reason.isEmpty ? null : reason,
     Arrived(:final arrivedAt) => 'Dolazak u ${formatTime(arrivedAt)}.',
   };

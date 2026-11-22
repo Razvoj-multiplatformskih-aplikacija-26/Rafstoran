@@ -8,6 +8,7 @@ final class ReservationStatusDto {
   static const cancelled = 'cancelled';
   static const arrived = 'arrived';
   static const noShow = 'no-show';
+  static const kinds = {pending, confirmed, cancelled, arrived, noShow};
 
   final String kind;
   final String? by;

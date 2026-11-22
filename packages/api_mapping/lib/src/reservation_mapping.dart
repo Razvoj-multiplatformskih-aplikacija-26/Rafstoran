@@ -21,6 +21,7 @@ extension ReservationStatusMapping on ReservationStatus {
       by: recordedBy.value,
       at: at,
     ),
+    UnknownStatus(:final kind) => ReservationStatusDto(kind: kind),
   };
 }
 
@@ -41,7 +42,8 @@ extension ReservationStatusDtoMapping on ReservationStatusDto {
       recordedBy: UserId(by),
       at: at,
     ),
-    _ => throw FormatException('Unknown reservation status', kind),
+    ReservationStatusDto(:final kind) when !ReservationStatusDto.kinds.contains(kind) => UnknownStatus(kind),
+    _ => throw FormatException('Incomplete reservation status', kind),
   };
 }
 
