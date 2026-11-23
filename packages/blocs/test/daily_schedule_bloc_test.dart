@@ -1,4 +1,3 @@
-import 'package:bloc_test/bloc_test.dart';
 import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 import 'package:test/test.dart';
@@ -50,8 +49,10 @@ void main() {
   DailyScheduleBloc build() {
     final restaurant = FakeRestaurant(clock: clock, reservations: [pending]);
     schedules = FakeSchedules(restaurant);
+    final feed = OnlineScheduleFeed(schedules: schedules, clock: clock);
     return DailyScheduleBloc(
-      getDailySchedule: GetDailySchedule(schedules: schedules),
+      watchDailySchedule: WatchDailySchedule(feed: feed),
+      refreshDailySchedule: RefreshDailySchedule(feed: feed),
       confirmReservation: ConfirmReservation(reservations: restaurant, clock: clock),
       recordArrival: RecordArrival(reservations: restaurant, clock: clock),
       recordNoShow: RecordNoShow(reservations: restaurant, clock: clock),
@@ -61,46 +62,54 @@ void main() {
     );
   }
 
-  blocTest<DailyScheduleBloc, DailyScheduleState>(
-    'DailyScheduleBloc reports a failed reload after a confirmation and is no longer busy',
-    build: build,
-    act: (bloc) async {
-      bloc.add(DailyScheduleRequested(DateTime(2026, 10, 9)));
-      await bloc.stream.firstWhere((s) => s is DailyScheduleLoaded);
-      bloc.add(ScheduleReservationSelected(pending.id));
-      schedules.failingLoads = 1;
-      bloc.add(ScheduleConfirmationRequested(pending.id));
-    },
-    skip: 3,
-    expect: () => [
-      isA<DailyScheduleLoaded>().having((s) => s.inFlightId, 'in flight', pending.id).having(
-        (s) => s.actionsFor(pending),
-        'actions at noon',
-        {ScheduleAction.confirm, ScheduleAction.cancel},
-      ),
-      isA<DailyScheduleLoaded>()
-          .having((s) => s.isBusy, 'busy', isFalse)
-          .having((s) => s.selectedId, 'selected', pending.id)
-          .having((s) => s.notice, 'notice', isA<ScheduleActionFailed>()),
-    ],
-  );
+  Future<DailyScheduleLoaded> loaded(DailyScheduleBloc bloc, bool Function(DailyScheduleLoaded state) test) async =>
+      await bloc.stream.firstWhere((s) => s is DailyScheduleLoaded && test(s)) as DailyScheduleLoaded;
 
-  blocTest<DailyScheduleBloc, DailyScheduleState>(
-    'DailyScheduleBloc shows why the server refused an action and reloads the schedule',
-    build: build,
-    act: (bloc) async {
-      bloc.add(DailyScheduleRequested(DateTime(2026, 10, 9)));
-      await bloc.stream.firstWhere((s) => s is DailyScheduleLoaded);
-      schedules.restaurant.reservations[0] = pending.copyWith(
-        status: Cancelled(reason: 'Promena plana.', cancelledBy: guest.id, at: noon),
-      );
-      bloc.add(ScheduleConfirmationRequested(pending.id));
-    },
-    skip: 3,
-    expect: () => [
-      isA<DailyScheduleLoaded>()
-          .having((s) => s.notice, 'notice', isA<ScheduleActionRejected>())
-          .having((s) => s.schedule.reservations.single.status, 'status', isA<Cancelled>()),
-    ],
-  );
+  test('DailyScheduleBloc keeps the schedule and says why a refresh failed', () async {
+    final bloc = build()..add(DailyScheduleRequested(DateTime(2026, 10, 9)));
+    final first = await loaded(bloc, (s) => true);
+    schedules.failingLoads = 1;
+    bloc.add(const DailyScheduleRefreshed());
+    final after = await loaded(bloc, (s) => s.refreshFailure != null);
+    expect(after.schedule.reservations, [pending]);
+    expect(after.refreshedAt, first.refreshedAt);
+    expect(after.refreshFailure, isA<RepositoryException>());
+    await bloc.close();
+  });
+
+  test('DailyScheduleBloc reports a confirmation that succeeded even when the refresh after it fails', () async {
+    final bloc = build()..add(DailyScheduleRequested(DateTime(2026, 10, 9)));
+    await loaded(bloc, (s) => true);
+    bloc.add(ScheduleReservationSelected(pending.id));
+    schedules.failingLoads = 1;
+    bloc.add(ScheduleConfirmationRequested(pending.id));
+    final busy = await loaded(bloc, (s) => s.isBusy);
+    expect(busy.actionsFor(pending), {ScheduleAction.confirm, ScheduleAction.cancel});
+    final after = await loaded(bloc, (s) => s.refreshFailure != null);
+    expect(after.isBusy, isFalse);
+    expect(after.selectedId, pending.id);
+    expect(after.notice, isA<ScheduleActionSucceeded>());
+    await bloc.close();
+  });
+
+  test('DailyScheduleBloc shows why the server refused an action and the status from the server', () async {
+    final bloc = build()..add(DailyScheduleRequested(DateTime(2026, 10, 9)));
+    await loaded(bloc, (s) => true);
+    schedules.restaurant.reservations[0] = pending.copyWith(
+      status: Cancelled(reason: 'Promena plana.', cancelledBy: guest.id, at: noon),
+    );
+    bloc.add(ScheduleConfirmationRequested(pending.id));
+    final after = await loaded(bloc, (s) => s.schedule.reservations.single.status is Cancelled);
+    expect(after.notice, isA<ScheduleActionRejected>());
+    await bloc.close();
+  });
+
+  test('DailyScheduleBloc shows a failure when a day that was never loaded cannot be refreshed', () async {
+    final bloc = build();
+    schedules.failingLoads = 1;
+    bloc.add(DailyScheduleRequested(DateTime(2026, 10, 9)));
+    final failure = await bloc.stream.firstWhere((s) => s is DailyScheduleFailure);
+    expect((failure as DailyScheduleFailure).cause, isA<RepositoryException>());
+    await bloc.close();
+  });
 }

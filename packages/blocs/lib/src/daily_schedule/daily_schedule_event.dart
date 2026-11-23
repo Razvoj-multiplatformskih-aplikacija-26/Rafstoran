@@ -10,6 +10,13 @@ final class DailyScheduleRequested extends DailyScheduleEvent {
   final DateTime day;
 }
 
+final class _DailyScheduleArrived extends DailyScheduleEvent {
+  const _DailyScheduleArrived(this.day, this.snapshot);
+
+  final DateTime day;
+  final ScheduleSnapshot? snapshot;
+}
+
 final class DailyScheduleRefreshed extends DailyScheduleEvent {
   const DailyScheduleRefreshed();
 }

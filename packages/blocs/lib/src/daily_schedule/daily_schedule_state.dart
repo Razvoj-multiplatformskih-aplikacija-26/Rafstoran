@@ -41,6 +41,8 @@ final class DailyScheduleLoaded extends DailyScheduleState {
     this.selectedId,
     this.notice,
     this.inFlightId,
+    this.refreshedAt,
+    this.refreshFailure,
   });
 
   final DailySchedule schedule;
@@ -49,9 +51,21 @@ final class DailyScheduleLoaded extends DailyScheduleState {
   final ReservationId? selectedId;
   final ScheduleNotice? notice;
   final ReservationId? inFlightId;
+  final DateTime? refreshedAt;
+  final Object? refreshFailure;
 
   @override
-  List<Object?> get props => [...super.props, schedule, actions, cursor, selectedId, notice, inFlightId];
+  List<Object?> get props => [
+    ...super.props,
+    schedule,
+    actions,
+    cursor,
+    selectedId,
+    notice,
+    inFlightId,
+    refreshedAt,
+    refreshFailure,
+  ];
 
   Set<ScheduleAction> actionsFor(Reservation reservation) => actions[reservation.id] ?? const {};
 
@@ -64,6 +78,7 @@ final class DailyScheduleLoaded extends DailyScheduleState {
     if (selectedId case final id?) ', selected ${id.value}',
     if (inFlightId case final id?) ', in flight ${id.value}',
     if (notice case final notice?) ', ${notice.runtimeType}',
+    if (refreshFailure != null) ', not refreshed',
     ')',
   ].join();
 
@@ -92,6 +107,10 @@ final class DailyScheduleLoaded extends DailyScheduleState {
     ScheduleNotice? notice,
     bool clearNotice = false,
     ReservationId? inFlightId,
+    bool clearInFlight = false,
+    DateTime? refreshedAt,
+    Object? refreshFailure,
+    bool clearRefreshFailure = false,
   }) {
     return DailyScheduleLoaded(
       day: day,
@@ -100,7 +119,9 @@ final class DailyScheduleLoaded extends DailyScheduleState {
       cursor: cursor ?? this.cursor,
       selectedId: clearSelection ? null : (selectedId ?? this.selectedId),
       notice: clearNotice ? null : (notice ?? this.notice),
-      inFlightId: inFlightId,
+      inFlightId: clearInFlight ? null : (inFlightId ?? this.inFlightId),
+      refreshedAt: refreshedAt ?? this.refreshedAt,
+      refreshFailure: clearRefreshFailure ? null : (refreshFailure ?? this.refreshFailure),
     );
   }
 }

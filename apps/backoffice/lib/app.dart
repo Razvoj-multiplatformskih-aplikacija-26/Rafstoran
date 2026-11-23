@@ -93,7 +93,8 @@ class _SignedInAppState extends State<_SignedInApp> {
       value: widget.staff,
       child: BlocProvider(
         create: (_) => DailyScheduleBloc(
-          getDailySchedule: dependencies.getDailySchedule,
+          watchDailySchedule: dependencies.watchDailySchedule,
+          refreshDailySchedule: dependencies.refreshDailySchedule,
           confirmReservation: dependencies.confirmReservation,
           recordArrival: dependencies.recordArrival,
           recordNoShow: dependencies.recordNoShow,

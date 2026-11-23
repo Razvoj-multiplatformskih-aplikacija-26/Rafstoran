@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:domain/domain.dart';
 import 'package:domain/domain.dart' as domain;
@@ -9,7 +11,8 @@ part 'daily_schedule_state.dart';
 
 final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleState> {
   DailyScheduleBloc({
-    required this.getDailySchedule,
+    required this.watchDailySchedule,
+    required this.refreshDailySchedule,
     required this.confirmReservation,
     required this.recordArrival,
     required this.recordNoShow,
@@ -17,8 +20,9 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
     required this.clock,
     required this.staff,
   }) : super(DailyScheduleLoading(day: restaurantDay(clock.now()))) {
-    on<DailyScheduleRequested>((event, emit) => _load(emit, day: event.day));
-    on<DailyScheduleRefreshed>((event, emit) => _load(emit, day: state.day, keepSelection: true));
+    on<DailyScheduleRequested>(_onRequested);
+    on<_DailyScheduleArrived>(_onArrived);
+    on<DailyScheduleRefreshed>((event, emit) => _refresh(emit, state.day));
     on<ScheduleReservationSelected>((event, emit) => _select(emit, event.id));
     on<ScheduleConfirmationRequested>(
       (event, emit) => _act(emit, event.id, () => confirmReservation(id: event.id, by: staff)),
@@ -50,37 +54,63 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
     });
   }
 
-  final GetDailySchedule getDailySchedule;
+  final WatchDailySchedule watchDailySchedule;
+  final RefreshDailySchedule refreshDailySchedule;
   final ConfirmReservation confirmReservation;
   final RecordArrival recordArrival;
   final RecordNoShow recordNoShow;
   final CancelReservation cancelReservation;
   final Clock clock;
   final User staff;
-  int _request = 0;
+  StreamSubscription<ScheduleSnapshot?>? _feed;
 
   DateTime get today => restaurantDay(clock.now());
 
-  Future<void> _load(Emitter<DailyScheduleState> emit, {required DateTime day, bool keepSelection = false}) async {
-    final request = ++_request;
-    final previous = state;
-    final selectedId = keepSelection && previous is DailyScheduleLoaded ? previous.selectedId : null;
-    final cursor = keepSelection && previous is DailyScheduleLoaded ? previous.cursor : null;
-    if (!keepSelection) emit(DailyScheduleLoading(day: day));
-    try {
-      final schedule = await getDailySchedule(day);
-      if (request != _request) return;
-      final loaded = DailyScheduleLoaded(
-        day: day,
+  Future<void> _onRequested(DailyScheduleRequested event, Emitter<DailyScheduleState> emit) async {
+    await _feed?.cancel();
+    final day = event.day;
+    emit(DailyScheduleLoading(day: day));
+    _feed = watchDailySchedule(day).listen((snapshot) => add(_DailyScheduleArrived(day, snapshot)));
+    await _refresh(emit, day);
+  }
+
+  void _onArrived(_DailyScheduleArrived event, Emitter<DailyScheduleState> emit) {
+    final current = state;
+    final snapshot = event.snapshot;
+    if (event.day != current.day || snapshot == null) return;
+    final schedule = snapshot.schedule;
+    final next = switch (current) {
+      DailyScheduleLoaded() => current.copyWith(
         schedule: schedule,
         actions: _actionsFor(schedule),
-        cursor: cursor ?? (row: 0, column: _currentHalfHour(schedule)),
-        selectedId: selectedId,
-      );
-      emit(loaded.copyWith(cursor: loaded.clamp(loaded.cursor)));
+        refreshedAt: snapshot.refreshedAt,
+      ),
+      _ => DailyScheduleLoaded(
+        day: current.day,
+        schedule: schedule,
+        actions: _actionsFor(schedule),
+        cursor: (row: 0, column: _currentHalfHour(schedule)),
+        refreshedAt: snapshot.refreshedAt,
+        refreshFailure: current is DailyScheduleFailure ? current.cause : null,
+      ),
+    };
+    emit(next.copyWith(cursor: next.clamp(next.cursor)));
+  }
+
+  Future<void> _refresh(Emitter<DailyScheduleState> emit, DateTime day) async {
+    try {
+      await refreshDailySchedule(day);
+      final current = state;
+      if (current is DailyScheduleLoaded && current.day == day && current.refreshFailure != null) {
+        emit(current.copyWith(clearRefreshFailure: true));
+      }
     } on Exception catch (cause) {
-      if (request != _request) return;
-      emit(DailyScheduleFailure(day: day, cause: cause));
+      final current = state;
+      if (current.day != day) return;
+      emit(switch (current) {
+        DailyScheduleLoaded() => current.copyWith(refreshFailure: cause),
+        _ => DailyScheduleFailure(day: day, cause: cause),
+      });
     }
   }
 
@@ -91,34 +121,36 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
   ) async {
     final current = state;
     if (current is! DailyScheduleLoaded || current.isBusy) return;
-    final request = ++_request;
     emit(current.copyWith(inFlightId: id, clearNotice: true));
+    final ScheduleNotice notice;
     try {
-      final notice = switch (await action()) {
+      notice = switch (await action()) {
         Failure(:final error) => ScheduleActionRejected(error),
         Success(:final value) => ScheduleActionSucceeded(value),
       };
-      _finish(emit, request, schedule: await getDailySchedule(current.day), notice: notice);
     } on Exception catch (cause) {
-      _finish(emit, request, notice: ScheduleActionFailed(cause));
+      final latest = state;
+      if (latest is DailyScheduleLoaded && latest.day == current.day) {
+        emit(latest.copyWith(notice: ScheduleActionFailed(cause), clearInFlight: true));
+      }
+      return;
     }
-  }
-
-  void _finish(
-    Emitter<DailyScheduleState> emit,
-    int request, {
-    DailySchedule? schedule,
-    required ScheduleNotice notice,
-  }) {
     final latest = state;
-    if (request != _request || latest is! DailyScheduleLoaded) return;
-    emit(latest.copyWith(schedule: schedule, actions: _actionsFor(schedule ?? latest.schedule), notice: notice));
+    if (latest is! DailyScheduleLoaded || latest.day != current.day) return;
+    emit(latest.copyWith(notice: notice, clearInFlight: true));
+    await _refresh(emit, current.day);
   }
 
   void _select(Emitter<DailyScheduleState> emit, ReservationId? id) {
     final current = state;
     if (current is! DailyScheduleLoaded) return;
     emit(current.copyWith(selectedId: id, clearSelection: id == null, actions: _actionsFor(current.schedule)));
+  }
+
+  @override
+  Future<void> close() async {
+    await _feed?.cancel();
+    return super.close();
   }
 
   int _currentHalfHour(DailySchedule schedule) {

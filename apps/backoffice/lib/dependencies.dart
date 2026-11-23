@@ -8,12 +8,13 @@ import 'data/fake_sessions.dart';
 final class BackofficeDependencies {
   BackofficeDependencies({
     required this.clock,
-    required ScheduleRepository schedules,
+    required ScheduleFeed schedules,
     required ReservationRepository reservations,
     required SlotRepository slots,
     required SessionRepository sessions,
     this.fakeSchedule,
-  }) : getDailySchedule = GetDailySchedule(schedules: schedules),
+  }) : watchDailySchedule = WatchDailySchedule(feed: schedules),
+       refreshDailySchedule = RefreshDailySchedule(feed: schedules),
        getAvailableSlots = GetAvailableSlots(slots: slots, clock: clock),
        createReservation = CreateReservation(reservations: reservations, slots: slots, clock: clock),
        confirmReservation = ConfirmReservation(reservations: reservations, clock: clock),
@@ -33,7 +34,7 @@ final class BackofficeDependencies {
     final api = ApiClient(baseUri: baseUri, appVersion: appVersion, tokens: tokens);
     return BackofficeDependencies(
       clock: clock,
-      schedules: HttpScheduleRepository(api),
+      schedules: OnlineScheduleFeed(schedules: HttpScheduleRepository(api), clock: clock),
       reservations: HttpReservationRepository(api),
       slots: HttpSlotRepository(api),
       sessions: HttpSessionRepository(api),
@@ -48,7 +49,7 @@ final class BackofficeDependencies {
     final schedule = latency == null ? FakeSchedule(clock: clock) : FakeSchedule(clock: clock, latency: latency);
     return BackofficeDependencies(
       clock: clock,
-      schedules: schedule,
+      schedules: OnlineScheduleFeed(schedules: schedule, clock: clock),
       reservations: schedule,
       slots: schedule,
       sessions: FakeSessions(staff),
@@ -59,7 +60,8 @@ final class BackofficeDependencies {
   static const appVersion = 'backoffice/0.1.0+1';
 
   final Clock clock;
-  final GetDailySchedule getDailySchedule;
+  final WatchDailySchedule watchDailySchedule;
+  final RefreshDailySchedule refreshDailySchedule;
   final GetAvailableSlots getAvailableSlots;
   final CreateReservation createReservation;
   final ConfirmReservation confirmReservation;

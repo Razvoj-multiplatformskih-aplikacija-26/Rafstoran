@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ui/ui.dart';
+import 'package:use_cases/use_cases.dart';
 
 import '../data/fake_schedule.dart';
 import '../dependencies.dart';
@@ -174,6 +175,35 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   void _refresh() => _bloc.add(const DailyScheduleRefreshed());
+
+  Future<void> _logOut() async {
+    final lastFailure = switch (_bloc.state) {
+      DailyScheduleLoaded(:final refreshFailure) => refreshFailure,
+      DailyScheduleFailure(:final cause) => cause,
+      DailyScheduleLoading() => null,
+    };
+    final offline = lastFailure is RepositoryException && lastFailure.failure == RepositoryFailure.unreachable;
+    if (offline) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialog) => AlertDialog(
+          title: const Text('Odjaviti se bez veze sa serverom?'),
+          content: Text(
+            [
+              'Prijava traži vezu sa serverom. Dok se veza ne vrati, na ovom računaru niko ne može da se prijavi.',
+              if (!kIsWeb) 'Odjava briše raspored sačuvan na ovom računaru.',
+            ].join(' '),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialog, false), child: const Text('Ostani prijavljen')),
+            FilledButton(onPressed: () => Navigator.pop(dialog, true), child: const Text('Odjavi se')),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+    context.read<SessionBloc>().add(const SessionLogOutRequested());
+  }
 
   void _simulateOutage(FakeSchedule fake) {
     fake.failingRequests = 1;
@@ -355,11 +385,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(_staff.name, style: theme.textTheme.labelLarge),
-                  IconButton(
-                    tooltip: 'Odjavi se',
-                    onPressed: () => context.read<SessionBloc>().add(const SessionLogOutRequested()),
-                    icon: const Icon(Icons.logout),
-                  ),
+                  IconButton(tooltip: 'Odjavi se', onPressed: _logOut, icon: const Icon(Icons.logout)),
                   if (kDebugMode && fake != null)
                     IconButton(
                       tooltip: 'Simuliraj grešku',
@@ -375,7 +401,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       'palette' => showCommandPalette(context, _paletteCommands()),
                       'shortcuts' => showShortcutsOverview(context),
                       'outage' => fake == null ? null : _simulateOutage(fake),
-                      'logout' => context.read<SessionBloc>().add(const SessionLogOutRequested()),
+                      'logout' => _logOut(),
                       _ => null,
                     },
                     itemBuilder: (context) => [
@@ -512,21 +538,30 @@ class _LoadedBody extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= Breakpoints.medium;
+        final freshness = _Freshness(refreshedAt: state.refreshedAt, failure: state.refreshFailure);
         if (!wide) {
-          return ScheduleList(
-            schedule: schedule,
-            selectedId: state.selectedId,
-            openAt: state.cursorTime,
-            onSelect: (reservation) {
-              onSelect(reservation);
-              _showDetailSheet(context, reservation);
-            },
-            onContextMenu: onContextMenu,
+          return Column(
+            children: [
+              freshness,
+              Expanded(
+                child: ScheduleList(
+                  schedule: schedule,
+                  selectedId: state.selectedId,
+                  openAt: state.cursorTime,
+                  onSelect: (reservation) {
+                    onSelect(reservation);
+                    _showDetailSheet(context, reservation);
+                  },
+                  onContextMenu: onContextMenu,
+                ),
+              ),
+            ],
           );
         }
         return Column(
           children: [
             if (state.isBusy) const LinearProgressIndicator(minHeight: 3) else const SizedBox(height: 3),
+            freshness,
             if (state.isEmpty)
               Container(
                 width: double.infinity,
@@ -578,6 +613,47 @@ class _LoadedBody extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _Freshness extends StatelessWidget {
+  const _Freshness({required this.refreshedAt, required this.failure});
+
+  final DateTime? refreshedAt;
+  final Object? failure;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final refreshedAt = this.refreshedAt;
+    final lastRefresh = refreshedAt == null ? null : 'Poslednje osveženje: ${formatDateAndTime(refreshedAt)}';
+    final failure = this.failure;
+    if (failure == null) {
+      if (lastRefresh == null) return const SizedBox.shrink();
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Text(lastRefresh, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+      );
+    }
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      child: Container(
+        width: double.infinity,
+        color: theme.colorScheme.surfaceContainerHighest,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            const Icon(Icons.cloud_off_outlined, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text([failureMessage(failure), ?lastRefresh].join(' · '), style: theme.textTheme.bodyMedium),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

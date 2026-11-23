@@ -146,4 +146,21 @@ void main() {
 
     expect(find.text('Manje od 2 sata pre termina rezervaciju otkazuje menadžer.'), findsOneWidget);
   });
+
+  testWidgets('a failed refresh keeps the schedule on screen and says when it was last refreshed', (tester) async {
+    useWindow(tester, width: 1440, height: 900);
+    final dependencies = fakeDependencies();
+    await pumpBackoffice(tester, dependencies: dependencies);
+    expect(find.text('Poslednje osveženje: petak, 9. oktobar u 17:10'), findsOneWidget);
+
+    dependencies.fakeSchedule!.failingRequests = 1;
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
+    await settle(tester);
+
+    expect(find.byType(ScheduleGrid), findsOneWidget);
+    expect(
+      find.text('Podaci trenutno nisu dostupni. · Poslednje osveženje: petak, 9. oktobar u 17:10'),
+      findsOneWidget,
+    );
+  });
 }
