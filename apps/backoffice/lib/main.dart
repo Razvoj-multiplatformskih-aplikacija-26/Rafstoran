@@ -1,4 +1,3 @@
-import 'package:api_client/api_client.dart';
 import 'package:blocs/blocs.dart';
 import 'package:domain/domain.dart';
 import 'package:flutter/foundation.dart';
@@ -9,8 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:ui/ui.dart';
 
 import 'app.dart';
-import 'data/secure_token_store.dart';
-import 'dependencies.dart';
+import 'server_dependencies.dart';
 
 Future<void> main() async {
   usePathUrlStrategy();
@@ -20,9 +18,8 @@ Future<void> main() async {
   if (kDebugMode) Bloc.observer = ConsoleBlocObserver(debugPrint);
   runApp(
     BackofficeApp(
-      dependencies: BackofficeDependencies.server(
+      dependencies: serverDependencies(
         baseUri: Uri.parse(const String.fromEnvironment('SERVER_URL', defaultValue: 'http://localhost:8080')),
-        tokens: kIsWeb ? MemoryTokenStore() : const SecureTokenStore(),
       ),
     ),
   );
