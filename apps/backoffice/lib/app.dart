@@ -101,6 +101,7 @@ class _SignedInAppState extends State<_SignedInApp> {
           cancelReservation: dependencies.cancelReservation,
           clock: dependencies.clock,
           staff: widget.staff,
+          refreshEvery: const Duration(seconds: 30),
         )..add(DailyScheduleRequested(restaurantDay(dependencies.clock.now()))),
         child: _material(router: _router),
       ),

@@ -347,6 +347,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         ],
                       ),
                     ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(36),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: BlocBuilder<DailyScheduleBloc, DailyScheduleState>(
+                      builder: (context, state) => _ConnectionLamp(state: state, now: bloc.clock.now()),
+                    ),
+                  ),
+                ),
+              ),
               actions: [
                 IconButton(
                   tooltip: 'Prethodni dan (P)',
@@ -538,30 +550,21 @@ class _LoadedBody extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= Breakpoints.medium;
-        final freshness = _Freshness(refreshedAt: state.refreshedAt, failure: state.refreshFailure);
         if (!wide) {
-          return Column(
-            children: [
-              freshness,
-              Expanded(
-                child: ScheduleList(
-                  schedule: schedule,
-                  selectedId: state.selectedId,
-                  openAt: state.cursorTime,
-                  onSelect: (reservation) {
-                    onSelect(reservation);
-                    _showDetailSheet(context, reservation);
-                  },
-                  onContextMenu: onContextMenu,
-                ),
-              ),
-            ],
+          return ScheduleList(
+            schedule: schedule,
+            selectedId: state.selectedId,
+            openAt: state.cursorTime,
+            onSelect: (reservation) {
+              onSelect(reservation);
+              _showDetailSheet(context, reservation);
+            },
+            onContextMenu: onContextMenu,
           );
         }
         return Column(
           children: [
             if (state.isBusy) const LinearProgressIndicator(minHeight: 3) else const SizedBox(height: 3),
-            freshness,
             if (state.isEmpty)
               Container(
                 width: double.infinity,
@@ -617,41 +620,79 @@ class _LoadedBody extends StatelessWidget {
   }
 }
 
-class _Freshness extends StatelessWidget {
-  const _Freshness({required this.refreshedAt, required this.failure});
+class _ConnectionLamp extends StatelessWidget {
+  const _ConnectionLamp({required this.state, required this.now});
 
-  final DateTime? refreshedAt;
-  final Object? failure;
+  final DailyScheduleState state;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final refreshedAt = this.refreshedAt;
-    final lastRefresh = refreshedAt == null ? null : 'Poslednje osveženje: ${formatDateAndTime(refreshedAt)}';
-    final failure = this.failure;
-    if (failure == null) {
-      if (lastRefresh == null) return const SizedBox.shrink();
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        child: Text(lastRefresh, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-      );
-    }
+    final colors = theme.statusColors;
+    final (refreshedAt, failure) = switch (state) {
+      DailyScheduleLoaded(:final refreshedAt, :final refreshFailure) => (refreshedAt, refreshFailure),
+      DailyScheduleFailure(:final cause) => (null, cause),
+      DailyScheduleLoading() => (null, null),
+    };
+    final lastContact = switch (refreshedAt) {
+      null => null,
+      final at when restaurantDay(at) == restaurantDay(now) => 'poslednja veza ${formatTime(at)}',
+      final at => 'poslednja veza: ${formatDateAndTime(at)}',
+    };
+    final (background, lamp, label) = switch (failure) {
+      null when refreshedAt == null => (
+        theme.colorScheme.surfaceContainerHighest,
+        theme.colorScheme.onSurfaceVariant,
+        'Povezivanje…',
+      ),
+      null => (colors.confirmed, colors.onConfirmed, 'Na mreži'),
+      RepositoryException(failure: RepositoryFailure.unreachable) => (
+        colors.cancelled,
+        colors.onCancelled,
+        ['Van mreže', ?lastContact].join(' · '),
+      ),
+      RepositoryException(failure: RepositoryFailure.serverError) => (
+        colors.pending,
+        colors.onPending,
+        ['Greška na serveru', ?lastContact].join(' · '),
+      ),
+      _ => (colors.pending, colors.onPending, ['Osvežavanje nije uspelo', ?lastContact].join(' · ')),
+    };
+    final details = [
+      if (failure != null) failureMessage(failure) else label,
+      if (refreshedAt != null) 'Poslednje osveženje: ${formatDateAndTime(refreshedAt)}.',
+    ].join(' ');
+    final dot = Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(color: lamp, shape: BoxShape.circle),
+    );
     return Semantics(
       container: true,
       liveRegion: true,
-      child: Container(
-        width: double.infinity,
-        color: theme.colorScheme.surfaceContainerHighest,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            const Icon(Icons.cloud_off_outlined, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text([failureMessage(failure), ?lastRefresh].join(' · '), style: theme.textTheme.bodyMedium),
+      label: details,
+      child: ExcludeSemantics(
+        child: Tooltip(
+          message: details,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(999)),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                dot,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(color: lamp),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

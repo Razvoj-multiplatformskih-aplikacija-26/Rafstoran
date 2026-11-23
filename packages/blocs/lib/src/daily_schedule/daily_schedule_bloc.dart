@@ -19,6 +19,7 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
     required this.cancelReservation,
     required this.clock,
     required this.staff,
+    this.refreshEvery,
   }) : super(DailyScheduleLoading(day: restaurantDay(clock.now()))) {
     on<DailyScheduleRequested>(_onRequested);
     on<_DailyScheduleArrived>(_onArrived);
@@ -62,7 +63,9 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
   final CancelReservation cancelReservation;
   final Clock clock;
   final User staff;
+  final Duration? refreshEvery;
   StreamSubscription<ScheduleSnapshot?>? _feed;
+  Timer? _poll;
 
   DateTime get today => restaurantDay(clock.now());
 
@@ -71,6 +74,8 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
     final day = event.day;
     emit(DailyScheduleLoading(day: day));
     _feed = watchDailySchedule(day).listen((snapshot) => add(_DailyScheduleArrived(day, snapshot)));
+    _poll?.cancel();
+    if (refreshEvery case final every?) _poll = Timer.periodic(every, (_) => add(const DailyScheduleRefreshed()));
     await _refresh(emit, day);
   }
 
@@ -149,6 +154,7 @@ final class DailyScheduleBloc extends Bloc<DailyScheduleEvent, DailyScheduleStat
 
   @override
   Future<void> close() async {
+    _poll?.cancel();
     await _feed?.cancel();
     return super.close();
   }
